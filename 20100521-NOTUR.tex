@@ -1,0 +1,156 @@
+%\documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+%\usetheme{Singapore}
+%\usetheme{Warsaw}
+\usetheme{Malmoe}
+\useinnertheme{circles}
+\useoutertheme{infolines}
+% \useinnertheme{rounded}
+
+\setbeamercovered{transparent}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{bm,textpos,alltt,listings,multirow,ulem}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+\usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes.arrows,arrows,shapes.misc]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\input{JedMacros.tex}
+
+\title[PETSc]{The Portable Extensible Toolkit for Scientific computing}
+
+\subtitle{New developments, memory performance, and algorithmic experimentation}
+
+\author{Jed Brown}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute[ETH Z\"urich]
+{
+  Laboratory of Hydrology, Hydraulics, and Glaciology \\
+  ETH Zürich
+}
+
+\date{NOTUR 2010-05-21, Bergen}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+% \frametitle{Outline}
+% \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+%\beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents
+% You might wish to add the option [pausesections]
+\end{frame}
+
+\section{Introduction}
+\input{slides/AboutPETSc}
+\input{slides/PETScTimeline.tex}
+
+\section[Memory]{Memory performance for sparse kernels}
+\input{slides/JFNKBottlenecks.tex}
+\input{slides/CPUArchitecture.tex}
+\input{slides/HardwareCapability.tex}
+%\input{OlikerSpMVOptimization.tex}
+\subsection{Sparse Matrix-Vector products}
+\input{slides/SpMVPerformanceModel.tex}
+\input{slides/StreamTriad-XT5-BGP.tex}
+\input{slides/OptimizingSpMV.tex}
+\input{slides/OptimizingSpMVUnassembled.tex}
+\subsection{Triangular solves}
+\input{slides/StoringFactors.tex}
+\input{slides/FactorImprovement.tex}
+
+\section{Time Integration}
+\subsection{Differential Algebraic Equations}
+\input{slides/StiffIntegrators.tex}
+\input{slides/StiffBarriers.tex}
+\input{slides/DAEIRKS.tex}
+\subsection{Strong stability preserving methods}
+\input{slides/SSPIntegrators.tex}
+
+\section[FieldSplit]{Preconditioning using splitting methods}
+\input{slides/FieldSplit.tex}
+\input{slides/SplittingStrongCoupling.tex}
+
+\section{Hydrostatic Ice}
+\input{slides/THIEquations.tex}
+\input{slides/THIX5kmClip.tex}
+\input{slides/THIWhatAboutSplitting.tex}
+
+\input{slides/ThoughtsOnMultigrid.tex}
+
+\begin{frame}{Wrap-up}
+  \begin{itemize}
+  \item PETSc can help you
+    \begin{itemize}
+    \item easily construct a code to experiment with ideas
+    \item scale an existing code base
+    \item incorporate more scalable or higher performance algorithms
+    \item attain high performance on a variety of architectures
+    \item debug and profile a parallel application (not discussed today)
+    \item package and distribute your code (e.g. graph algorithms, \\
+      domain decomposition and multilevel solvers), \code{-{}-download-xxx}
+    \end{itemize}
+  \item I will be around most of today, find me to discuss
+    \begin{itemize}
+    \item new and old features in PETSc
+    \item performance, scalability, and algorithms
+    \item design of new codes
+    \item integration with your existing application
+    \end{itemize}
+  \item \url{http://mcs.anl.gov/petsc}
+  \item \url{petsc-users@mcs.anl.gov} and \url{petsc-dev@mcs.anl.gov}
+  \item \url{petsc-maint@mcs.anl.gov}
+  \end{itemize}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,77 @@
+\begin{frame}{{\bf Portable} Extensible Toolkit for Scientific computing}
+%TODO: big-iron image
+\begin{itemize}
+  \item Architecture
+    \begin{itemize}
+    \item tightly coupled (e.g. XT5, BG/P, Earth Simulator)
+    \item loosely coupled such as network of workstations
+    \end{itemize}
+  \item Operating systems (Linux, Mac, Windows, BSD, proprietary Unix)
+  \item Any compiler
+  \item Real/complex, single/double precision, 32/64-bit int
+  \item Usable from C, C++, Fortran 77/90, and Python
+  \item Free to everyone (BSD-style license), open development
+  \item 500B unknowns, 75\% weak scalability on Jaguar (225k cores) \\
+    and Jugene (295k cores)
+  \item Same code runs performantly on a laptop
+  \item<2> \alert{\tikz[baseline] \node [cross out,draw=black,line width=1,anchor=text] {No}; iPhone support}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Portable {\bf Extensible} Toolkit for Scientific computing}
+\begin{block}{Philosophy: Everything has a plugin architecture}
+\begin{itemize}
+  \item Vectors, Matrices, Coloring/ordering/partitioning algorithms
+  \item Preconditioners, Krylov accelerators
+  \item Nonlinear solvers, Time integrators
+  \item Spatial discretizations/topology$^*$
+\end{itemize}
+\end{block}
+\begin{example}
+	Vendor supplies matrix format and associated preconditioner, distributes
+	compiled shared library.  Application user loads plugin at runtime, no source
+	code in sight.
+\end{example}
+\end{frame}
+
+\begin{frame}{Portable Extensible {\bf Toolkit} for Scientific computing}
+Algorithms, (parallel) debugging aids, low-overhead profiling
+\begin{block}{Composability}
+Try new algorithms by choosing from product space and composing
+existing algorithms (multilevel, domain decomposition, splitting).
+\end{block}
+\begin{block}{Experimentation}
+\begin{itemize}
+  \item It is not possible to pick the solver \emph{a priori}. \\
+  What will deliver best/competitive performance for a given physics, discretization, architecture, and problem size?
+  \item PETSc's response: expose an algebra of composition so new solvers can be created at runtime.
+  \item Important to keep solvers decoupled from physics and discretization because we also experiment with those. 
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Portable Extensible Toolkit for {\bf Scientific computing}}
+  \begin{itemize}
+  \item Computational Scientists
+    \begin{itemize}
+    \item PyLith (CIG), Underworld (Monash), Magma Dynamics (LDEO, Columbia), PFLOTRAN (DOE), SHARP/UNIC (DOE)
+    \end{itemize}
+  \item Algorithm Developers (iterative methods and preconditioning)
+  \item Package Developers
+    \begin{itemize}
+    \item SLEPc, TAO, Deal.II, Libmesh, FEniCS, PETSc-FEM, MagPar, OOFEM, FreeCFD, OpenFVM
+    \end{itemize}
+  \item Funding
+    \begin{itemize}\item Department of Energy
+      \begin{itemize}\item SciDAC, ASCR ISICLES, MICS Program, INL Reactor Program
+      \end{itemize}
+    \item National Science Foundation
+      \begin{itemize}\item CIG, CISE, Multidisciplinary Challenge Program
+      \end{itemize}
+    \end{itemize}
+  \item Hundreds of tutorial-style examples
+  \item Hyperlinked manual, examples, and manual pages for all routines
+  \item Support from \url{petsc-maint@mcs.anl.gov}
+  %\item Mailing list \url{petsc-users@mcs.anl.gov}
+\end{itemize}
+\end{frame}

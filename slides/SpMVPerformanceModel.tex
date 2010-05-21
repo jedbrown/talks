@@ -1,0 +1,27 @@
+\begin{frame}[fragile]{Sparse Mat-Vec performance model}
+  \begin{block}{Compressed Sparse Row format (AIJ)}
+    For $m \times n$ matrix with $N$ nonzeros
+    \begin{itemize}
+    \item[ai] row starts, length $m+1$
+    \item[aj] column indices, length $N$, range $[0,n-1)$
+    \item[aa] nonzero entries, length $N$, scalar values
+    \end{itemize}
+  \end{block}
+\begin{columns}
+\begin{column}{0.3\textwidth}
+\[y \gets y + A x\]
+\end{column}
+\begin{column}{0.7\textwidth}
+\begin{lstlisting}
+  for (i=0; i<m; i++)
+    for (j=ai[i]; j<ai[i+1]; j++)
+      y[i] += aa[j] * x[aj[j]];
+    \end{lstlisting}
+  \end{column}
+\end{columns}
+  \begin{itemize}
+  \item One add and one multiply per inner loop
+  \item Scalar \code{aa[j]} and integer \code{aj[j]} only used once
+  \item Must load \code{aj[j]} to read from \code{x}, may not reuse cache well
+  \end{itemize}
+\end{frame}

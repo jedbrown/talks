@@ -1,0 +1,21 @@
+\begin{frame}{Special class: IRKS (inherent Runge-Kutta stability)}
+  \begin{itemize}
+  \item $A$-stable
+  \item $L$-stable
+  \item order $p$, stage order $q$, $p=q=r-1=s-1$
+  \item diagonally implicit
+  \item Asymptotically correct error estimates for \\
+    present method \emph{and} method of order $p+1$.
+  \item Implemented in PETSc's TSGL (\code{-ts\_type gl})
+    \begin{itemize}
+    \item implicit DAE form: $f(t,x,\dot{x}) = 0$
+    \item orders $p = 1,\dotsc,5$
+    \item adaptive-order, adaptive-step controller
+    \item plugin architecture for controllers
+    \item make new methods available to the controller by giving their
+      tableau, \\ error estimates computed automatically
+    \item solve $f(t,x,x_0+\alpha x) = 0$ with SNES
+    \end{itemize}
+  \end{itemize}
+  {\small Butcher, Jackiewicz, Wright, \emph{On error propagation in general linear methods for ordinary differential equations}, 2007.}
+\end{frame}

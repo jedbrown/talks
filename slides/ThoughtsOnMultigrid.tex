@@ -1,0 +1,22 @@
+\begin{frame}{Thoughts on Multigrid}
+  \begin{itemize}
+  \item Rapid coarsening is essential for weak scalability
+    \begin{itemize}
+    \item Push the algorithm towards ``multilevel domain decomposition''
+    \end{itemize}
+  \item Energy minimizing interpolants (Wan, Chan, and Smith 2000)
+    \begin{itemize}
+    \item Similar to exotic Schwarz methods, see Dohrmann and Widlund 2008, 2009
+    \item Closely related to FETI-DP/BDDC coarse spaces
+    \end{itemize}
+  \item (Precondition with) first-order upwind for transport/waves
+  \item Smooth all components together (block SOR, Vanka smoothers for indefinite problems)
+  \item Interpolation operators must be compatible with physics (e.g. inf-sup conditions)
+  \item Ordering of unknowns can make incomplete factorization behave \\
+    similar to line smoothers
+  \item Nonlinear multigrid (FAS) is worth trying if pointwise or block \\
+    residuals are cheap, or globalization is especially challenging
+  \item Monotone multigrid (Kornhuber) for variational inequalities
+  \item Boundary conditions in subdomain problems (``optimized Schwarz'')
+  \end{itemize}
+\end{frame}

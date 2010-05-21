@@ -1,0 +1,43 @@
+\begin{frame}{Examples of splitting for strong coupling}
+  \begin{itemize}
+  \item Incompressible flow
+    \begin{gather*}
+      J(u)
+      \begin{bmatrix}
+        w \\ p
+      \end{bmatrix}
+      \sim
+      \begin{bmatrix}
+        u\cdot\grad -\Delta & \grad \\
+        -\divrg &  \\
+      \end{bmatrix}
+      \begin{bmatrix}
+        w \\ p
+      \end{bmatrix} \\
+      S \sim \divrg (u\cdot\grad - \Delta)^{-1} \grad \approx \lap (u\cdot\grad - \Delta)^{-1}
+    \end{gather*}
+    \begin{itemize}
+    \item $S^{-1}$ requires solve with a Laplacian and application of an
+      advection-diffusion operator defined in pressure space (Elman et
+      al, 2008)
+    \end{itemize}
+  \item Shallow water with stiff gravity wave, $\alpha = 1/\Delta t$, wave speed $\sqrt{gh}$
+    \begin{gather*}
+      J(h,uh)
+      \begin{bmatrix} h' \\ uh' \end{bmatrix}
+      \sim
+      \begin{bmatrix}
+        \alpha & \divrg \\
+        g h \grad & \alpha
+      \end{bmatrix}
+      \begin{bmatrix} h' \\ uh' \end{bmatrix}
+      + (\text{non-stiff terms})
+      \\
+      S \sim \alpha - \alpha^{-1} g \divrg h\grad
+    \end{gather*}
+    \begin{itemize}
+    \item Scalar parabolic operator, good for multigrid \\
+      (Mousseau, Knoll, and Reisner, 2002)
+    \end{itemize}
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,22 @@
+\begin{frame}{Barriers}
+  \begin{block}{Dahlquist's second barrier}
+    An $A$-stable linear multistep method has order $p \le 2$.
+  \end{block}
+  \begin{block}{Diagonally implicit Runge-Kutta}
+    A DIRK evaluates the first stage to order $q = 1$.
+  \end{block}
+  \begin{block}{Circumvent with general linear methods}
+    \begin{equation*}
+      \begin{bmatrix} Y \\ X^{n+1} \end{bmatrix}
+      =
+      \begin{bmatrix} A & U \\ B & V \end{bmatrix}
+      \begin{bmatrix} h \dot{Y} \\ X^{n} \end{bmatrix}
+    \end{equation*}
+    \begin{itemize}
+    \item stage values $Y = \{ y_1,\dotsc,y_s \}$
+    \item Nordsieck vector passed between steps
+      \[ X = \{x_1,\dotsc,x_r\} = \{x, h \dot{x}, h^2 \ddot{x}, \dotsc \} \]
+    \item $A$ can be lower triangular (permits stages to be solved sequentially)
+    \end{itemize}
+  \end{block}
+\end{frame}

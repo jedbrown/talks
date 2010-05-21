@@ -1,0 +1,23 @@
+\begin{frame}{Stiff integrators}
+  \includegraphics[width=\textwidth]{figures/HairerWanner-stiff}
+  \vspace{-.9em}
+  {\scriptsize \raggedleft (Hairer and Wanner, 1999)}
+  \begin{equation*}
+    \dot{x} + 50 (x - \cos t) = 0
+  \end{equation*}
+  \vspace{-1em}
+  \begin{columns}
+    \begin{column}{0.4\textwidth}
+      \begin{itemize}
+      \item $ \dot{x} = \lambda x $
+      \item $\Rz(h \lambda) = x^{n+1}/x^n$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+      \item $A$-stable: $\abs{\Rz(\{\Re [z] \le 0\})} \le 1$
+      \item $L$-stable: $\lim_{z \to \infty} \Rz(z) = 0$
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}

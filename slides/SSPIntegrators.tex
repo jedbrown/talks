@@ -1,0 +1,31 @@
+\begin{frame}{Strong stability preserving methods: \code{-ts\_type ssp}}
+  \begin{itemize}
+  \item Conservation laws $u_t + \divrg f(u) = 0$
+  \item Discontinuous solutions, requires careful discretization \\
+    to prevent spurious oscillations
+  \item SSP property allows decoupling of spatial and time discretizations
+  \item Choose spatial discretization that is stable with forward-Euler \\
+    (e.g. TVD finite volume, ENO/WENO, Discontinuous Galerkin)
+  \item Barriers for methods of order greater than 1 with $s$ stages
+    \begin{equation*}
+    c_{\text{eff}} = \frac{\abs{\lambda_{\text{max}}}\Delta t}{s\Delta x} <
+    \begin{cases}
+      1 & \text{Explicit}, \\
+      2 & \text{Implicit}.
+    \end{cases}
+  \end{equation*}
+  \item
+    \begin{centering}
+      \begin{tabular}{|l|c|l|c|c|}
+        \hline
+        Popular method & $c_{\text{eff}}$ & Improved method & $c_{\text{eff}}$ & Storage \\
+        \hline
+        SSPRK$(2,2)$ & 0.500 & SSPRK$(m,2)$ & $1-1/m$ & $2N^*$ \\
+        SSPRK$(3,3)$ & 0.333 & SSPRK$(n^2,3)$ & $1-1/n$ & $2N$ \\
+        SSPRK$(5,4)$ & 0.377 & SSPRK$(10,4)$ & $0.6$ & $2N$ \\
+        \hline
+      \end{tabular}
+    \end{centering}
+  \end{itemize}
+  {\small David Ketcheson, \emph{Highly efficient strong stability-preserving Runge-Kutta methods with low-storage implementations}, 2008.}
+\end{frame}

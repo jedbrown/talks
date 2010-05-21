@@ -1,0 +1,42 @@
+\newcommand\ganttline[4]{% line, tag, start end
+   \node at (0,#1/2+.1) [anchor=base east] {#2};
+   \fill[blue] (#3/\xtick-1991/\xtick,#1/2-.1) rectangle (#4/\xtick-1991/\xtick,#1/2+.1);}
+\newcommand\ganttlabel[6]{% year, label, color, yloc, anchor
+  \node[#3] at (#1/\xtick+#6/\xtick-1991/\xtick,#4) [anchor=#5] {#2};
+  \fill[#3] (#1/\xtick-1991/\xtick,1/2-.1) rectangle (#1/\xtick-1991/\xtick+0.04,12/2+.1);}
+
+%\begin{frame}{Timeline}
+\frame{
+\begin{figure}[htbp]
+\def\present{2010.5}
+\def\xtick{2.2}
+\begin{tikzpicture}[y=-1cm]
+   %\draw[help lines] (0.5,5) grid (8,0.5);
+   \ganttlabel{1991}{1991}{red}{6.2}{north}{0}
+   \ganttlabel{1995}{1995}{red}{6.2}{north}{0}
+   \ganttlabel{2000}{2000}{red}{6.2}{north}{0}
+   \ganttlabel{2005}{2005}{red}{6.2}{north}{0}
+   \ganttlabel{2010}{2010}{red}{6.2}{north}{0}
+   \ganttlabel{1992}{PETSc-1}{green!70!black}{0}{center}{0}
+   \ganttlabel{1994.4}{MPI-1}{magenta!70!black}{-.5}{center}{0}
+   \ganttlabel{1997.6}{MPI-2}{magenta!70!black}{-.5}{center}{0}
+   \ganttlabel{1995.5}{PETSc-2}{green!70!black}{0}{center}{0}
+   \ganttlabel{2008.9}{PETSc-3}{green!70!black}{0}{center}{0}
+   \ganttline{1}{Barry}{1991}{\present}
+   \ganttline{2}{Bill}{1991}{1996}
+   \ganttline{3}{Lois}{1993}{2001}
+   \ganttline{4}{Satish}{1997}{\present}
+   \ganttline{5}{Dinesh}{1998}{2005.5}
+   \ganttline{6}{Hong}{2001}{\present}
+   \ganttline{7}{Kris}{2001}{2006}
+   \ganttline{8}{Matt}{2001.5}{\present}
+   \ganttline{9}{Victor}{2003}{2006.9}
+   \ganttline{9}{}{2007.3}{2007.5}
+   \ganttline{9}{}{2008.5}{2008.7}
+   \ganttline{10}{Dmitry}{2005.6}{\present}
+   \ganttline{11}{Lisandro}{2006.9}{\present}
+   \ganttline{12}{Jed}{2009}{\present}
+\end{tikzpicture}
+\end{figure}
+}
+%\end{frame}

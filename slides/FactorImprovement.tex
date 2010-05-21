@@ -1,0 +1,21 @@
+\begin{frame}{Improvement from better storage for factors}
+  \begin{tabular}{|l|l|c|c|c|}
+    \hline
+    \multirow{2}{*}{Processor} & \multirow{2}{*}{Matrix} & SpMV & \multicolumn{2}{c|}{Triangular solves} \\
+    & & (Mflop/s) & Old format & New format \\
+    \hline
+    \multirow{3}{*}{Core 2 Duo} & 7-point Laplace & 537 & 261 (49\%) & 447 (83\%) \\
+               & 3D Euler AIJ & 620 & 260 (42\%) & 660 (106\%) \\
+               & 3D Euler BAIJ & 890 & 468 (53\%) & 758 (85\%) \\
+    \hline
+    \multirow{3}{*}{BlueGene/P} & 7-point Laplace & 98 & 46 (47\%) & 62 (63\%) \\
+               & 3D Euler AIJ & 148 & 99 (66\%) & 126 (85\%) \\
+               & 3D Euler BAIJ & 303 & 198 (65\%) & 260 (86\%) \\
+    \hline
+  \end{tabular}
+  \bigskip
+
+  {\small Barry Smith and Hong Zhang, \emph{Sparse triangular solves for ILU revisited: \\
+      data layout crucial to better performance}, submitted to
+    Intl. J. of High Performance Computing Applications.}
+\end{frame}

@@ -1,0 +1,25 @@
+\begin{frame}{Optimizing Sparse Mat-Vec}
+  \begin{itemize}
+  \item Order unknows so that vector reuses cache (Reverse Cuthill-McKee)
+    \begin{itemize}
+    \item Optimal: $\frac{(2 \text{ flops})(\text{bandwidth})}{\texttt{sizeof(Scalar)} + \texttt{sizeof(Int)}}$
+    \item Usually improves strength of ILU and SOR
+    \end{itemize}
+  \item Coalesce indices for adjacent rows with same nonzero pattern (Inodes)
+    \begin{itemize}
+    \item Optimal: $\frac{(2 \text{ flops})(\text{bandwidth})}{\texttt{sizeof(Scalar)} + \texttt{sizeof(Int)}/i}$
+    \item Can do block SOR (much stronger than scalar SOR)
+    \item Default in PETSc, turn off with \code{-mat\_no\_inode}
+    \item Requires ordering unknowns so that fields are interlaced, this
+      is (much) better for memory use anyway
+    \end{itemize}
+  \item Use explicit blocking, hold one index per block (BAIJ format)
+    \begin{itemize}
+    \item Optimal: $\frac{(2 \text{ flops})(\text{bandwidth})}{\texttt{sizeof(Scalar)} + \texttt{sizeof(Int)}/b^2}$
+    \item Block SOR and factorization
+    \item Symbolic factorization works with blocks (much cheaper)
+    \item Very regular memory access, unrolled dense kernels
+    \item Faster insertion: \code{MatSetValuesBlocked()}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
