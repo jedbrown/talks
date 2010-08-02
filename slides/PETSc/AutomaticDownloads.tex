@@ -1,0 +1,28 @@
+\frame{
+\frametitle{Automatic Downloads}
+
+\begin{itemize}
+  \item Starting in 2.2.1, some packages can be automatically
+  \begin{itemize}
+    \item Downloaded
+    \item Configured and Built (in {\kb \$PETSC\_DIR/externalpackages})
+    \item Installed with PETSc
+  \end{itemize}
+
+  \item Currently works for
+  \begin{itemize}
+    \item petsc4py
+    \item PETSc documentation utilities (Sowing, lgrind, c2html)
+    \item BLAS, LAPACK, BLACS, ScaLAPACK, PLAPACK
+    \item MPICH, MPE, Open MPI
+    \item ParMetis, Chaco, Jostle, Party, Scotch, Zoltan
+    \item MUMPS, Spooles, SuperLU, SuperLU\_Dist, UMFPack, pARMS
+    \item PaStiX, BLOPEX, FFTW, SPRNG
+    \item Prometheus, HYPRE, ML, SPAI
+    \item Sundials
+    \item Triangle, TetGen, FIAT, FFC, Generator
+    \item HDF5, Boost
+  \end{itemize}
+\end{itemize}
+\emph{Can also use \code{-{}-with-xxx=/path/to/your/install}}
+}

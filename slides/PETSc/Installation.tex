@@ -1,0 +1,79 @@
+\section{Installation}
+\begin{frame}{Downloading}
+\begin{itemize}
+  \item \url{http://mcs.anl.gov/petsc}, download tarball
+  \item We will use Mecurial in this tutorial:
+  \begin{itemize}
+    \item \url{http://mercurial.selenic.com}
+    \item Debian/Ubuntu: \shell{aptitude install mercurial}
+    \item Fedora: \shell{yum install mercurial}
+  \end{itemize}
+  \item Get the PETSc release
+  \begin{itemize}\footnotesize
+    \item \shell{\small hg clone \mtab\bslash \\
+     \scriptsize http://petsc.cs.iit.edu/petsc/petsc-releases/petsc-release-3.1}
+    \item \shell{cd petsc-release-3.1}
+    \item \shell{\scriptsize hg clone http://petsc.cs.iit.edu/petsc/ \\
+          \qquad BuildSystem-releases/BuildSystem-release-3.1 \mtab\bslash \\
+        \qquad config/BuildSystem}
+    \item Get the latest bug fixes with \shell{hg pull --update}
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Configuration}
+\begin{block}{Basic configuration}
+\begin{itemize}\footnotesize
+  \item \shell{export PETSC\_DIR=\$PWD PETSC\_ARCH=mpich-gcc-dbg}
+  \item \shell{./configure -{}-with-shared \mtab \bslash \\
+  	\qquad\qquad -{}-with-blas-lapack-dir=/usr \mtab\bslash \\
+  	\qquad\qquad -{}-download-\{mpich,ml,hypre\}}
+  \item \shell{make all test}
+\end{itemize}
+\end{block}
+\begin{itemize}
+\item Other common options
+  \begin{itemize}\footnotesize
+  \item \item \code{-{}-with-mpi-dir=/path/to/mpi}
+  \item \code{-{}-with-scalar-type=$<$real or complex$>$}
+  \item \code{-{}-with-precision=$<$single,double,longdouble$>$}
+  \item \code{-{}-with-64-bit-indices}
+  \item \code{-{}-download-\{umfpack,mumps,scalapack,blacs,parmetis\}}
+  \end{itemize}
+\item reconfigure at any time with \\
+  {\footnotesize \shell{mpich-gcc-dbg/conf/reconfigure-mpich-gcc-dbg.py \mtab\bslash\\
+      \qquad\qquad -{}-new-options}}
+\end{itemize}
+\end{frame}
+
+\input{slides/PETSc/AutomaticDownloads}
+
+\begin{frame}{An optimized build}
+  \begin{itemize}
+  \item \shell{\small mpich-gcc-dbg/conf/reconfigure-mpich-gcc-dbg.py \\
+      PETSC\_ARCH=mpich-gcc-opt \\
+      -{}-with-debugging=0 \&\& make PETSC\_ARCH=mpich-gcc-opt}
+  \item What does \code{-{}-with-debugging=1} (default) do?
+    \begin{itemize}
+    \item Keeps debugging symbols (of course)
+    \item Maintains a stack so that errors produce a full stack trace (even SEGV)
+    \item Does lots of integrity checking of user input
+    \item Places sentinels around allocated memory to detect memory errors
+    \item Allocates related memory chunks separately (to help find memory bugs)
+    \item Keeps track of and reports unused options
+    \item Keeps track of and reports allocated memory that is not freed \\
+      \quad \code{-malloc\_dump}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Compiling an example}
+\begin{itemize}
+  \item \shell{hg clone \\
+  {\footnotesize http://petsc.cs.iit.edu/petsc/tutorials/CSCS10TutorialCode}}
+  \item \shell{cd CSCS2010TutorialCode}
+  \item \shell{hg update -r\Rbasic}
+  \item \shell{make}
+  \item \shell{./pbratu -help | less}
+\end{itemize}
+\end{frame}
