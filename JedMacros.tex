@@ -1,3 +1,17 @@
+\usepackage{xspace}
+\makeatletter
+\DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+\def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+\def\eg{{e.g}\onedot} \def\Eg{{E.g}\onedot}
+\def\ie{{i.e}\onedot} \def\Ie{{I.e}\onedot}
+\def\cf{{c.f}\onedot} \def\Cf{{C.f}\onedot}
+\def\etc{{etc}\onedot}
+\def\vs{{vs}\onedot}
+\def\wrt{w.r.t\onedot}
+\def\dof{d.o.f\onedot}
+\def\etal{{et al}\onedot}
+\makeatother
+
 \newcommand{\II}{\mathcal{I}}
 \newcommand{\C}{\mathbb{C}}
 \newcommand{\D}{\mathcal{D}}
@@ -34,3 +48,16 @@
 \newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
 \newcommand\oneitem[1]{\begin{itemize} \item #1 \end{itemize}}
 \newcommand\pp{{\mathfrak p}}
+\newcommand\ff{\bm f}
+\newcommand\uu{\bm u}
+\newcommand\vv{\bm v}
+\newcommand\ww{\bm w}
+\newcommand\DD{D}
+\newcommand{\tcolon}{\!:\!}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\card}{card}
+\DeclareMathOperator{\trace}{tr}
+\DeclareMathOperator{\sspan}{span}
+\renewcommand{\bar}{\overline}
+\DeclareMathOperator{\divergence}{div}
+\renewcommand\div\divergence
