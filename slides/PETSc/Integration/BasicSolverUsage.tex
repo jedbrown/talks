@@ -1,0 +1,27 @@
+\begin{frame}{Basic Solver Usage}
+
+  We will illustrate basic solver usage with {\kb SNES}.
+\begin{itemize}
+  \item Use {\kb SNESSetFromOptions()} so that everything is set dynamically
+  \begin{itemize}
+    \item Use {\kb -snes\_type} to set the type or take the default
+  \end{itemize}
+
+  \item Override the tolerances
+  \begin{itemize}
+    \item Use {\kb -snes\_rtol} and {\kb -snes\_atol}
+  \end{itemize}
+
+  \item View the solver to make sure you have the one you expect
+  \begin{itemize}
+    \item Use {\kb -snes\_view}
+  \end{itemize}
+
+  \item For debugging, monitor the residual decrease
+  \begin{itemize}
+    \item Use {\kb -snes\_monitor}
+    \item Use {\kb -ksp\_monitor} to see the underlying linear solver
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

@@ -1,0 +1,28 @@
+\begin{frame}{Working with the local form}
+  Wouldn't it be nice if we could just write our code for the natural numbering?
+  \begin{itemize}
+  \item Yes, that's what \code{DAVecGetArray()} is for.
+  \item Also, the DA offers \emph{local} callback functions
+    \begin{itemize}
+    \item \code{FormFunctionLocal()}, set by \code{DASetLocalFunction()}
+      
+      \medskip
+      
+    \item \code{FormJacobianLocal()}, set by \code{DASetLocalJacobian()}
+    \end{itemize}
+
+    \bigskip
+
+  \item When PETSc needs to evaluate the nonlinear residual $F(x)$,
+    \begin{itemize}
+    \item Each process evaluates the local residual
+
+      \medskip
+
+    \item PETSc assembles the global residual automatically
+      \begin{itemize}
+      \item Uses \code{DALocalToGlobal()} method
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

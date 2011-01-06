@@ -1,0 +1,26 @@
+\begin{frame}
+\frametitle{SNES Paradigm}
+
+The SNES interface is based upon callback functions
+\begin{itemize}
+  \item \code{FormFunction()}, set by \code{SNESSetFunction()}
+
+  \medskip
+
+  \item \code{FormJacobian()}, set by \code{SNESSetJacobian()}
+\end{itemize}
+
+\bigskip
+
+  When PETSc needs to evaluate the nonlinear residual $F(x)$,
+\begin{itemize}
+  \item Solver calls the {\bf user's} function
+
+  \medskip
+
+  \item User function gets application state through the {\kb ctx} variable
+  \begin{itemize}
+    \item PETSc \emph{never} sees application data
+  \end{itemize}
+\end{itemize}
+\end{frame}

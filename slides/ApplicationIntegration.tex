@@ -1,0 +1,21 @@
+\begin{frame}{Incorporating PETSc into existing codes}
+  \begin{itemize}
+  \item PETSc does not seize \code{main()}, does not control output
+  \item Propogates errors from underlying packages, flexible error handling
+  \item Nothing special about \code{MPI\_COMM\_WORLD}
+  \item Can wrap existing data structures/algorithms
+    \begin{itemize}
+    \item \code{MatShell}, \code{PCShell}, full implementations
+    \item \code{VecCreateMPIWithArray()}
+    \item \code{MatCreateSeqAIJWithArrays()}
+    \item Use an existing semi-implicit solver as a preconditioner
+    \item Usually worthwhile to use native PETSc data structures \\
+      unless you have a good reason not to
+    \end{itemize}
+  \item Uniform interfaces across languages: C, C++, Fortran 77/90, Python
+  \item Do not have to use high level interfaces
+    \begin{itemize}
+    \item but PETSc can offer more if you do, like MFFD and SNES Test
+    \end{itemize}
+  \end{itemize}
+\end{frame}

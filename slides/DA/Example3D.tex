@@ -1,0 +1,22 @@
+\frame{
+\frametitle{A 3D Problem}
+
+  Problem has:
+\begin{itemize}
+  \item 912,673 unknowns (on the fine level)
+
+  \item 24,137,569 nonzeros
+\end{itemize}
+
+\begin{tabular}{rlll}
+  Executable     & \multicolumn{2}{c}{Options}                                               & Explanation \\
+\hline
+  \code{./bratu} & \code{-dim 3}                       & \code{-da\_grid\_x 7}               & Coarse grid is 7x7x7 \\
+                 & \code{-da\_grid\_y 7}               & \code{-da\_grid\_z 7} & \\
+                 & \code{-ksp\_rtol 1.0e-9}            &                                     & Solver tolerance \\
+                 & \code{-dmmg\_nlevels 5}             &                                     & 5 levels of refinement \\
+                 & \multicolumn{2}{l}{\code{-mg\_levels\_3\_pc\_type sor}}                   & Memory savings \\
+                 & \multicolumn{2}{l}{\code{-mg\_levels\_4\_pc\_type sor}} & \\
+                 & \code{-snes\_view}                  &                                     & Describe solver
+\end{tabular}
+}

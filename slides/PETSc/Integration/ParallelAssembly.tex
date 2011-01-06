@@ -1,0 +1,21 @@
+\begin{frame}{Parallel Assembly}
+\framesubtitle{Vectors and Matrices}
+
+\begin{itemize}
+  \item Processes may set an arbitrary entry
+  \begin{itemize}
+    \item Must use proper interface
+  \end{itemize}
+
+  \item Entries need not be generated locally
+  \begin{itemize}
+    \item Local meaning the process on which they are stored
+  \end{itemize}
+
+  \item PETSc automatically moves data if necessary
+  \begin{itemize}
+    \item Happens during the assembly phase
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

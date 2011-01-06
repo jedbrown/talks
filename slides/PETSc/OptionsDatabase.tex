@@ -1,0 +1,90 @@
+\subsection{Options Database}
+\begin{frame}[fragile]{Objects}
+  % \begin{lstlisting}
+  %   Mat A;
+  %   PetscInt m,n,M,N;
+  %   MatCreate(comm,&A);
+  %   MatSetSizes(A,m,n,M,N);      /* or PETSC_DECIDE */ 
+  %   MatSetOptionsPrefix(A,"foo_");
+  %   MatSetFromOptions(A);
+  %   /* Use A */
+  %   MatView(A,PETSC_VIEWER_DRAW_WORLD);
+  %   MatDestroy(A);
+  % \end{lstlisting}
+  \begin{minted}{c}
+    Mat A;
+    PetscInt m,n,M,N;
+    MatCreate(comm,&A);
+    MatSetSizes(A,m,n,M,N);      /* or PETSC_DECIDE */ 
+    MatSetOptionsPrefix(A,"foo_");
+    MatSetFromOptions(A);
+    /* Use A */
+    MatView(A,PETSC_VIEWER_DRAW_WORLD);
+    MatDestroy(A);
+  \end{minted}
+  \begin{itemize}
+  \item \code{Mat} is an opaque object (pointer to incomplete type)
+    \oneitem{Assignment, comparison, etc, are cheap}
+  \item What's up with this ``Options'' stuff?
+    \begin{itemize}
+    \item Allows the type to be determined at runtime: \code{-foo\_mat\_type sbaij}
+    \item Inversion of Control similar to ``service locator'', \\
+      related to ``dependency injection''
+    \item Other options (performance and semantics) can be changed at
+      runtime under \code{-foo\_mat\_}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\input{slides/PETSc/PetscObject.tex}
+
+\begin{frame}{Ways to set options}
+  \begin{itemize}
+  \item Command line
+  \item Filename in the third argument of \code{PetscInitialize()}
+  \item \code{$\sim$/.petscrc}
+  \item \code{\$PWD/.petscrc}
+  \item \code{\$PWD/petscrc}
+  \item \code{PetscOptionsInsertFile()}
+  \item \code{PetscOptionsInsertString()}
+  \item \code{PETSC\_OPTIONS} environment variable
+  \item command line option \code{-options\_file [file]}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Try it out}
+  \shell{\small cd \$PETSC\_DIR/src/snes/examples/tutorials \&\& make ex5} \\
+  \begin{itemize}
+  \item \shell{./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \\
+      -snes\_monitor -\{ksp,snes\}\_converged\_reason \\
+      -snes\_view}
+  \item \shell{./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \\
+      -snes\_monitor -\{ksp,snes\}\_converged\_reason \\
+      -snes\_view -mat\_view\_draw -draw\_pause 0.5}
+  \item \shell{./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \\
+      -snes\_monitor -\{ksp,snes\}\_converged\_reason \\
+      -snes\_view -mat\_view\_draw -draw\_pause 0.5 \\
+      -pc\_type lu -pc\_factor\_mat\_ordering\_type natural}
+  \item Use \code{-help} to find other ordering types
+\end{itemize}
+\end{frame}
+
+\begin{frame}{In parallel}
+  \begin{itemize}
+  \item \shell{mpiexec -n 4 \\
+      ./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \\
+      -snes\_monitor -\{ksp,snes\}\_converged\_reason \\
+      -snes\_view -sub\_pc\_type lu}
+  \item How does the performance change as you
+    \begin{itemize}
+    \item vary the number of processes (up to 32 or 64)?
+    \item increase the problem size?
+    \item use an inexact subdomain solve?
+    \item try an overlapping method: \code{-pc\_type asm -pc\_asm\_overlap 2}
+    \item simulate a big machine: \code{-pc\_asm\_blocks 512}
+    \item change the Krylov method: \code{-ksp\_type ibcgs}
+    \item use algebraic multigrid: \code{-pc\_type hypre}
+    \item use smoothed aggregation multigrid: \code{-pc\_type ml}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

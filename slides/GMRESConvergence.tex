@@ -1,0 +1,16 @@
+\begin{frame}{GMRES convergence}
+  \begin{itemize}
+    \begin{theorem}[not sharp]\label{thm:gmres-diag}
+      For the GMRES iteration applied to a diagonalizable matrix $A = V\Lambda V^{-1}$
+      \begin{equation*}
+        \frac{\norm{r_n}}{\norm{r_0}}
+        \le \kappa(V) \inf_{\substack{p_n \in P_n \\ p_n(0) = 1}} \norm{p_n}_\Lambda
+      \end{equation*}
+      where $P_n$ is the space of polynomials of degree at most $n$.
+    \end{theorem}
+    \item For SPD matrices, the convex hull of the spectrum is the interval $[\sigma_{\text{min}},\sigma_{\text{max}}]$.  The polynomial of degree $n$ which is smallest on this set is the shifted Chebyshev polynomial which attains a maximum value
+\[ 2 \left(\frac{\sqrt\kappa-1}{\sqrt\kappa+1}\right)^n \]
+This implies convergence in $\bigO(\sqrt{\kappa})$ iterations.
+\item \alert<2->{Second order elliptic operators produce $\kappa \in \Theta(h^{-2})$, required number of iterations scales as $h^{-1}$.}
+\end{itemize}
+\end{frame}

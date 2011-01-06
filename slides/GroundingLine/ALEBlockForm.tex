@@ -1,0 +1,33 @@
+\newcommand{\colorA}[1]{{\color{red} #1}}
+\newcommand{\colorB}[1]{{\color{green!60!black} #1}}
+\newcommand{\colorC}[1]{{\color{blue} #1}}
+\newcommand{\colorD}[1]{{\color{magenta!70!black} #1}}
+\newcommand{\colorE}[1]{{\color{cyan!70!black} #1}}
+\newcommand{\colorF}[1]{{\color{yellow!60!black} #1}}
+\newcommand{\colorG}[1]{{\color{red!50!white} #1}}
+
+\begin{frame}{ALE form}
+  After discretization in time ($\alpha \propto 1/\Delta t$) we have a Jacobian
+  \begin{equation*}
+    \begin{bmatrix}
+      \colorA{A_{II}} & \colorA{A_{I\Gamma}}             &                       &                             &                     &   \\
+      & \colorB{\alpha M_{\Gamma\Gamma}} &                       & \colorB{- N_{\Gamma\Gamma}} &                       &  \\
+      \colorG{G_{II}}      & \colorG{G_{\Gamma I}} & \colorC{B_{II}}       & \colorC{B_{I\Gamma}}        & \colorC{C_{I}^T}    & \colorD{D_I} \\
+      \colorG{G_{I\Gamma}} &        \colorG{G_{\Gamma\Gamma}}                          & \colorC{B_{\Gamma I}} & \colorC{B_{\Gamma\Gamma}}   & \colorC{C_{\Gamma}^T} & \colorD{D_\Gamma} \\
+      \colorG{G_{Ip}}        &  \colorG{G_{\Gamma p}}                                & \colorC{C_{I}}        & \colorC{C_{\Gamma}}         &                   & \\
+      \colorE{\alpha E_I}    & \colorE{\alpha E_\Gamma} & \colorE{F_I} & \colorE{F_\Gamma} & & \colorF{\alpha M_\Theta + J}
+    \end{bmatrix}
+    \begin{bmatrix}
+      x_I \\ x_\Gamma \\ u_I \\ u_\Gamma \\ p \\ \Theta
+    \end{bmatrix}
+  \end{equation*}
+  \begin{itemize}
+  \item \colorA{pseudo-elasticity for mesh motion}
+  \item \colorB{$(\dot{\bm x} - \bm u)\cdot \bm n = \text{accumulution}$}
+  \item \colorG{``just'' geometry}
+  \item \colorC{Stokes problem}
+  \item \colorD{temperature dependence of rheology}
+  \item \colorE{convective terms and strain heating in heat transport}
+  \item \colorF{thermal advection-diffusion}
+  \end{itemize}
+\end{frame}

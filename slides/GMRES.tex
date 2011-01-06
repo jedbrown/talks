@@ -1,0 +1,17 @@
+\begin{frame}{GMRES}
+  Brute force minimization of residual in $\{b,Ab,A^2b,\dotsc\}$
+  \begin{enumerate}
+  \item Use Arnoldi to orthogonalize the $n$th subspace, producing
+    \[ A Q_n = Q_{n+1} H_n \]
+  \item Minimize residual in this space by solving the overdetermined system
+    \[ H_n y_n = e_1^{(n+1)} \]
+    using $QR$-decomposition, updated cheaply at each iteration.
+  \end{enumerate}
+  Properties
+  \begin{itemize}
+  \item Converges in $n$ steps for all right hand sides if there exists a polynomial of degree $n$
+    such that $\norm{p_n(A)} < \textit{tol}$ and $p_n(0)=1$.
+  \item Residual is monotonically decreasing, robust in practice
+  \item Restarted variants are used to bound memory requirements
+  \end{itemize}
+\end{frame}

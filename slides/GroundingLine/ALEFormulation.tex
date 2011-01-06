@@ -1,0 +1,88 @@
+\begin{frame}{Non-Newtonian Stokes system: velocity $\bm u$, pressure $p$}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+  \alert{\begin{align*}
+    -\nabla \cdot(\eta D\uu) + \nabla p - \ff &= 0 \\
+    \nabla \cdot \uu &= 0
+  \end{align*}}
+\end{column}
+\begin{column}{0.5\textwidth}
+    \begin{align*}
+      D\uu &= \tfrac 1 2 \left(\nabla \uu + (\nabla \uu)^T \right) \\
+      \gamma(D\uu) &= \tfrac 1 2 D\uu \tcolon D\uu \\
+      \eta(\gamma) &= B(\Theta,\dotsc)\big(\epsilon + \gamma \big)^{\frac{\mathfrak{p}-2}{2}} \\
+      \mathfrak{p} &= 1 + \tfrac{1}{\mathfrak{n}} \approx \tfrac 4 3 \\
+      T &= \bm 1 - \bm n \otimes \bm n \\
+    \end{align*}
+\end{column}
+\end{columns}
+\vspace{-1.5em}
+    with boundary conditions
+    \begin{align*}
+      (\eta D\bm u - p\bm 1)\cdot\bm n =
+      \begin{cases}\bm 0 & \text{free surface} \\
+        -\rho_w z \bm n & \text{ice-ocean interface}\end{cases} \\
+      \bm u = \bm 0\qquad\qquad \text{frozen bed}, \Theta < \Theta_0 \\
+      \left. \begin{aligned}
+          \bm u \cdot \bm n &= \bm g_{\text{melt}}(T\uu,\dotsc) \\
+          T (\eta D\bm u - p\bm 1)\cdot\bm n &= \bm g_{\text{slip}}(T \bm u,\dotsc) \end{aligned}\right\}
+      \text{nonlinear slip}, \Theta \ge \Theta_0 \\
+    \end{align*}
+    \vspace{-3em}
+    \[ \bm g_{\text{slip}}(T\uu) = \beta_{\mathfrak{m}}(\dotsc) \lvert T\bm u \rvert^{\mathfrak{m}-1} T \bm u \]
+    Navier $\mathfrak{m}=1$, \quad Weertman $\mathfrak{m}\approx \frac 1 3$, \quad Coulomb $\mathfrak{m}=0$.
+\end{frame}
+
+\begin{frame}{Other critical equations}
+  \vspace{-0.3em}
+  \begin{itemize}
+  \item Mesh motion: $\bm x$
+    \begin{columns}
+      \begin{column}{0.4\textwidth}
+        \vspace{-1.5em}
+        \begin{gather*}
+          \alert{-\nabla\cdot\bm \sigma = 0} \\
+          \text{surface: }(\bm {\dot{x}}- \bm u)\cdot\bm n = q_{BL},\;
+          T\bm \sigma \cdot \bm n = 0
+        \end{gather*}
+      \end{column}
+      \begin{column}{0.6\textwidth}
+        \begin{gather*}
+          \bm \sigma = \mu \Big[ 2 D\bm w + (\nabla \bm w)^T\nabla \bm w \Big] + \lambda|\nabla\bm w|\bm 1 \\
+          \bm w = \bm x - \bm x_0 \\
+        \end{gather*}
+      \end{column}
+    \end{columns}
+\vspace{-1em}
+  \item Heat transport: $\Theta$ (enthalpy)
+    \begin{multline*}
+      \frac{\partial}{\partial t} \Theta + {\color{blue} (\bm u - \bm{\dot{x}})}\cdot \nabla \Theta \\
+      - \nabla\cdot \Big[ {\color{green!70!black} \kappa_T(\Theta)\nabla T(\Theta)} + {\color{magenta!70!black} \kappa_\omega\nabla \omega(\Theta) + \bm q_D(\Theta)} \Big] - {\color{cyan!70!black} \eta D\bm u\tcolon D\bm u} = 0
+    \end{multline*}
+    \vspace{-0.5em}
+    \begin{itemize}
+      \begin{columns}
+        \begin{column}{0.2\textwidth}\end{column}
+        \begin{column}{0.4\textwidth}
+    \item {\color{blue} ALE advection}
+    \item {\color{green!70!black} Thermal diffusion}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+    \item {\color{magenta!70!black} Moisture diffusion/Darcy flow}
+    \item {\color{cyan!70!black} Strain heating}
+    \end{column}
+  \end{columns}
+\end{itemize}
+\vspace{0.3em}
+    Note: $\kappa(\Theta)$ and $\bm q_D(\Theta)$ are very sensitive near $\Theta=\Theta_0$
+\end{itemize}
+\vspace{-.6em}
+\begin{block}{Summary of primal variables in DAE}
+  \begin{tabular}{lll}
+    $u$ & velocity & algebraic \\
+    $p$ & pressure & algebraic \\
+    $x$ & mesh location & algebraic in domain, differential at surface \\
+    $\Theta$ & enthalpy & differential
+  \end{tabular}
+\end{block}
+\end{frame}

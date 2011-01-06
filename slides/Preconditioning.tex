@@ -1,0 +1,152 @@
+\subsection{Preconditioning}
+\input{slides/PreconditioningIdea.tex}
+\input{slides/PreconditionerDefinition.tex}
+
+\begin{frame}{Questions to ask when you see a matrix}
+  \begin{enumerate}
+  \item What do you want to do with it?
+    \begin{itemize}
+    \item Multiply with a vector
+    \item Solve linear systems or eigen-problems
+    \end{itemize}
+  \item How is the conditioning/spectrum?
+    \begin{itemize}
+    \item distinct/clustered eigen/singular values?
+    \item symmetric positive definite ($\sigma(A) \subset \R^+$)?
+    \item nonsymmetric definite ($\sigma(A) \subset \{z \in \C : \Re [z] > 0 \}$)?
+    \item indefinite?
+    \end{itemize}
+  \item How dense is it?
+    \begin{itemize}
+    \item block/banded diagonal?
+    \item sparse unstructured?
+    \item denser than we'd like?
+    \end{itemize}
+  \item Is there a better way to compute $Ax$?
+  \item Is there a different matrix with similar spectrum, but nicer properties?
+  \item \alert<2>{How can we precondition $A$?}
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Relaxation}
+  Split into lower, diagonal, upper parts: \alert{$ A = L + D + U $}
+  \begin{block}{Jacobi}
+    Cheapest preconditioner: $P^{-1} = D^{-1}$
+  \end{block}
+  \begin{block}{Successive over-relaxation (SOR)}
+    \begin{gather*}
+      \left(L + \frac 1 \omega D\right) x_{n+1} = \left[\left(\frac
+          1\omega-1\right)D - U\right] x_n + \omega b \\
+      P^{-1} = \text{$k$ iterations starting with $x_0=0$}
+    \end{gather*}
+    \begin{itemize}
+    \item Implemented as a sweep
+    \item $\omega = 1$ corresponds to Gauss-Seidel
+    \item Very effective at removing high-frequency components of residual
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[shrink=5]{Factorization}
+  Two phases
+  \begin{itemize}
+  \item symbolic factorization: find where fill occurs, only uses sparsity pattern
+  \item numeric factorization: compute factors
+  \end{itemize}
+  \begin{block}{LU decomposition}
+    \begin{itemize}
+    \item Ultimate preconditioner
+    \item Expensive, for $m\times m$ sparse matrix with bandwidth $b$, traditionally requires $\bigO(mb^2)$ time and $\bigO(mb)$ space.
+      \begin{itemize}
+      \item Bandwidth scales as $m^{\frac{d-1}{d}}$ in $d$-dimensions
+      \item Optimal in 2D: $\bigO(m \log m)$ space, $\bigO(m^{3/2})$ time
+      \item Optimal in 3D: $\bigO(m^{4/3})$ space, $\bigO(m^2)$ time
+      \end{itemize}
+    \item Symbolic factorization is problematic in parallel
+    \end{itemize}
+  \end{block}
+  \begin{block}{Incomplete LU}
+    \begin{itemize}
+    \item Allow a limited number of levels of fill:
+      ILU($k$)
+    \item Only allow fill for entries that exceed threshold: ILUT
+    \item Very poor scaling in parallel, don't bother beyond 8 PEs.
+    \item No guarantees
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{1-level Domain decomposition}
+  Domain size $L$, subdomain size $H$, element size $h$
+  \begin{block}{Overlapping/Schwarz}
+    \begin{itemize}\item Solve Dirichlet problems on overlapping
+      subdomains
+    \item No overlap: $\textit{its} \in \bigO\big( \frac{L}{\sqrt{Hh}} \big)$
+    \item Overlap $\delta$: $\textit{its} \in \big( \frac L {\sqrt{H\delta}} \big)$
+    \end{itemize}
+  \end{block}
+  \begin{block}{Neumann-Neumann}
+    \begin{itemize}
+    \item Solve Neumann problems on non-overlapping subdomains
+    \item $\textit{its} \in \bigO\big( \frac{L}{H}(1+\log\frac H h) \big)$
+    \item Tricky null space issues (floating subdomains)
+    \end{itemize}
+  \end{block}
+  \begin{itemize}
+  \item Multilevel variants knock off the leading $\frac L H$
+  \item Both overlapping and nonoverlapping with this bound
+  \end{itemize}
+  % \begin{block}{BDDC and FETI-DP}
+  %   \begin{itemize}
+  %   \item Neumann problems on subdomains with
+  %     coarse grid correction
+  %   \item $\textit{its} \in \bigO\big(1 + \log\frac H h \big)$
+  %   \end{itemize}
+  %   \includegraphics[width=0.7\textwidth]{bddc}
+  % \end{block}
+\end{frame}
+
+\begin{frame}[shrink=5]{Multigrid}
+  \begin{block}{Hierarchy: Interpolation and restriction operators}
+    \begin{equation*}
+    \II^\uparrow : X_{\text{coarse}} \to X_{\text{fine}} \qquad
+    \II^\downarrow :  X_{\text{fine}} \to X_{\text{coarse}}
+  \end{equation*}
+  \end{block}
+  \begin{itemize}
+  \item Geometric: define problem on multiple levels, use grid to compute hierarchy
+  \item Algebraic: define problem only on finest level, use matrix structure to build hierarchy
+  \end{itemize}
+  \begin{block}{Galerkin approximation}
+    Assemble this matrix: $A_{\text{coarse}} = \II^\downarrow A_{\text{fine}} \II^\uparrow$
+  \end{block}
+  \begin{block}{Application of multigrid preconditioner ($V$-cycle)}
+    \begin{itemize}
+    \item Apply pre-smoother on fine level (any preconditioner)
+    \item Restrict residual to coarse level with $\II^\downarrow$
+    \item Solve on coarse level $A_{\text{coarse}} x = r$
+    \item Interpolate result back to fine level with $\II^\uparrow$
+    \item Apply post-smoother on fine level (any preconditioner)
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Multigrid convergence properties}
+  \begin{itemize}
+  \item Textbook: $P^{-1}A$ is spectrally equivalent to identity
+  \item Most theory applies to SPD systems
+  \item nonsymmetric (e.g. advection, shallow water, Euler) \\
+    with low-order upwind discretization
+  \item Good when coefficients in problem are smooth
+    \begin{itemize}
+    \item large jumps and anisotropy are harder
+    \item build low-energy interpolants
+    \item use stronger smoothers
+    \end{itemize}
+  \item Aggressive coarsening is critical, especially in parallel
+  \item Most theory uses SOR smoothers, ILU often more robust
+  \item Coarsest component usually solved semi-redundantly with direct solver
+  \item Multilevel Schwarz is an extreme case of aggressive coarsening
+    and strong smoothers.  Exotic interpolants for robustness.
+  \end{itemize}
+\end{frame}

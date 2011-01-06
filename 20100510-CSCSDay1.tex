@@ -1,0 +1,200 @@
+%\documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+%\usetheme{Singapore}
+%\usetheme{Warsaw}
+\usetheme{Malmoe}
+\useinnertheme{circles}
+\useoutertheme{infolines}
+% \useinnertheme{rounded}
+
+\setbeamercovered{transparent}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{bm,textpos,alltt,listings,multirow,ulem}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+\usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes.arrows,arrows,shapes.misc]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{bm,textpos,alltt}
+\usepackage{listings}
+
+\newcommand{\II}{\mathcal{I}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\E}{\mathcal{E}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\I}{\mathcal{I}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\PP}{\mathcal{P}}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\kb}{\tt}
+\newcommand{\blue}{\textcolor{blue}}
+\newcommand{\green}{\textcolor{green!70!black}}
+\newcommand{\red}{\textcolor{red}}
+\newcommand{\brown}{\textcolor{brown}}
+\newcommand{\cyan}{\textcolor{cyan}}
+\newcommand{\magenta}{\textcolor{magenta}}
+\newcommand{\yellow}{\textcolor{yellow}}
+\newcommand{\mini}{\mathop{\rm minimize}}
+\newcommand{\st}{\mbox{subject to }}
+\newcommand{\lap}[1]{\Delta #1}
+\newcommand{\grad}[1]{\nabla #1}
+\renewcommand{\div}[1]{\nabla \cdot #1}
+\def\code#1{{\tt #1}}
+\def\shell#1{{\tt \$ #1}}
+\newcommand\mtab{\hspace{\stretch{1}}}
+\newcommand\ud{\,\mathrm{d}}
+\newcommand\bslash{{$\backslash$}}
+\newcommand\half{{\frac 1 2}}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\bigabs}[1]{\big\lvert #1 \big\rvert}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand\oneitem[1]{\begin{itemize} \item #1 \end{itemize}}
+\newcommand\pp{{\mathfrak p}}
+
+\def\Rbasic{1}
+\def\Rsnesmf{2}
+\def\Rsnesmflambda{3}
+\def\Rsnesmfp{4}
+\def\Rcolor{5}
+\def\Rassemblebratu{6}
+\def\Rassemblepicard{7}
+\def\Rmyprealloc{8}
+\def\Rnewtoncrash{9}
+\def\Rnewtonbug{10}
+\def\Rnewtonfix{11}
+
+\title[PETSc day 1]{The Portable Extensible Toolkit for Scientific computing}
+\subtitle{Day 1: Usage and Algorithms}
+
+\author{Jed Brown}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute[ETH Z\"urich]
+{
+
+}
+
+\date{CSCS 2010-05-10}
+
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+% \frametitle{Outline}
+% \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+%\beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents
+% You might wish to add the option [pausesections]
+\end{frame}
+
+\begin{frame}{Requests}
+  \begin{itemize}
+  \item Tell me if you do not understand
+  \item Tell me if an example does not work
+  \item Suggest better wording, figures, organization
+  \item Follow up:
+    \begin{itemize}
+    \item Configuration issues, private: \url{petsc-maint@mcs.anl.gov}
+    \item Public questions: \url{petsc-users@mcs.anl.gov}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section{Introduction}
+\input{slides/PETSc/Timeline.tex}
+\input{slides/PETSc/About.tex}
+\input{slides/PETSc/RoleOfPETSc.tex}
+\input{slides/PETSc/Installation.tex}
+
+\section{Programming model}
+\input{slides/PETSc/PETScPyramid.tex}
+\input{slides/SNES/FlowControl.tex}
+\input{collective}
+\input{OptionsDatabase}
+
+\section{Algorithms}
+\input{pbratu}
+% \input{thi}
+% \input{slides/SNES/DrivenCavity.tex}
+% \input{DrivenCavityRun.tex}
+
+% \begin{frame}{Summary}
+% \vskip0pt plus.5fill
+% \begin{block}{Today}
+% \begin{itemize}
+%   \item Build, run, and modify examples
+%   \item Familiar with debugging capability
+%   \item Understand some general properties of the algorithms
+%   \item Check Jacobians, diagnose failure to converge
+%   \item Get help from the options database and manual pages
+% \end{itemize}
+% \end{block}
+
+% \begin{block}{Tomorrow}
+%   \begin{itemize}
+%   \item Performance bottlenecks
+%   \item Optimizing memory access patterns
+%   \item Parallel scalability
+%   \item Integration with your existing projects/lower-level interfaces
+%   \item Tricks for hard problems/extending PETSc
+%   \end{itemize}
+% \end{block}
+% \end{frame}
+
+% \input{FieldSplit}
+% \input{Q1Q1Stokes}
+% \section{Performance}
+% \input{bandwidth}
+
+\end{document}

@@ -1,0 +1,141 @@
+%\documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+\usetheme{default}
+%\usetheme{Singapore}
+%\usetheme{Warsaw}
+%\usetheme{Malmoe}
+% \useinnertheme{circles}
+% \useoutertheme{infolines}
+% \useinnertheme{rounded}
+
+\setbeamercovered{transparent}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{bm,textpos,alltt,listings,multirow,ulem}
+\usepackage[amssymb]{SIunits}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+\usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes.arrows,arrows,shapes.misc]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\input{JedMacros.tex}
+
+\title{Free surface flows in glaciology}
+
+\author{Jed Brown}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute[ETH Z\"urich]
+{
+  Laboratory of Hydrology, Hydraulics, and Glaciology \\
+  ETH Zürich
+}
+
+\date[2010-10-28]{Sisiphus meeting 2010-10-28}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+% \frametitle{Outline}
+% \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+%\beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Outline}
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+\section{Motivation}
+\input{slides/GroundingLine/BindschadlerNaturalHistory.tex}
+\input{slides/GroundingLine/SchoofRetreat.tex}
+\input{slides/GroundingLine/Sensitivity.tex}
+\input{slides/GroundingLine/MeshDependence.tex}
+\input{slides/GroundingLine/ThwaitesPIG.tex}
+\input{slides/GroundingLine/YPlus.tex}
+
+\section{ALE Formulation}
+\input{slides/GroundingLine/ALEFormulation.tex}
+%\input{slides/Dohp/Resolution.tex}
+\input{slides/GroundingLine/ALEBlockForm.tex}
+\input{slides/Dohp/StokesScaling.tex}
+
+\section{Conservation}
+\input{slides/InfSup/Stabilized.tex}
+
+\section[Slip]{Slip boundary conditions on bumpy surfaces}
+\input{slides/GroundingLine/Normals.tex}
+
+\section[Hydrostatic]{A robust multigrid solver for the hydrostatic equations}
+\input{slides/THI/Equations.tex}
+\input{slides/THI/X5kmClip.tex}
+\input{slides/THI/WhatAboutSplitting.tex}
+
+\begin{frame}{Outlook}
+  \begin{block}{}
+    \begin{itemize}
+    \item Exact local conservation is critical for problems with discontinuous geometry and coefficients
+    \item Nonlinear slip on irregular surfaces is hard but tractable (mostly)
+    \item Smooth manufactured solutions are necessary, but not sufficient to study solver and discretization performance
+    \item Need good software to combine relaxation for loosely coupled processes and factorization
+      for stiff/indefinite coupling
+    \item Modeling of boundary layer processes in highly anisotropic geometry likely requires conforming to the interface
+    \end{itemize}    
+  \end{block}
+  \begin{block}{Tools}
+    \begin{itemize}
+    \item PETSc\ \url{http://mcs.anl.gov/petsc}
+      \begin{itemize}\item ML, Hypre, MUMPS
+      \end{itemize}
+    \item ITAPS \url{http://itaps.org}
+      \begin{itemize}\item MOAB, CGM, Lasso
+      \end{itemize}
+    \end{itemize}
+  \end{block}
+\end{frame}
+\end{document}

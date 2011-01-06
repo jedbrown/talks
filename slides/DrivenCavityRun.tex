@@ -1,0 +1,54 @@
+
+\begin{frame}{Running the driven cavity}
+  \begin{itemize}
+  \item \code{./ex19 -lidvelocity 100 -grashof 1e2 -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -dmmg\_view -nlevels 3}
+  \item \code{./ex19 -lidvelocity 100 -grashof 1e4 -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -dmmg\_view -nlevels 3}
+  \item \code{./ex19 -lidvelocity 100 -grashof 1e5 -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -dmmg\_view -nlevels 3}
+  \item<2-> Uh oh, we have convergence problems
+  \item<2-> Run with \code{-snes\_monitor\_convergence}
+  \item<2-> Does \code{-dmmg\_grid\_sequence} help? 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Why isn't SNES converging?}
+  \begin{itemize}
+  \item The Jacobian is wrong (maybe only in parallel)
+    \oneitem{Check with \code{-snes\_type test} and \code{-snes\_mf\_operator -pc\_type lu}}
+  \item The linear system is not solved accurately enough
+    \begin{itemize}
+    \item Check with \code{-pc\_type lu}
+    \item Check \code{-ksp\_monitor\_true\_residual}, try right preconditioning
+    \end{itemize}
+  \item The Jacobian is singular with inconsistent right side
+    \begin{itemize}
+    \item Use \code{MatNullSpace} to inform the \code{KSP} of a known null space
+    \item Use a different Krylov method or preconditioner
+    \end{itemize}
+  \item The nonlinearity is just really strong
+    \begin{itemize}
+    \item Run with \code{-info} or \code{-snes\_ls\_monitor} (petsc-dev) to see line search
+    \item Try using trust region instead of line search \code{-snes\_type tr}
+    \item Try grid sequencing if possible
+    \item Use a continuation
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Globalizing the lid-driven cavity}
+  \begin{block}{Pseudotransient continuation continuation ($\Psi tc$)}
+    \begin{itemize}
+    \item Do linearly implicit backward-Euler steps, driven by
+      steady-state residual
+    \item Clever way to adjust step sizes to retain quadratic
+      convergence it terminal phase
+    \end{itemize}
+  \end{block}
+  \begin{itemize}
+  \item Implemented in \code{src/snes/examples/tutorials/ex27.c}
+  \item \shell{make runex27}
+  \item Make the method linearly implicit: \code{-snes\_max\_it 1}
+    \oneitem{Compare required number of linear iterations}
+  \item Try increasing \code{-lidvelocity}, \code{-grashof}, and problem size
+  \item Coffey, Kelley, and Keyes, \emph{Pseudotransient continuation and differential algebraic equations}, SIAM J. Sci. Comp, 2003.
+  \end{itemize}
+\end{frame}

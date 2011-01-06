@@ -1,0 +1,21 @@
+\begin{frame}{Interacting with the Debugger}
+
+\begin{itemize}
+  \item Launch the debugger
+  \begin{itemize}
+    \item {\kb -start\_in\_debugger  [gdb,dbx,noxterm]}
+    \item {\kb -on\_error\_attach\_debugger [gdb,dbx,noxterm]}
+  \end{itemize}
+
+  \item Attach the debugger only to some parallel processes
+  \begin{itemize}
+    \item {\kb -debugger\_nodes 0,1}
+  \end{itemize}
+
+  \item Set the display (often necessary on a cluster)
+  \begin{itemize}
+    \item {\kb -display khan.mcs.anl.gov:0.0}
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

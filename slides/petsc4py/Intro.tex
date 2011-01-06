@@ -1,0 +1,25 @@
+\begin{frame}[fragile]{PETSc for Python}
+  \begin{itemize}
+  \item \url{http://petsc4py.googlecode.com}
+  \item Primarily developed by Lisandro Dalcin, used and supported by the rest of the PETSc team
+  \item Native Python interface to almost all of PETSc
+    \begin{itemize}
+    \item Write PETSc callbacks in Python
+    \item Mix Python and C
+    \item Almost 1-1 mapping to C API, C semantics
+    \item implicit (garbage collected) or explicit memory management
+    \end{itemize}
+  \item Plotting with \code{matplotlib}
+  \item Installation:
+    \begin{itemize}
+    \item \begin{minted}{bash}
+export PETSC_DIR=/path/to/petsc
+export PETSC_ARCH=your-arch
+easy_install petsc4py
+      \end{minted}
+    \item \code{-{}-download-petsc4py}
+    \item \mint{bash}|aptitude install python-petsc4py|
+    \end{itemize}
+  \item slepc4py, tao4py
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,25 @@
+\begin{frame}{Why Are PETSc Matrices That Way?}
+
+\begin{itemize}
+  \item No one data structure is appropriate for all problems
+  \begin{itemize}
+    \item Blocked and diagonal formats provide significant performance benefits
+    \item PETSc has many formats and makes it easy to add new data structures
+  \end{itemize}
+
+  \item Assembly is difficult enough without worrying about partitioning
+  \begin{itemize}
+    \item PETSc provides parallel assembly routines
+    \item Achieving high performance still requires making most operations local
+    \item However, programs can be incrementally developed.
+    \item {\kb MatPartitioning} and {\kb MatOrdering} can help
+  \end{itemize}
+
+  \item Matrix decomposition in contiguous chunks is simple
+  \begin{itemize}
+    \item Makes interoperation with other codes easier
+    \item For other ordering, PETSc provides ``Application Orderings'' (AO)
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

@@ -1,0 +1,29 @@
+\begin{frame}{Matrix Polymorphism}
+
+The PETSc {\kb Mat} has a single user interface,
+\begin{itemize}
+  \item Matrix assembly
+  \begin{itemize}
+    \item {\kb MatSetValues()}
+  \end{itemize}
+
+  \item Matrix-vector multiplication
+  \begin{itemize}
+    \item {\kb MatMult()}
+  \end{itemize}
+
+  \item Matrix viewing
+  \begin{itemize}
+    \item {\kb MatView()}
+  \end{itemize}
+\end{itemize}
+but multiple underlying implementations.
+\begin{itemize}
+  \item AIJ, Block AIJ, Symmetric Block AIJ,
+  \item Dense
+  \item Matrix-Free
+  \item etc.
+\end{itemize}
+A matrix is defined by its {\red{interface}}, not by its {\blue{data structure}}.
+
+\end{frame}

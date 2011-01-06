@@ -1,0 +1,22 @@
+\begin{frame}{Important matrices}
+  \begin{enumerate}
+  \item Sparse (e.g.~discretization of a PDE operator)
+  \item \alert<2,4>{Inverse of \emph{anything} interesting $B = A^{-1}$}
+  \item \alert<4>{Jacobian of a nonlinear function $J y = \lim_{\epsilon \to 0} \frac{F(x + \epsilon y) - F(x)}{\epsilon}$}
+  \item \alert<2,4>{Fourier transform $\mathcal{F},\mathcal{F}^{-1}$}
+  \item \alert<2,4>{Other fast transforms, e.g. Fast Multipole Method}
+  \item \alert<2,4>{Low rank correction $B = A + u v^T$}
+  \item \alert<2,4>{Schur complement $S = D - C A^{-1} B$}
+  \item \alert<3,4>{Tensor product $A = \sum_e A_x^e \otimes A_y^e \otimes A_z^e$}
+  \item \alert<3,4>{Linearization of a few steps of an explicit integrator}
+  \end{enumerate}
+  \begin{columns}\begin{column}{0.3\textwidth}\end{column}\begin{column}{0.7\textwidth}
+  \begin{itemize}
+  \item<only@2> These matrices are \alert<2>{dense}.  Never form them.
+  \item<only@3>{Thes are \alert<3>{not very sparse}.}
+    Don't form them.
+  \item<only@4> {None of these matrices ``have entries''}
+  \end{itemize}
+\end{column}
+\end{columns}
+\end{frame}

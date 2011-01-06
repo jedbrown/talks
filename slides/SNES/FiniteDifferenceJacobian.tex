@@ -1,0 +1,23 @@
+\begin{frame}{Finite Difference Jacobians}
+  PETSc can compute and explicitly store a Jacobian via 1st-order FD
+  \begin{itemize}
+  \item Dense
+    \begin{itemize}
+    \item Activated by {\kb -snes\_fd}
+    \item Computed by {\kb SNESDefaultComputeJacobian()}
+    \end{itemize}
+  \item Sparse via colorings
+    \begin{itemize}
+    \item Coloring is created by {\kb MatFDColoringCreate()}
+    \item Computed by {\kb SNESDefaultComputeJacobianColor()}
+    \end{itemize}
+  \end{itemize}
+  Can also use Matrix-free Newton-Krylov via 1st-order FD
+  \begin{itemize}
+  \item Activated by {\kb -snes\_mf} without preconditioning
+  \item Activated by {\kb -snes\_mf\_operator} with user-defined preconditioning
+    \begin{itemize}
+    \item Uses preconditioning matrix from {\kb SNESSetJacobian()}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,22 @@
+\begin{frame}{Basic {\kb PetscObject} Usage}
+
+\vbox{Every object in PETSc supports a basic interface}
+
+\begin{tabular}{|r|l|}
+\hline
+Function & Operation \\
+\hline
+{\kb Create()}               & create the object \\
+{\kb Get/SetName()}          & name the object \\
+{\kb Get/SetType()}          & set the implementation type \\
+{\kb Get/SetOptionsPrefix()} & set the prefix for all options \\
+{\kb SetFromOptions()}       & customize object from the command line \\
+{\kb SetUp()}                & preform other initialization \\
+{\kb View()}                 & view the object \\
+{\kb Destroy()}              & cleanup object allocation \\
+\hline
+\end{tabular}
+
+\vbox{Also, all objects support the {\kb -help} option.}
+
+\end{frame}

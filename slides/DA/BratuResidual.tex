@@ -1,0 +1,31 @@
+\begin{frame}[fragile]
+\frametitle{Bratu Residual Evaluation}
+
+\begin{equation*}
+  -\Delta u - \lambda e^{u} = 0
+\end{equation*}
+
+\small
+% \begin{verbatim}
+\begin{minted}{c}
+BratuResidualLocal(DALocalInfo *info,Field **x,Field **f,
+                   UserCtx *user)
+{
+  /* Not Shown: Handle boundaries */
+  /* Compute over the interior points */
+  for(j = info->ys; j < info->ys+info->ym; j++) {
+    for(i = info->xs; i < info->xs+info->xm; i++) {
+      u       = x[j][i];
+      u_xx    = (2.0*u - x[j][i-1] - x[j][i+1])*hydhx;
+      u_yy    = (2.0*u - x[j-1][i] - x[j+1][i])*hxdhy;
+      f[j][i] = u_xx + u_yy - hx*hy*lambda*exp(u);
+    }
+  }
+}
+\end{minted}
+%\end{verbatim}
+
+\begin{center}\small
+\$PETSC\_DIR/src/snes/examples/tutorials/ex5.c
+\end{center}
+\end{frame}

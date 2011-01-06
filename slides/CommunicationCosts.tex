@@ -1,0 +1,24 @@
+\begin{frame}{Communication Costs}
+  \begin{itemize}
+  \item Reductions: usually part of Krylov method, latency limited
+    \begin{itemize}
+    \item \code{VecDot}
+    \item \code{VecMDot}
+    \item \code{VecNorm}
+    \item \code{MatAssemblyBegin}
+    \item Change algorithm (e.g. IBCGS)
+    \end{itemize}
+  \item Point-to-point (nearest neighbor), latency or bandwidth
+    \begin{itemize}
+    \item \code{VecScatter}
+    \item \code{MatMult}
+    \item \code{PCApply}
+    \item \code{MatAssembly}
+    \item \code{SNESFunctionEval}
+    \item \code{SNESJacobianEval}
+    \item Compute subdomain boundary fluxes redundantly
+    \item Ghost exchange for all fields at once
+    \item Better partition
+    \end{itemize}
+  \end{itemize}
+\end{frame}

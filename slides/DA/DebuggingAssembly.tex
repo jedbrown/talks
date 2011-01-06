@@ -1,0 +1,27 @@
+\begin{frame}{Debugging Assembly}
+
+\begin{center}
+  On two processes, I get a {\red SEGV}!
+\end{center}
+
+So we try running with:
+\begin{itemize}
+  \item \code{\scriptsize make NP=2 EXTRA\_ARGS="-run test -vec\_view\_draw -draw\_pause -1" debugbratu}
+  \pause
+  \item Spawns one debugger window per process
+  \pause
+  \item SEGV on access to ghost coordinates
+  \pause
+  \item Fix by using a local ghosted vector
+  \begin{itemize}
+    \item Update to Revision {\green 10}
+  \end{itemize}
+  \pause
+  \item Notice
+  \begin{itemize}
+    \item we already use ghosted assembly (completion) for FEM
+
+    \item FD does not need ghosted assembly
+  \end{itemize}
+\end{itemize}
+\end{frame}

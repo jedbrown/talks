@@ -1,0 +1,25 @@
+\begin{frame}{Preconditioning}
+  \begin{block}{Idea: improve the conditioning of the Krylov operator}
+    \begin{itemize}
+    \item Left preconditioning
+      \vspace{-1em}
+      \begin{gather*}
+        (P^{-1} A) x = P^{-1} b \\
+        \{ P^{-1} b, (P^{-1}A) P^{-1} b, (P^{-1}A)^2 P^{-1} b, \dotsc \}
+      \end{gather*}
+    \item Right preconditioning
+      \vspace{-1em}
+      \begin{gather*}
+        (A P^{-1}) P x = b \\
+        \{ b, (P^{-1}A)b, (P^{-1}A)^2b, \dotsc \}
+      \end{gather*}
+    \item The product $P^{-1}A$ or $A P^{-1}$ is \emph{not} formed.
+    \end{itemize}
+  \end{block}
+  \begin{definition}[Preconditioner]
+      A \emph{preconditioner} $\PP$ is a method for constructing a
+matrix (just a linear function, not assembled!)  $P^{-1} = \PP(A,A_p)$
+using a matrix $A$ and extra information $A_p$, such that the spectrum
+of $P^{-1}A$ (or $A P^{-1}$) is well-behaved.
+    \end{definition}
+\end{frame}

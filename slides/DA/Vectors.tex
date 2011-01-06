@@ -1,0 +1,30 @@
+\frame{
+\frametitle{DA Vectors}
+
+\begin{itemize}
+  \item The DA object contains only layout (topology) information
+  \begin{itemize}
+    \item All field data is contained in PETSc {\kb Vec}s
+  \end{itemize}
+
+  \item Global vectors are parallel 
+  \begin{itemize}
+    \item Each process stores a unique local portion
+    \item {\kb DACreateGlobalVector(DA da, Vec *gvec)}
+  \end{itemize}
+
+  \item Local vectors are sequential (and usually temporary)
+  \begin{itemize}
+    \item Each process stores its local portion plus ghost values
+    \item {\kb DACreateLocalVector(DA da, Vec *lvec)}
+    \item includes ghost values!
+  \end{itemize}
+
+  \item Coordinate vectors store the mesh geometry
+    \begin{itemize}
+    \item \code{DAGetCoordinates(DA,Vec *coords)}
+    \item Can be manipulated with their own DA \\
+      \code{DAGetCoordinateDA(DA,DA *cda)}
+    \end{itemize}
+\end{itemize}
+}

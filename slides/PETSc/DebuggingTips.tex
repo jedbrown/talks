@@ -1,0 +1,32 @@
+\begin{frame}{Debugging Tips}
+
+\begin{itemize}
+  \item Put a breakpoint in {\kb PetscError()} to catch errors as they occur
+
+  \item PETSc tracks memory overwrites at both ends of arrays
+  \begin{itemize}
+    \item The {\kb CHKMEMQ} macro causes a check of all allocated memory
+
+    \item Track memory overwrites by bracketing them with {\kb CHKMEMQ}
+  \end{itemize}
+
+  \item PETSc checks for leaked memory
+  \begin{itemize}
+    \item Use {\kb PetscMalloc()} and {\kb PetscFree()} for all allocation
+
+    \item Print unfreed memory on {\kb PetscFinalize()} with {\kb -malloc\_dump}
+  \end{itemize}
+
+  \item Simply the best tool today is \red{Valgrind}
+  \begin{itemize}
+    \item It checks memory access, cache performance, memory usage, etc.
+
+    \item \href{http://www.valgrind.org}{http://www.valgrind.org}
+
+    \item Pass {\kb -malloc 0} to PETSc when running under Valgrind
+    \item Might need {\kb -{}-trace-children=yes} when running under MPI
+    \item {\kb -{}-track-origins=yes} handy for uninitialized memory
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

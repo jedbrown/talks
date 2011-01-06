@@ -1,0 +1,26 @@
+\frame{
+\frametitle{Creating a DA}
+
+{\small \kb DACreate2d(comm,wrap, type, M, N, m, n, \\
+\qquad\qquad\qquad  dof, s, lm[], ln[], DA *da)}
+\begin{columns}\begin{column}{0.15\textwidth}\end{column}\begin{column}{0.85\textwidth}
+  \begin{itemize}
+  \item[{\kb wrap}:] Specifies periodicity
+  \begin{itemize}
+    \item {\kb DA\_NONPERIODIC}, {\kb DA\_XPERIODIC}, {\kb DA\_YPERIODIC}, or {\kb DA\_XYPERIODIC}
+  \end{itemize}
+  \item[{\kb type}:] Specifies stencil
+  \begin{itemize}
+    \item {\kb DA\_STENCIL\_BOX} or {\kb DA\_STENCIL\_STAR}
+  \end{itemize}
+  \item[{\kb M,N}:] Number of grid points in x/y-direction
+  \item[{\kb m,n}:] Number of processes in x/y-direction
+  \item[{\kb dof}:] Degrees of freedom per node
+  \item[{\kb s}:] The stencil width
+  \item[{\kb lm,ln}:] Alternative array of local sizes
+  \begin{itemize}
+    \item Use {\kb PETSC\_NULL} for the default
+  \end{itemize}
+\end{itemize}
+\end{column} \end{columns}
+}

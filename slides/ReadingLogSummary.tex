@@ -1,0 +1,21 @@
+\begin{frame}[fragile]{Reading \code{-log\_summary}}
+\begin{itemize}
+\item
+{\scriptsize
+\begin{verbatim}
+                         Max       Max/Min        Avg      Total 
+Time (sec):           1.548e+02      1.00122   1.547e+02
+Objects:              1.028e+03      1.00000   1.028e+03
+Flops:                1.519e+10      1.01953   1.505e+10  1.204e+11
+Flops/sec:            9.814e+07      1.01829   9.727e+07  7.782e+08
+MPI Messages:         8.854e+03      1.00556   8.819e+03  7.055e+04
+MPI Message Lengths:  1.936e+08      1.00950   2.185e+04  1.541e+09
+MPI Reductions:       2.799e+03      1.00000
+\end{verbatim}}
+\item Also a summary per stage
+\item Memory usage per stage (based on when it was allocated)
+\item Time, messages, reductions, balance, flops per event per stage
+\item Always send \code{-log\_summary} when asking \\
+  performance questions on mailing list
+\end{itemize}
+\end{frame}

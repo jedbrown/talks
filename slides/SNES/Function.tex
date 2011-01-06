@@ -1,0 +1,16 @@
+\begin{frame}{SNES Function}
+
+The user provided function which calculates the nonlinear residual has signature
+\begin{center}
+  {\small \mint{c}|PetscErrorCode (*func)(SNES snes,Vec x,Vec r,void *ctx)|}
+\end{center}
+\begin{itemize}
+  \item[{\kb x}:] The current solution
+  \item[{\kb r}:] The residual
+  \item[{\kb ctx}:] The user context passed to {\kb SNESSetFunction()}
+  \begin{itemize}
+    \item Use this to pass application information, e.g. physical constants
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

@@ -11,12 +11,11 @@
   \item Get the PETSc release
   \begin{itemize}\footnotesize
     \item \shell{\small hg clone \mtab\bslash \\
-     \scriptsize http://petsc.cs.iit.edu/petsc/petsc-releases/petsc-release-3.1}
-    \item \shell{cd petsc-release-3.1}
-    \item \shell{\scriptsize hg clone http://petsc.cs.iit.edu/petsc/ \\
-          \qquad BuildSystem-releases/BuildSystem-release-3.1 \mtab\bslash \\
+     \scriptsize http://petsc.cs.iit.edu/petsc/releases/petsc-3.1}
+    \item \shell{cd petsc-3.1}
+    \item \shell{\scriptsize hg clone http://petsc.cs.iit.edu/petsc/releases/BuildSystem-3.1 \mtab\bslash \\
         \qquad config/BuildSystem}
-    \item Get the latest bug fixes with \shell{hg pull --update}
+    \item Get the latest bug fixes with \shell{hg pull -{}-update}
   \end{itemize}
 \end{itemize}
 \end{frame}
@@ -70,9 +69,9 @@
 \begin{frame}{Compiling an example}
 \begin{itemize}
   \item \shell{hg clone \\
-  {\footnotesize http://petsc.cs.iit.edu/petsc/tutorials/CSCS10TutorialCode}}
-  \item \shell{cd CSCS2010TutorialCode}
-  \item \shell{hg update -r\Rbasic}
+  {\footnotesize http://petsc.cs.iit.edu/petsc/tutorials/CSCS10}}
+  \item \shell{cd CSCS10}
+  \item \shell{hg update \Rbasic}
   \item \shell{make}
   \item \shell{./pbratu -help | less}
 \end{itemize}

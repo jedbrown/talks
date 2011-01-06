@@ -1,0 +1,92 @@
+\begin{frame}{What about splitting at the global level?}
+  \begin{itemize}\footnotesize
+  \item Split $(u,v)$ multiplicatively at global level: {\code{\small -pc\_type fieldsplit}}
+    \begin{itemize} 
+    \item parallel direct solve in splits \\
+      {\code{-fieldsplit\_pc\_type cholesky -fieldsplit\_pc\_factor\_mat\_solver\_package mumps}}
+    \item Split additively instead \\
+      {\code{-pc\_fieldsplit\_type additive}}
+    \item Parallel ML in splits, ASM(1)/ICC(1) on levels \\
+      {\code{-fieldsplit\_pc\_type asm \\ \qquad -fieldsplit\_sub\_pc\_type icc \\ \qquad -fieldsplit\_sub\_pc\_factor\_levels 1}}
+    \item Parallel BoomerAMG in splits \\
+      {\code{-fieldsplit\_pc\_type hypre}}
+    \item ASM/Cholesky in splits \\
+      {\code{-fieldsplit\_pc\_type asm \\ \qquad -fieldsplit\_sub\_pc\_type cholesky}}
+    \item ASM/ICC(0) in splits \\
+      {\code{-fieldsplit\_pc\_type asm \\ \qquad -fieldsplit\_sub\_pc\_type icc}}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Split in subdomains?}
+  \begin{itemize}
+  \item ASM on coupled system: {\code{-pc\_type asm}}
+    \begin{itemize}
+    \item Split in subdomains, Cholesky in splits \\
+    {\code{-sub\_pc\_type fieldsplit \\ \qquad -sub\_fieldsplit\_pc\_type cholesky}}
+    \item Split in subdomainst, ML in splits \\
+      {\code{-sub\_pc\_type fieldsplit \\ \qquad -sub\_fieldsplit\_pc\_type ml}}
+    \item Split in subdomains, BoomerAMG in splits \\
+      {\code{-sub\_pc\_type fieldsplit \\ \qquad -sub\_fieldsplit\_pc\_type hypre}}
+    \item Split in subdomains, ICC(1) in splits \\
+      {\code{-sub\_pc\_type fieldsplit \\ \qquad -sub\_fieldsplit\_pc\_type icc}}
+    \item Block ICC(0) on subdomains (no splitting), stored as block symmetric
+      {\code{-sub\_pc\_type icc -da\_mat\_type sbaij}}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Coupled Multigrids}
+  \begin{itemize}
+  \item Geometric multigrid with isotropic coarsening, ASM(1)/Cholesky and ASM(0)/ICC(0) on levels \\
+    {\code{\small -mg\_levels\_pc\_type bjacobi -mg\_levels\_sub\_pc\_type icc -mg\_levels\_1\_pc\_type asm -mg\_levels\_1\_sub\_pc\_type cholesky}}
+  \item \ldots with Galerkin coarse operators \\
+    {\code{\small -pc\_mg\_galerkin}}
+  \item \ldots with ML's aggregates \\
+    {\code{\small -pc\_type ml -mg\_levels\_pc\_type asm}}
+  \item Geometric multigrid with aggressive semi-coarsening, ASM(1)/Cholesky and ASM(0)/ICC(0) on levels \\
+    {\code{\small -da\_refine\_hierarchy\_x 1,1,8,8 -da\_refine\_hierarchy\_y 2,2,1,1 -da\_refine\_hierarachy\_z 2,2,1,1}}
+  \item Simulate 1024 cores, interactively, on my laptop \\
+    {\code{\small -mg\_levels\_pc\_asm\_blocks 1024}}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary of solvers}
+  \centering
+  \begin{tabular}{|l|c|}
+    \hline
+    Method & Avg Krylov/Newton \\
+    \hline
+    Global multiplicative FieldSplit, ASM/LU & 175 \\
+    Global multiplicative FieldSplit, BoomerAMG & 59 \\
+    Global multiplicative FieldSplit, strong ML & 71 \\
+    Global additive FieldSplit, ASM/LU & 197 \\
+    Global ASM, FieldSplit/LU inside & 215 \\
+    Global ASM, LU inside & 167 \\
+    Coupled BoomerAMG & 60 \\
+    Coupled ML with strong smoothers & 72 \\
+    Geometric multigrid & 11 \\
+    Geometric multigrid, Galerkin coarse & 122 \\
+    \hline
+  \end{tabular} \\
+  {Smallish size $40\times 40\times 10$, relatively extreme parameters}
+\end{frame}
+
+\begin{frame}{Linear solve performance}
+  \centering
+  \includegraphics[width=\textwidth]{figures/THI/linear4}
+\end{frame}
+
+\begin{frame}{Status-quo Picard}
+  \includegraphics[width=\textwidth]{figures/THI/z-picard-mult-noseq}
+\end{frame}
+
+\begin{frame}{Grid sequencing: \code{-dmmg\_grid\_sequence}}
+    \includegraphics[width=0.9\textwidth]{figures/THI/z-mult-o1-r2}
+\end{frame}
+
+\begin{frame}{Avoid oversolving}
+    \includegraphics[width=0.9\textwidth]{figures/THI/z-mult-o1-ew} \\
+    Luis Chacon's variant of Eisenstat-Walker: \\
+    \code{\footnotesize -snes\_ksp\_ew -snes\_ksp\_ew\_rtolmax 0.5 -snes\_ksp\_ew\_version 3}
+\end{frame}

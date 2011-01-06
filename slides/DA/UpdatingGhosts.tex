@@ -1,0 +1,25 @@
+\begin{frame}{Updating Ghosts}
+
+Two-step process enables overlapping\\
+computation and communication
+
+\medskip
+
+\begin{itemize}
+  \item {\kb DAGlobalToLocalBegin(da, gvec, mode, lvec)}
+  \begin{itemize}
+    \item {\kb gvec} provides the data 
+    \item {\kb mode} is either {\kb INSERT\_VALUES} or {\kb ADD\_VALUES}
+    \item {\kb lvec} holds the local and ghost values
+  \end{itemize}
+
+  \item {\kb DAGlobalToLocalEnd(da, gvec, mode, lvec)}
+  \begin{itemize}
+    \item Finishes the communication
+  \end{itemize}
+\end{itemize}
+
+\medskip
+
+The process can be reversed with {\kb DALocalToGlobal()}.
+\end{frame}

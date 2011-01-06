@@ -1,0 +1,17 @@
+\frame{
+\frametitle{Setting Values on Regular Grids}
+
+PETSc provides
+\begin{center}
+ {\kb MatSetValuesStencil(Mat A, m, MatStencil idxm[], n, MatStencil idxn[], values[], mode)}
+\end{center}
+\begin{itemize}
+  \item Each row or column is actually a {\kb MatStencil}
+  \begin{itemize}
+    \item This specifies grid coordinates and a component if necessary
+    \item Can imagine for unstructured grids, they are \emph{vertices}
+  \end{itemize}
+
+  \item The values are the same logically dense block in row/col
+\end{itemize}
+}

@@ -1,0 +1,26 @@
+\begin{frame}
+\frametitle{DA Paradigm}
+
+The DA interface is based upon \emph{local} callback functions
+\begin{itemize}
+  \item \code{FormFunctionLocal()}, set by \code{DASetLocalFunction()}
+
+  \medskip
+
+  \item \code{FormJacobianLocal()}, set by \code{DASetLocalJacobian()}
+\end{itemize}
+
+\bigskip
+
+  When PETSc needs to evaluate the nonlinear residual $F(x)$,
+\begin{itemize}
+  \item Each process evaluates the local residual
+
+  \medskip
+
+  \item PETSc assembles the global residual automatically
+  \begin{itemize}
+    \item Uses \code{DALocalToGlobal()} method
+  \end{itemize}
+\end{itemize}
+\end{frame}

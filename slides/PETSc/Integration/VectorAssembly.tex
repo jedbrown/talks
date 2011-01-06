@@ -1,0 +1,23 @@
+\begin{frame}{Vector Assembly}
+
+\begin{itemize}
+  \item A three step process
+  \begin{itemize}
+    \item Each process sets or adds values
+    \item Begin communication to send values to the correct process
+    \item Complete the communication
+  \end{itemize}
+
+  \item {\kb VecSetValues(Vec v, int n, int rows[], PetscScalar values[], mode)}
+  \begin{itemize}
+    \item {\kb mode} is either INSERT\_VALUES or ADD\_VALUES
+  \end{itemize}
+
+  \item Two phase assembly allows overlap of communication and computation
+  \begin{itemize}
+    \item {\kb VecAssemblyBegin(Vec v)}
+    \item {\kb VecAssemblyEnd(Vec v)}
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

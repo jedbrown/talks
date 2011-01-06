@@ -1,0 +1,22 @@
+\begin{frame}{How do I create matrices?}
+
+\begin{itemize}
+  \item {\kb MatCreate(MPI\_Comm, Mat *)}
+  \item {\kb MatSetSizes(Mat, int m, int n, int M, int N)}
+  \item {\kb MatSetType(Mat, MatType typeName)}
+  \item {\kb MatSetFromOptions(Mat)}
+  \begin{itemize}
+    \item Can set the type at runtime
+  \end{itemize}
+  \item {\kb MatMPIBAIJSetPreallocation(Mat,...)} %(Mat,int bs,int d_nz,const int
+                                %d_nnz[],int o_nz,const int o_nnz[])}
+    \oneitem{important for assembly performance, more tomorrow}
+  \item {\kb MatSetBlockSize(Mat, int bs)}
+    \oneitem{for vector problems}
+  \item {\kb MatSetValues(Mat,...)}
+  \begin{itemize}
+    \item {\bf MUST} be used, but does automatic communication
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

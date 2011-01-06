@@ -12,6 +12,10 @@
 \def\etal{{et al}\onedot}
 \makeatother
 
+\usepackage{siunitx}
+\DeclareSIUnit\year{a}
+\sisetup{retain-unity-mantissa = false}
+
 \newcommand{\II}{\mathcal{I}}
 \newcommand{\C}{\mathbb{C}}
 \newcommand{\D}{\mathcal{D}}
@@ -23,7 +27,11 @@
 \newcommand{\bigO}{\mathcal{O}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\Rz}{\mathcal{R}}
+\newcommand{\QQ}{\mathcal Q}
+\newcommand{\VV}{\mathcal V}
 \newcommand{\kb}{\tt}
+\newcommand{\Qk}[1]{Q_{#1}}
+\newcommand{\Pkdisc}[1]{P_{#1}^{\text{disc}}}
 \newcommand{\blue}{\textcolor{blue}}
 \newcommand{\green}{\textcolor{green!70!black}}
 \newcommand{\red}{\textcolor{red}}
@@ -49,6 +57,7 @@
 \newcommand\oneitem[1]{\begin{itemize} \item #1 \end{itemize}}
 \newcommand\pp{{\mathfrak p}}
 \newcommand\ff{\bm f}
+\newcommand\nn{\bm n}
 \newcommand\uu{\bm u}
 \newcommand\vv{\bm v}
 \newcommand\ww{\bm w}
@@ -61,3 +70,13 @@
 \renewcommand{\bar}{\overline}
 \DeclareMathOperator{\divergence}{div}
 \renewcommand\div\divergence
+\newcommand{\ip}[2]{{\left\langle #1, #2 \right\rangle}}
+
+% Dimensionless numbers
+\newcommand{\Peclet}{{\mathrm{Pe}}}
+\newcommand{\Reynolds}{{\mathrm{Re}}}
+\newcommand{\Rayleigh}{{\mathrm{Ra}}}
+\newcommand{\Mach}{{\mathrm{Ma}}}
+\newcommand{\Prandtl}{{\mathrm{Pr}}}
+\newcommand{\Grashof}{{\mathrm{Gr}}}
+

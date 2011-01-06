@@ -1,0 +1,36 @@
+\begin{frame}{Vector Algebra}
+
+\only<1>{
+What are PETSc vectors?
+\begin{itemize}
+  \item Fundamental objects representing field solutions, right-hand sides, etc.
+  \item Each process locally owns a subvector of contiguous global data
+\end{itemize}
+
+How do I create vectors?
+\begin{itemize}
+  \item {\kb VecCreate(MPI\_Comm, Vec *)}
+  \item {\kb VecSetSizes(Vec, int n, int N)}
+  \item {\kb VecSetType(Vec, VecType typeName)}
+  \item {\kb VecSetFromOptions(Vec)}
+  \begin{itemize}
+    \item Can set the type at runtime
+  \end{itemize}
+\end{itemize}
+}
+
+\only<2>{
+A PETSc Vec
+\begin{itemize}
+  \item Has a direct interface to the values
+  \item Supports all vector space operations
+  \begin{itemize}
+    \item {\kb VecDot()}, {\kb VecNorm()}, {\kb VecScale()}
+  \end{itemize}
+  \item Has unusual operations, e.g. {\kb VecSqrt()}, {\kb VecWhichBetween()}
+  \item Communicates automatically during assembly
+  \item Has customizable communication (scatters)
+\end{itemize}
+}
+
+\end{frame}

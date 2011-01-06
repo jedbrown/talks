@@ -1,0 +1,25 @@
+\frame{
+\frametitle{A 2D Problem}
+
+  Problem has:
+\begin{itemize}
+  \item 1,329,409 unknowns (on the fine level)
+
+  \item 11,950,849 nonzeros
+\end{itemize}
+
+%% 45s
+%%./bratu -da_grid_x 10 -da_grid_y 10 -ksp_rtol 1.0e-9 -dmmg_nlevels 8 -mg_levels_4_pc_type sor -mg_levels_5_pc_type sor -mg_levels_6_pc_type sor -mg_levels_7_pc_type sor -snes_monitor -snes_view
+\begin{tabular}{rlll}
+  Executable     & \multicolumn{2}{c}{Options}                                               & Explanation \\
+\hline
+  \code{./bratu} & \code{-da\_grid\_x 10}              & \code{-da\_grid\_y 10}              & Coarse grid is 10x10 \\
+                 & \code{-ksp\_rtol 1.0e-9}            &                                     & Solver tolerance \\
+                 & \code{-dmmg\_nlevels 8}             &                                     & 8 levels of refinement \\
+                 & \multicolumn{2}{l}{\code{-mg\_levels\_4\_pc\_type sor}}                   & Memory savings \\
+                 & \multicolumn{2}{l}{\code{-mg\_levels\_5\_pc\_type sor}} & \\
+                 & \multicolumn{2}{l}{\code{-mg\_levels\_6\_pc\_type sor}} & \\
+                 & \multicolumn{2}{l}{\code{-mg\_levels\_7\_pc\_type sor}} & \\
+                 & \code{-snes\_view}                  &                                     & Describe solver
+\end{tabular}
+}

@@ -1,0 +1,57 @@
+\input{slides/THIEquations.tex}
+\input{slides/THIX5kmClip.tex}
+
+\begin{frame}{Some Multigrid Options}
+  \begin{itemize}
+  \item \code{-dmmg\_grid\_sequencce}: [FALSE] \\
+    Solve nonlinear problems on coarse grids to get initial guess
+  \item \code{-pc\_mg\_galerkin}: [FALSE] \\
+    Use Galerkin process to compute coarser operators
+  \item \code{-pc\_mg\_type}: [FULL] \\
+    (choose one of) MULTIPLICATIVE ADDITIVE FULL KASKADE
+  \item \code{-mg\_coarse\_\{ksp,pc\}\_*} \\
+    control the coarse-level solver
+  \item \code{-mg\_levels\_\{ksp,pc\}\_*} \\
+    control the smoothers on levels
+  \item \code{-mg\_levels\_3\_\{ksp,pc\}\_*} \\
+    control the smoother on specific level
+  \item These also work with ML's algebraic multigrid.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{What is this doing?}
+\begin{itemize}
+\item
+\begin{alltt}\footnotesize
+mpiexec -n 4 ./ex48
+-M 16
+-P 2
+-da\_refine\_hierarchy\_x 1,8,8 \\
+-da\_refine\_hierarchy\_y 2,1,1
+-da\_refine\_hierarchy\_z 2,1,1 \\
+-dmmg\_grid\_sequence 1
+-dmmg\_view
+-log\_summary \\
+-ksp\_converged\_reason
+-ksp\_gmres\_modifiedgramschmidt \\
+-ksp\_monitor
+-ksp\_rtol 1e-2 \\
+-pc\_mg\_type multiplicative \\
+-mg\_coarse\_pc\_type lu
+-mg\_levels\_0\_pc\_type lu \\
+-mg\_coarse\_pc\_factor\_mat\_solver\_package mumps \\
+-mg\_levels\_0\_pc\_factor\_mat\_solver\_package mumps \\
+-mg\_levels\_1\_sub\_pc\_type cholesky \\
+-snes\_converged\_reason
+-snes\_monitor
+-snes\_stol 1e-12 \\
+-thi\_L 80e3
+-thi\_alpha 0.05
+-thi\_friction\_m 0.3 \\
+-thi\_hom x
+-thi\_nlevels 4
+\end{alltt}
+\item What happens if you remove \code{-dmmg\_grid\_sequence}?
+\item What about solving with block Jacobi, ASM, or algebraic multigrid?
+\end{itemize}
+\end{frame}

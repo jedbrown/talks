@@ -1,0 +1,36 @@
+\begin{frame}{Command Line Processing}
+
+\begin{itemize}
+  \item Check for an option
+  \begin{itemize}
+    \item {\kb PetscOptionsHasName()}
+  \end{itemize}
+
+  \item Retrieve a value
+  \begin{itemize}
+    \item {\kb PetscOptionsGetInt()}, {\kb PetscOptionsGetIntArray()}
+  \end{itemize}
+
+  \item Set a value
+  \begin{itemize}
+    \item {\kb PetscOptionsSetValue()}
+  \end{itemize}
+
+  \item Check for unused options
+  \begin{itemize}
+    \item {\kb -options\_left}
+  \end{itemize}
+
+  \item Clear, alias, reject, etc.
+
+  \item Modern form uses
+  \begin{itemize}
+    \item {\kb PetscOptionsBegin()}, {\kb PetscOptionsEnd()}
+
+    \item {\kb PetscOptionsInt()},{\kb PetscOptionsReal()}
+
+    \item Integrates with {\kb -help}
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

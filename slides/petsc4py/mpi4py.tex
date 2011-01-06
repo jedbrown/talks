@@ -1,0 +1,50 @@
+\begin{frame}[fragile]{mpi4py}
+  \begin{itemize}
+  \item \url{http://mpi4py.googlecode.com}
+  \item Not required for petsc4py, but often used together
+  \item Pythonic API
+    \begin{itemize}
+    \item Object-oriented interface
+    \item High-level, send/recv and collectives with arbitrary Python objects (using \code{pickle})
+    \item Fast send and receive of numpy arrays
+    \end{itemize}
+  \item Complete low-level interface
+    \begin{itemize}
+    \item If you can call it from C, you can call it using mpi4py
+    \item Performance is close to C, except for very small messages
+    \end{itemize}
+  \item Parallel interactive sessions
+    \begin{itemize}
+    \item Via IPython's \code{ipcluster} and related
+    \end{itemize}
+  \item Open source and vendor MPI implementations
+  \item Python versions $\ge 2.3$ (including $3$)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile,shrink=.1]{Examples}
+\begin{itemize}
+\item Point-to-point with Python objects
+  \begin{minted}{python}
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+if rank == 0:
+    data = {'a': 7, 'b': 3.14}
+    comm.send(data, dest=1, tag=11)
+elif rank == 1:
+    data = comm.recv(source=0, tag=11)
+  \end{minted}
+\item Numpy array data, no packing
+  \begin{minted}{python}
+if rank == 0: 
+    data = numpy.arange(1000, dtype='i')
+    comm.Send([data, MPI.INT], dest=1, tag=77)
+elif rank == 1:
+    data = numpy.empty(1000, dtype='i')
+    comm.Recv([data, MPI.INT], source=0, tag=77)
+  \end{minted}
+\end{itemize}
+\end{frame}

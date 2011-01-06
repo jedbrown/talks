@@ -1,0 +1,101 @@
+\begin{frame}
+\only<1>{
+\frametitle{VecGetArray in C}
+
+\begin{semiverbatim}
+Vec v;
+
+PetscScalar *array;
+
+PetscInt n, i;
+
+PetscErrorCode ierr;
+
+
+VecGetArray(v, \&array);
+
+VecGetLocalSize(v, \&n);
+
+PetscSynchronizedPrintf(PETSC\_COMM\_WORLD,
+
+\ "First element of local array is \%f\\n", array[0]);
+
+PetscSynchronizedFlush(PETSC\_COMM\_WORLD);
+
+for(i = 0; i < n; i++) \{
+
+\ \ array[i] += (PetscScalar) rank;
+
+\}
+
+VecRestoreArray(v, \&array);
+\end{semiverbatim}
+}
+
+\only<2>{
+\frametitle{VecGetArray in F77}
+
+\begin{semiverbatim}
+\#include "finclude/petsc.h"
+
+\#include "finclude/petscvec.h"
+
+      Vec v;
+
+      PetscScalar array(1)
+
+      PetscOffset offset
+
+      PetscInt n, i
+
+      PetscErrorCode ierr
+
+
+      call VecGetArray(v, array, offset, ierr)
+
+      call VecGetLocalSize(v, n, ierr)
+
+      do i=1,n
+
+      \ \ array(i+offset) =  array(i+offset) + rank
+
+      end do
+
+      call VecRestoreArray(v, array, offset, ierr)
+\end{semiverbatim}
+}
+
+\only<3>{
+\frametitle{VecGetArray in F90}
+
+\begin{semiverbatim}
+\#include "finclude/petsc.h"
+
+\#include "finclude/petscvec.h"
+
+\#include "finclude/petscvec.h90"
+
+      Vec v;
+
+      PetscScalar pointer :: array(:)
+
+      PetscInt n, i
+
+      PetscErrorCode ierr
+
+
+      call VecGetArrayF90(v, array, ierr)
+
+      call VecGetLocalSize(v, n, ierr)
+
+      do i=1,n
+
+      \ \ array(i) =  array(i) + rank
+
+      end do
+
+      call VecRestoreArrayF90(v, array, ierr)
+\end{semiverbatim}
+}
+
+\end{frame}

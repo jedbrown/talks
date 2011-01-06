@@ -1,0 +1,15 @@
+\begin{frame}{DA Operators}
+
+\begin{itemize}
+  \item Evaluate only the local portion
+  \begin{itemize}
+    \item No nice local array form without copies
+  \end{itemize}
+
+  \item Use \code{MatSetValuesStencil()} to convert \code{(i,j,k)} to indices
+
+  \item \code{\scriptsize make NP=2 EXTRA\_ARGS="-run test -da\_grid\_x 10 -da\_grid\_y 10 -mat\_view\_draw -draw\_pause -1" runbratu}
+
+  \item \code{\scriptsize make NP=2 EXTRA\_ARGS="-run test -dim 3 -da\_grid\_x 5 -da\_grid\_y 5 -da\_grid\_z 5 -mat\_view\_draw -draw\_pause -1" runbratu}
+\end{itemize}
+\end{frame}

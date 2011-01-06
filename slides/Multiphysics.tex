@@ -1,0 +1,42 @@
+\begin{frame}{Multiphysics splitting}
+  \begin{equation*}
+    \begin{bmatrix}
+      A & B \\ C & D
+    \end{bmatrix}
+    \begin{bmatrix}
+      x \\ y
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+      f \\ g
+    \end{bmatrix}
+  \end{equation*}
+  \begin{itemize}\item Relaxation
+    \begin{equation*}
+      \begin{bmatrix}
+        A & \\ C & D
+      \end{bmatrix}
+    \end{equation*}
+    \begin{itemize}
+    \item Gauss-Seidel inspired, easy to implement
+    \item works when fields are loosely coupled
+    \end{itemize}
+  \item Factorization
+    \begin{align*}
+      \begin{bmatrix}
+        1 & \\ CA^{-1} & 1
+      \end{bmatrix}
+      \begin{bmatrix}
+        A & B \\ & S
+      \end{bmatrix}, \qquad
+      S = D - C A^{-1} B
+    \end{align*}
+    \begin{itemize}
+    \item robust (exact factorization), can often drop lower block
+    \item how to precondition $S$ which is usually dense?
+      \begin{itemize}
+      \item interpret as differential operators, use approximate commutators
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

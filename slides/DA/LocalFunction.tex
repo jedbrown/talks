@@ -1,0 +1,25 @@
+\frame{
+\frametitle{DA Local Function}
+
+The user provided function which calculates the nonlinear residual in 2D has signature \\
+{\kb PetscErrorCode (*lfunc)(DALocalInfo *info, \\
+  \qquad \qquad \qquad Field **x, Field **r, void *ctx)}
+\begin{columns}\begin{column}{0.15\textwidth}\end{column}\begin{column}{0.85\textwidth}
+\begin{itemize}
+  \item[{\kb info}:] All layout and numbering information
+  \item[{\kb x}:] The current solution
+  \begin{itemize}
+    \item Notice that it is a multidimensional array
+  \end{itemize}
+  \item[ {\kb r}:] The residual
+  \item[ {\kb ctx}:] The user context passed to {\kb DASetLocalFunction()}
+\end{itemize}
+\end{column}\end{columns}
+
+\bigskip
+
+The local DA function is activated by calling
+\begin{center}
+  {\kb SNESSetFunction(snes, r, SNESDAFormFunction, ctx)}
+\end{center}
+}

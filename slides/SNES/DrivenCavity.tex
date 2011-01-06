@@ -1,0 +1,84 @@
+\begin{frame}{SNES Example}
+\framesubtitle{Driven Cavity}
+\hbox{
+\includegraphics[width=.4\textwidth]{figures/SNES/DrivenCavitySolution}
+\vbox{
+\begin{itemize}
+  \item Velocity-vorticity formulation
+  \item Flow driven by lid and/or bouyancy
+  \item Logically regular grid
+  \begin{itemize}
+    \item Parallelized with {\kb DA}
+  \end{itemize}
+  \item Finite difference discretization
+  \item Authored by David Keyes
+\end{itemize}
+}
+}
+\end{frame}
+
+\begin{frame}[fragile]{SNES Example}
+\framesubtitle{Driven Cavity Application Context}
+\begin{lstlisting}
+/* Collocated at each node */
+typedef struct {
+  PetscScalar u,v,omega,temp;
+} Field;
+
+typedef struct {
+       /* physical parameters */
+   PassiveReal lidvelocity,prandtl,grashof;
+       /* color plots of the solution */
+   PetscTruth  draw_contours;
+} AppCtx;
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{SNES Example}
+\framesubtitle{Driven Cavity Residual Evaluation}
+\small
+\begin{lstlisting}
+DrivenCavityFunction(SNES snes, Vec X, Vec F, void *ptr) {
+  AppCtx        *user = (AppCtx *) ptr;
+  /* local starting and ending grid points */
+  PetscInt       istart, iend, jstart, jend;
+  PetscScalar    *f;             /* local vector data */
+  PetscReal      grashof = user->grashof;  
+  PetscReal      prandtl = user->prandtl;
+  PetscErrorCode ierr;
+
+  /* Code to communicate nonlocal ghost point data */
+  VecGetArray(F, &f);
+  /* Code to compute local function components */
+  VecRestoreArray(F, &f);
+  return 0;
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{SNES Example}
+\framesubtitle{Better Driven Cavity Residual Evaluation}
+
+\small
+\begin{lstlisting}
+PetscErrorCode DrivenCavityFuncLocal(DALocalInfo *info,
+                    Field **x,Field **f,void *ctx) {
+  /* Handle boundaries */
+  /* Compute over the interior points */
+  for(j = info->ys; j < info->ys+info->ym; j++) {
+    for(i = info->xs; i < info->xs+info->xm; i++) {
+      /* convective coefficients for upwinding */
+      /* U velocity */
+      u          = x[j][i].u;
+      uxx        = (2.0*u - x[j][i-1].u - x[j][i+1].u)*hydhx;
+      uyy        = (2.0*u - x[j-1][i].u - x[j+1][i].u)*hxdhy;
+      upw        = 0.5*(x[j+1][i].omega-x[j-1][i].omega)*hx
+      f[j][i].u  = uxx + uyy - upw;
+      /* V velocity, Omega, Temperature */
+}}}
+\end{lstlisting}
+
+\begin{center}\small
+\$PETSC\_DIR/src/snes/examples/tutorials/ex19.c
+\end{center}
+\end{frame}

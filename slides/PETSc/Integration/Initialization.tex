@@ -1,0 +1,22 @@
+\begin{frame}{Initialization}
+
+\begin{itemize}
+  \item Call {\kb PetscInitialize()}
+  \begin{itemize}
+    \item Setup static data and services
+    \item Setup MPI if it is not already
+    \item Can set \code{PETSC\_COMM\_WORLD} to use your communicator \\
+      (can always use subcommunicators for each object)
+  \end{itemize}
+
+  \item Call {\kb PetscFinalize()}
+  \begin{itemize}
+    \item Calculates logging summary
+    \item Can check for leaks/unused options
+    \item Shutdown and release resources
+  \end{itemize}
+
+  \item Can only initialize PETSc once
+\end{itemize}
+
+\end{frame}

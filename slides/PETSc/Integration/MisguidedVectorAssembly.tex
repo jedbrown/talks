@@ -1,0 +1,24 @@
+\begin{frame}{One Way to Set the Elements of a Vector}
+
+\begin{semiverbatim}
+VecGetSize(x, \&N);
+
+MPI\_Comm\_rank(PETSC\_COMM\_WORLD, \&rank);
+
+if (rank == 0) \{
+
+\ \ for(i = 0, val = 0.0; i < N; i++, val += 10.0) \{
+
+\ \ \ \ VecSetValues(x, 1, \&i, \&val, INSERT\_VALUES);
+
+\ \ \}
+
+\}
+
+/* These routines ensure that the data is distributed to the other processes */
+
+VecAssemblyBegin(x);
+
+VecAssemblyEnd(x);
+\end{semiverbatim}
+\end{frame}

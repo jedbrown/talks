@@ -1,0 +1,22 @@
+\begin{frame}{Nonlinear Solvers}{Newton and Picard Methods}
+
+\begin{itemize}
+  \item Using PETSc linear algebra, just add:
+  \begin{itemize}
+    \item {\kb SNESSetFunction(SNES snes, Vec r, residualFunc, void *ctx)}
+    \item {\kb SNESSetJacobian(SNES snes, Mat A, Mat M, jacFunc, void *ctx)}
+    \item {\kb SNESSolve(SNES snes, Vec b, Vec x)}
+  \end{itemize}
+
+  \item Can access subobjects
+  \begin{itemize}
+    \item {\kb SNESGetKSP(SNES snes, KSP *ksp)}
+  \end{itemize}
+
+  \item Can customize subobjects from the cmd line
+  \begin{itemize}
+    \item Set the subdomain preconditioner to ILU with {\kb -sub\_pc\_type ilu} 
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

@@ -1,0 +1,21 @@
+\begin{frame}{Working With Local Vectors}
+
+It is sometimes more efficient to directly access local storage of a {\kb Vec}.
+\begin{itemize}
+  \item PETSc allows you to access the local storage with
+  \begin{itemize}
+    \item {\kb VecGetArray(Vec, double *[])}
+  \end{itemize}
+
+  \item You must return the array to PETSc when you finish
+  \begin{itemize}
+    \item {\kb VecRestoreArray(Vec, double *[])}
+  \end{itemize}
+
+  \item Allows PETSc to handle data structure conversions
+  \begin{itemize}
+    \item Commonly, these routines are inexpensive and do not involve a copy
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

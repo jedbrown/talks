@@ -1,0 +1,25 @@
+\begin{frame}{Profiling}
+
+\begin{itemize}
+  \item Use {\kb -log\_summary} for a performance profile
+  \begin{itemize}
+    \item Event timing
+    \item Event flops
+    \item Memory usage
+    \item MPI messages
+  \end{itemize}
+
+  \item Call {\kb PetscLogStagePush()} and {\kb PetscLogStagePop()}
+  \begin{itemize}
+    \item User can add new stages
+  \end{itemize}
+
+  \item Call {\kb PetscLogEventBegin()} and {\kb PetscLogEventEnd()}
+  \begin{itemize}
+    \item User can add new events
+  \end{itemize}
+
+  \item Call {\kb PetscLogFlops()} to include your flops
+\end{itemize}
+
+\end{frame}

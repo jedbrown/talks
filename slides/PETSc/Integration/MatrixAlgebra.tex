@@ -1,0 +1,16 @@
+\begin{frame}{Matrices, redux}
+What are PETSc matrices?
+\begin{itemize}
+\item Linear operators on finite dimensional vector spaces.
+  \item<2> Fundamental objects for storing stiffness matrices and Jacobians
+  \item<2> Each process locally owns a contiguous set of rows
+  \item<2> Supports many data types
+  \begin{itemize}
+    \item AIJ, Block AIJ, Symmetric AIJ, Block Diagonal, etc.
+  \end{itemize}
+  \item<2> Supports structures for many packages
+  \begin{itemize}
+    \item MUMPS, Spooles, SuperLU, UMFPack, DSCPack
+  \end{itemize}
+\end{itemize}
+\end{frame}

@@ -1,0 +1,19 @@
+\frame{
+\frametitle{DA Local Jacobian}
+
+The user provided function which calculates the Jacobian in 2D has signature
+\begin{center}\small
+{\kb PetscErrorCode (*lfunc)(DALocalInfo *info, PetscScalar **x, Mat J, void *ctx)}
+\end{center}
+\begin{itemize}
+  \item[{\kb info}:] All layout and numbering information
+  \item[{\kb x}:] The current solution
+  \item[{\kb J}:] The Jacobian
+  \item[{\kb ctx}:] The user context passed to {\kb DASetLocalFunction()}
+\end{itemize}
+
+The local DA function is activated by calling
+\begin{center}\small
+  {\kb SNESSetJacobian(snes, J, J, SNESDAComputeJacobian, ctx)}
+\end{center}
+}

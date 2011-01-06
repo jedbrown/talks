@@ -1,0 +1,23 @@
+\begin{frame}{What can we do with a matrix that doesn't have entries?}
+  \begin{block}{Krylov solvers for $A x = b$}
+    \begin{itemize}
+    \item Krylov subspace: $\{b, Ab, A^2b, A^3b, \dotsc\}$
+    \item Convergence rate depends on the spectral properties of the matrix
+      \begin{itemize}
+      \item Existance of small polynomials $p_n(A) < \epsilon$ where $p_n(0) = 1$.
+      \item condition number $\kappa(A) = \norm{A} \norm{A^{-1}} = \sigma_{\text{max}}/\sigma_{\text{min}}$
+      \item distribution of singular values, spectrum $\Lambda$, pseudospectrum $\Lambda_\epsilon$
+%      \item $\epsilon$-pseudospectrum $\Lambda_\epsilon$, spectrum of $A + E$ where $\norm{E} < \epsilon$
+      \end{itemize}
+    \item For any popular Krylov method $\mathcal{K}$, there is a matrix
+      of size $m$, such that $\mathcal{K}$ outperforms all other methods
+      by a factor at least $\bigO(\sqrt{m})$~[Nachtigal et. al., 1992]%\cite{nachtigal1992fnm}
+    \end{itemize}
+  \end{block}
+  \begin{block}{Typically...}
+    \begin{itemize}
+    \item The action $y \gets A x$ can be computed in $\bigO(m)$
+    \item Aside from matrix multiply, the $n^{\text{th}}$ iteration requires at most $\bigO(mn)$
+    \end{itemize}
+  \end{block}
+\end{frame}

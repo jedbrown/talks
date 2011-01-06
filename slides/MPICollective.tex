@@ -1,0 +1,62 @@
+\subsection{Collective semantics}
+\begin{frame}{MPI}
+  \begin{itemize}
+  \item Message Passing Interface
+  \item Defines an interface, many implementations
+  \item Can write and run multiprocess jobs without a multicore processor
+  \item Highly optimized
+    \begin{itemize}
+    \item Often bypasses kernel, IP stack
+    \item Network hardware can send/receive directly from user memory (no-copy)
+    \item Many nonblocking primitives, one-sided operations
+    \item Can use shared memory within a node
+      \oneitem{Sometimes faster to have network hardware do the copy}
+    \end{itemize}
+  \item Designed for library interoperability (e.g. attribute caching)
+  \item Not very fault tolerant
+    \begin{itemize}
+    \item Usually can't recover if one process disappears, deadlock possible
+    \item CAP Theorem
+    \end{itemize}
+  \item \shell{mpiexec -n 4 ./app -program -options}
+  \item Highly configurable runtime options (Open MPI, MPICH2)
+  \item Rarely have to call MPI directly when using PETSc
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{MPI communicators}
+  \begin{itemize}
+  \item Opaque object, defines process group and synchronization channel
+  \item PETSc objects need an \code{MPI\_Comm} in their constructor
+    \begin{itemize}
+    \item \code{PETSC\_COMM\_SELF} for serial objects
+    \item \code{PETSC\_COMM\_WORLD} common, but \emph{not} required
+    \end{itemize}
+  \item Can split communicators, spawn processes on new communicators, etc
+  \item Operations are either
+    \begin{itemize}
+    \item Not Collective: \code{VecGetLocalSize(), MatSetValues()}
+    \item Collective: \code{VecNorm(), MatMult(), MatAssemblyBegin()}
+    \end{itemize}
+  \item Deadlock if some process doesn't participate (e.g. wrong order)
+  \item Point-to-point communication between two processes e.g. \code{MatMult()}
+  \item Global communication, like the reduction in \code{VecDot()}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Advice from Bill Gropp}
+  \begin{quote}\large
+    You want to think about how you decompose your data structures, how
+    you think about them globally.  [...]  If you were building a house,
+    you'd start with a set of blueprints that give you a picture of what
+    the whole house looks like.  You wouldn't start with a bunch of
+    tiles and say. ``Well I'll put this tile down on the ground, and
+    then I'll find a tile to go next to it.''  But all too many people
+    try to build their parallel programs by creating the smallest
+    possible tiles and then trying to have the structure of their code
+    emerge from the chaos of all these little pieces.  You have to have
+    an organizing principle if you're going to survive making your code
+    parallel.
+  \end{quote}
+  {\small \centering (\url{http://www.rce-cast.com/Podcast/rce-28-mpich2.html})}
+\end{frame}

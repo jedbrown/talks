@@ -1,0 +1,22 @@
+\begin{frame}{What is a DA?}
+
+{\kb DA} is a topology interface handling parallel data layout on structured grids
+
+\begin{itemize}
+  \item Handles local and global indices
+  \begin{itemize}
+    \item {\kb DAGetGlobalIndices()} and {\kb DAGetAO()}
+  \end{itemize}
+
+  \item Provides local and global vectors
+  \begin{itemize}
+    \item {\kb DAGetGlobalVector()} and {\kb DAGetLocalVector()}
+  \end{itemize}
+
+  \item Handles ghost values coherence
+  \begin{itemize}
+    \item {\kb DAGetGlobalToLocal()} and {\kb DAGetLocalToGlobal()}
+  \end{itemize}
+\end{itemize}
+
+\end{frame}

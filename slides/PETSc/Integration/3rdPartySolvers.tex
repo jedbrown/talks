@@ -1,0 +1,70 @@
+\begin{frame}
+
+\href{http://www.mcs.anl.gov/petsc/petsc-as/documentation/linearsolvertable.html}{\green{Complete table of solvers}}
+
+\only<1>{
+\frametitle{3rd Party Solvers in PETSc}
+
+\begin{enumerate}
+  \item Sequential LU
+  \begin{itemize}
+    \item ILUDT (SPARSEKIT2, Yousef Saad, U of MN)
+    \item EUCLID \& PILUT (Hypre, David Hysom, LLNL)
+    \item ESSL (IBM)
+    \item SuperLU (Jim Demmel and Sherry Li, LBNL)
+    \item Matlab
+    \item UMFPACK (Tim Davis, U. of Florida)
+    \item LUSOL (MINOS, Michael Saunders, Stanford)
+  \end{itemize}
+
+  \item Parallel LU
+  \begin{itemize}
+    \item MUMPS (Patrick Amestoy, IRIT)
+    \item SPOOLES (Cleve Ashcroft, Boeing)
+    \item SuperLU\_Dist (Jim Demmel and Sherry Li, LBNL)
+  \end{itemize}
+
+  \item Parallel Cholesky
+  \begin{itemize}
+    \item DSCPACK (Padma Raghavan, Penn. State)
+  \end{itemize}
+
+  \item XYTlib - parallel direct solver (Paul Fischer and Henry Tufo, ANL) 
+\end{enumerate}
+}
+
+\only<2>{
+\frametitle{3rd Party Preconditioners in PETSc}
+
+\begin{enumerate}
+  \item Parallel ICC
+  \begin{itemize}
+    \item BlockSolve95 (Mark Jones and Paul Plassman, ANL)
+  \end{itemize}
+
+  \item Parallel ILU
+  \begin{itemize}
+    \item BlockSolve95 (Mark Jones and Paul Plassman, ANL)
+  \end{itemize}
+
+  \item Parallel Sparse Approximate Inverse
+  \begin{itemize}
+    \item Parasails (Hypre, Edmund Chow, LLNL)
+    \item SPAI 3.0 (Marcus Grote and Barnard, NYU)
+  \end{itemize}
+
+  \item Sequential Algebraic Multigrid
+  \begin{itemize}
+    \item RAMG (John Ruge and Klaus Steuben, GMD)
+    \item SAMG (Klaus Steuben, GMD)
+  \end{itemize}
+
+  \item Parallel Algebraic Multigrid
+  \begin{itemize}
+    \item Prometheus (Mark Adams, PPPL)
+    \item BoomerAMG (Hypre, LLNL)
+    \item ML (Trilinos, Ray Tuminaro and Jonathan Hu, SNL)
+  \end{itemize}
+\end{enumerate}
+}
+\end{frame}

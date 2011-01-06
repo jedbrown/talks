@@ -1,0 +1,245 @@
+\begin{frame}{Newton iteration: foundation of SNES}
+  \begin{textblock}{3}(11,0)
+    \includegraphics[width=\textwidth]{figures/Newton}
+  \end{textblock}
+  \begin{itemize}
+  \item Standard form of a nonlinear system
+    \[ F(u) = 0 \]
+  \item Iteration
+    \begin{align*}
+      \text{Solve:} & \qquad J(u) w = -F(u) \\
+      \text{Update:} & \qquad u^+ \gets u + w
+    \end{align*}
+    \item Quadratically convergent near a root: $\abs{u^{n+1}-u^*} \in \bigO\Big(\abs{u^n-u^*}^2\Big)$
+    \item Picard is the same operation with a different $J(u)$
+  \end{itemize}
+  \begin{example}[Nonlinear Poisson]
+    \begin{align*}
+      F(u)=0 \quad &\sim\quad -\div\big[ (1+u^2) \grad u \big] - f = 0 \\
+      J(u)w \quad &\sim\quad  -\div\big[(1+u^2)\grad w + 2uw\grad u \Big]
+    \end{align*}
+  \end{example}
+  % \begin{example}[$\pp$-Bratu]
+  %   Suppose $F$ is a discretization of
+  %   \[ -\nabla \cdot \big( \eta \nabla u \big) - \lambda e^u - f = 0 \]
+  %   \[\eta(\gamma) = (\epsilon^2+\gamma)^{\frac{\pp-2}{2}}, \qquad\quad \gamma = \half \abs{\nabla u}^2. \]
+  %   Then $J(u)w$ is a discretization of
+  %   \[ -\nabla \cdot \big( \eta \nabla w + \eta' (\nabla u \cdot \nabla w)\nabla u \big) - \lambda e^{u} w . \]
+  % \end{example}
+\end{frame}
+
+\subsection{Linear Algebra}
+\input{slides/MatrixDefinition.tex}
+\input{slides/MatricesImportant.tex}
+\input{slides/MatrixNoEntries.tex}
+\input{slides/GMRES.tex}
+
+% \section{$\pp$-Bratu}
+\begin{frame}{The $\pp$-Bratu equation}
+  \begin{itemize}
+  \item 2-dimensional model problem
+    \begin{equation*}
+      -\div \big(\abs{\nabla u}^{\pp-2} \nabla u \big) - \lambda e^u - f = 0, \qquad 1 \le \pp \le \infty, \quad \lambda < \lambda_{\text{crit}}(\pp)
+    \end{equation*}
+    Singular or degenerate when $\nabla u = 0$, turning point at $\lambda_{\text{crit}}$.
+  \item Regularized variant
+    \begin{gather*}
+      -\div (\eta \grad u) - \lambda e^u - f = 0 \\
+      \eta(\gamma) = (\epsilon^2 + \gamma)^{\frac{\pp-2}{2}} \qquad \gamma(u) = \half \abs{\grad u}^2
+    \end{gather*}
+  \item Jacobian
+    \begin{gather*}
+      J(u) w \sim -\div \big[ (\eta \bm 1 + \eta' \nabla u \otimes \nabla u) \grad w \big] - \lambda e^u w \\
+      \eta' = \frac{\pp-2}{2} \eta / (\epsilon^2 + \gamma)
+    \end{gather*}
+    Physical interpretation: conductivity tensor flattened in direction $\grad u$ %($\pp < 2$)
+  \end{itemize}
+\end{frame}
+
+% \frame{
+%   \begin{itemize}
+%   \item Start with 2-Laplacian plus Bratu, define only residuals
+%   \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
+%   \item \shell{hg update -r\Rsnesmf}
+%   \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+%   \item \shell{./pbratu -da\_grid\_x 20 -da\_grid\_y 20 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+%   \item \shell{./pbratu -da\_grid\_x 40 -da\_grid\_y 40 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+%   \end{itemize}
+% }
+
+\subsection{SNES}
+\input{slides/SNES/FlowControl.tex}
+\input{slides/SNES/Callbacks.tex}
+\input{slides/SNES/Function.tex}
+\input{slides/SNES/Jacobian.tex}
+
+\subsection{DA}
+\begin{frame}{Distributed Array}
+  \begin{itemize}
+  \item Interface for topologically structured grids
+  \item Defines (topological part of) a finite-dimensional function space
+    \oneitem{Get an element from this space: \code{DACreateGlobalVector()}}
+  \item Provides parallel layout
+  \item Refinement and coarsening
+    \oneitem{\code{DARefineHierarchy()}}
+  \item Ghost value coherence
+    \oneitem{\code{DAGlobalToLocalBegin()}}
+  \item Matrix preallocation: \oneitem{\code{DAGetMatrix()}}
+  \end{itemize}
+\end{frame}
+\input{slides/DA/GhostValues.tex}
+\input{slides/DA/GlobalNumberings.tex}
+\input{slides/DA/LocalNumbering.tex}
+\input{slides/DA/Vectors.tex}
+\input{slides/DA/UpdatingGhosts.tex}
+\input{slides/DA/Stencils.tex}
+\input{slides/DA/CreatingDA2d.tex}
+\input{slides/DA/WorkingWithLocal.tex}
+\input{slides/DA/LocalFunction.tex}
+\input{slides/DA/BratuResidual.tex}
+
+\begin{frame}{Start with 2-Laplacian plus Bratu nonlinearity}
+  \begin{itemize}
+  \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
+  \item \shell{hg update -r\Rsnesmflambda}
+  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 6.7 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+  \item \shell{./pbratu -da\_grid\_x 20 -da\_grid\_y 20 \\ -lambda 6.7 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+  \item \shell{./pbratu -da\_grid\_x 40 -da\_grid\_y 40 \\ -lambda 6.7 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+  \item Watch linear and nonlinear convergence
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Add $\pp$ nonlinearity}
+  \begin{itemize}
+  \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
+  \item \shell{hg update -r\Rsnesmfp}
+  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 1 -p 1.3 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+  \item \shell{./pbratu -da\_grid\_x 20 -da\_grid\_y 20 \\ -lambda 1 -p 1.3 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+  \item \shell{./pbratu -da\_grid\_x 40 -da\_grid\_y 40 \\ -lambda 1 -p 1.3 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+  \item Watch linear and nonlinear convergence
+  \end{itemize}
+\end{frame}
+
+\input{slides/Preconditioning.tex}
+
+\input{slides/SNES/FiniteDifferenceJacobian.tex}
+
+\begin{frame}{Add finite difference Jacobian by coloring}
+  \begin{itemize}
+  \item \shell{hg update -r\Rcolor}
+  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 1 -p 1.3 -snes\_fd -snes\_monitor -ksp\_converged\_reason}
+  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 1 -p 1.3 -fd\_jacobian -snes\_monitor -ksp\_converged\_reason}
+  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 1 -p 1.3 -fd\_jacobian -snes\_monitor -ksp\_converged\_reason}
+  \item Try some different preconditioners (\code{jacobi,sor,asm,hypre,ml})
+  \item Try changing the physical parameters
+  \item May need \code{-mat\_fd\_type ds}
+  \end{itemize}
+\end{frame}
+
+\subsection{Matrix Redux}
+\input{slides/PETSc/Integration/MatrixRedux.tex}
+\input{slides/PETSc/Integration/MatrixCreation.tex}
+\input{slides/PETSc/Integration/MatrixPolymorphism.tex}
+\input{slides/PETSc/Integration/MatrixAssembly.tex}
+\input{slides/PETSc/Integration/MisguidedMatrixAssembly.tex}
+\input{slides/PETSc/Integration/EfficientMatrixAssembly.tex}
+\input{slides/PETSc/Integration/WhyArePETScMatricesThatWay.tex}
+
+\begin{frame}{$\pp$-Bratu assembly}
+  \begin{itemize}
+  \item Use \code{DAGetMatrix()} (can skip matrix preallocation details)
+  \item Start by just assembling Bratu nonlinearity
+  \item \shell{hg update -r\Rassemblebratu}
+  \item Watch \code{-snes\_converged\_reason}, what happens for $p \ne 2$?
+  \item Solve exactly with the preconditioner \code{-pc\_type lu}
+  \item Try \code{-snes\_mf\_operator}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{$\pp$-Bratu assembly}
+  \begin{itemize}
+  \item We need to assemble the $\pp$ part
+    \begin{align*}
+      J(u)w \quad &\sim\quad -\div \big[(\eta\bm 1 + \eta' \grad u \otimes \grad u) \grad w\big]
+    \end{align*}
+  \item Second part is scary, but what about just using $-\div(\eta\grad w)$?
+  \item \shell{hg update -r\Rassemblepicard}
+  \item Solve exactly with the preconditioner \code{-pc\_type lu}
+  \item Try \code{-snes\_mf\_operator}
+  \item Refine the grid, change $\pp$
+  \item Try algebraic multigrid if available: \code{-pc\_type [ml,hypre]}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Does the preconditioner need Newton linearization?}
+  \begin{itemize}
+  \item The anisotropic part looks messy.  \\
+    \alert{Is it worth writing the code to assemble that part?}
+  \item Easy profiling: \code{-log\_summary}
+  \item Observation: the Picard linearization uses a ``star'' (5-point)
+    stencil while Newton linearization needs a ``box'' (9-point) stencil.
+  \item Add support for reduced preallocation with a command-line option
+  \item \shell{hg update -r\Rmyprealloc}
+  \item Compare performance (time, memory, iteration count) of
+    \begin{itemize}
+    \item 5-point Picard-linearization assembled by hand
+    \item 5-point Newton-linearized Jacobian computed by coloring
+    \item 9-point Newton-linearized Jacobian computed by coloring
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\subsection{Debugging}
+\begin{frame}{Maybe it's not worth it, but let's assemble it anyway}
+  \begin{itemize}
+  \item \shell{hg update -r\Rnewtoncrash}
+  \item Crash!
+  \item You were using the the debug PETSC\_ARCH, right?
+  \item Launch the debugger
+  \begin{itemize}
+    \item {\kb -start\_in\_debugger  [gdb,dbx,noxterm]}
+    \item {\kb -on\_error\_attach\_debugger [gdb,dbx,noxterm]}
+  \end{itemize}
+
+  \item Attach the debugger only to some parallel processes
+  \begin{itemize}
+    \item {\kb -debugger\_nodes 0,1}
+  \end{itemize}
+
+  \item Set the display (often necessary on a cluster)
+  \begin{itemize}
+    \item {\kb -display :0}
+  \end{itemize}
+\end{itemize}
+\end{frame}  
+
+\input{slides/PETSc/DebuggingTips.tex}
+
+\subsection{Correctness}
+
+\begin{frame}{Memory error is gone now}
+\begin{itemize}
+  \item \shell{hg update -r\Rnewtonbug}
+  \item Run with {-snes\_mf\_operator -pc\_type lu}
+  \item Do you see quadratic convergence?
+  \item<2-> Hmm, there must be a bug in that mess, where is it?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{SNES Test}
+  \begin{itemize}
+  \item PETSc can compute a finite difference Jacobian and compare it to yours
+  \item \code{-snes\_type test}
+    \oneitem{Is the difference significant?}
+  \item \code{-snes\_type test -snes\_test\_display}
+    \oneitem{Are the entries in the star stencil correct?}
+  \item Find which line has the typo
+  \item \shell{hg update -r\Rnewtonfix}
+  \item Check with \code{-snes\_type test} 
+  \item and \code{-snes\_mf\_operator -pc\_type lu}
+  \end{itemize}
+\end{frame}
+
+
+% \subsection{Matrix Preallocation}
+% \input{slides/PETSc/MatrixMemoryPreallocation.tex}

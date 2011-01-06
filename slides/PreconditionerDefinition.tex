@@ -1,0 +1,15 @@
+\begin{frame}{Preconditioning}
+  \begin{definition}[Preconditioner]
+      A \emph{preconditioner} $\PP$ is a method for constructing a matrix
+      $P^{-1} = \PP(A,A_p)$ using a matrix $A$ and extra information $A_p$, such that
+      the spectrum of $P^{-1}A$ (or $A P^{-1}$) is well-behaved.
+    \end{definition}
+    \begin{itemize}
+    \item $P^{-1}$ is dense, $P$ is often not available and is not needed
+    \item $A$ is rarely used by $\PP$, but $A_p = A$ is common
+    \item $A_p$ is often a sparse matrix, the ``preconditioning matrix''
+    \item Matrix-based: Jacobi, Gauss-Seidel, SOR, ILU(k), LU
+    \item Parallel: Block-Jacobi, Schwarz, Multigrid, FETI-DP, BDDC
+    \item Indefinite: Schur-complement, Domain Decomposition, Multigrid
+    \end{itemize}
+\end{frame}
