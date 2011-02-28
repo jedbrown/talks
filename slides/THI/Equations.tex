@@ -1,17 +1,17 @@
 \begin{frame}{Hydrostatic equations for ice sheet flow}
   \begin{itemize}
-  \item Valid in the limit $w_x \ll u_z$, independent of basal friction
-  \item Eliminate $p$ and $w$ by incompressibility:\\
+  \item Valid when $w_x \ll u_z$, independent of basal friction {\small (Schoof\&Hindmarsh 2010)}
+  \item Eliminate $p$ and $w$ from Stokes by incompressibility:\\
     \quad 3D elliptic system for $\bm u = (u,v)$
     \begin{align*}
       - \nabla\cdot \left[ \eta
         \begin{pmatrix}
           4 u_x + 2 v_y & u_y + v_x & u_z \\
           u_y + v_x & 2 u_x + 4 v_y & v_z
-        \end{pmatrix} \right] + \rho g \nabla s & = 0
+        \end{pmatrix} \right] + \rho g \bar\nabla h & = 0
     \end{align*}
     \begin{align*}
-      \eta(\gamma) &= \frac B 2 (\epsilon^2 + \gamma)^{\frac{1-\mathfrak n}{2\mathfrak n}}, \qquad \mathfrak n \approx 3 \\
+      \eta(\theta,\gamma) &= \frac{B(\theta)}{2} (\gamma_0 + \gamma)^{\frac{1-\mathfrak n}{2\mathfrak n}}, \qquad \mathfrak n \approx 3 \\
       \gamma &= u_x^2 + v_y^2 + u_xv_y + \frac 1 4 (u_y+v_x)^2 + \frac 1 4 u_z^2 + \frac 1 4 v_z^2
     \end{align*}
     and slip boundary $\sigma \cdot \bm n = \beta^2 \bm u$ where
@@ -19,6 +19,6 @@
       \beta^2(\gamma_b) &= \beta_0^2 (\epsilon_b^2 + \gamma_b)^{\frac{\mathfrak m-1}{2}}, \qquad 0 < \mathfrak m \le 1 \\
       \gamma_b &= \frac 1 2 (u^2 + v^2)
     \end{align*}
-  \item $Q_1$ FEM implementation in PETSc: \code{src/snes/examples/tutorials/ex48.c}
+  \item $Q_1$ FEM with Newton-Krylov-Multigrid solver in PETSc: \code{src/snes/examples/tutorials/ex48.c}
   \end{itemize}
 \end{frame}
