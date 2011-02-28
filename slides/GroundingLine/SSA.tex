@@ -1,0 +1,56 @@
+\begin{frame}{Standard shallow approximations}
+  \begin{itemize}
+  \item Shallow Ice Approximation (SIA):
+    \begin{itemize}
+    \item Purely local definition of velocity
+      \begin{align*}
+        u(z) &= - (\rho g)^{\mathfrak n} \int_b^z A(T(z))
+        (h-z)^{\mathfrak n} \abs{\bar\nabla h}^{\mathfrak n-1} \bar\nabla h
+      \end{align*}
+    \item No membrane stresses so only acceptable for \alert<2>{$\lambda \gg 1$}
+    \item No solve so costs similar to one residual evaluation per time step
+    \end{itemize}
+  \item ``Shelfy Stream'' Approximation (SSA)
+    \begin{itemize}
+    \item Need to solve elliptic problem posed in the map plane (2D):
+      \begin{gather*}
+        -\bar\nabla\cdot \left[H \bar\eta
+          \begin{pmatrix}
+            4\bar u_x + 2\bar v_y & \bar v_x + \bar u_y \\
+            \bar v_x + \bar u_y   & 2\bar u_x + 4\bar v_y
+          \end{pmatrix} \right]
+        + \beta^2 \bm{\bar u} + \rho g H \bar\grad h = 0 \\
+        \eta(\theta,\gamma) = \frac{B(\theta)}{2} (\gamma_0 + \gamma)^{\frac{1-\mathfrak n}{2\mathfrak n}}, \qquad \mathfrak n \approx 3 \\
+        \gamma = \bar u_x^2 + \bar v_y^2 + \bar u_x\bar v_y + \frac 1 4 (\bar u_y+\bar v_x)^2 %{\color{gray} + \frac 1 4 u_z^2 + \frac 1 4 v_z^2}
+      \end{gather*}
+    \item No vertical shear so only acceptable when \alert<2>{$\lambda \ll 1$}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Vertically-integrated Hybrids}
+  \begin{itemize}
+  \item Daniel Goldberg 2010, same order of accuracy as hydrostatic
+    \begin{itemize}
+    \item Vertically average ``membrane'' part of hydrostatic equations
+      \begin{gather*}
+        -\bar\nabla\cdot \left[\bar\eta
+          \begin{pmatrix}
+            4\bar u_x + 2\bar v_y & \bar v_x + \bar u_y   \\
+            \bar v_x + \bar u_y   & 2\bar u_x + 4\bar v_y
+          \end{pmatrix} \right]
+        {\color{red} - \left[ \eta \begin{pmatrix} u_z \\ v_z \end{pmatrix} \right]_z}
+        + \beta^2 \bm{\bar u} + \rho g H \bar\grad h = 0 \\
+        \eta(\theta,\gamma) = \frac{B(\theta)}{2} (\gamma_0 + \gamma)^{\frac{1-\mathfrak n}{2\mathfrak n}}, \qquad \mathfrak n \approx 3 \\
+        \gamma = \bar u_x^2 + \bar v_y^2 + \bar u_x\bar v_y + \frac 1 4 (\bar u_y+\bar v_x)^2 {\color{red} + \frac 1 4 u_z^2 + \frac 1 4 v_z^2}
+      \end{gather*}
+    \item Solve by integrating $z$-dependence and $\eta$, solve linear elliptic problem in map plane for $\bm{\bar u}$, iterate (Picard, $\approx 50$ its)
+    \item Evaluating viscosity (or a Newton residual) costs about \\ one hydrostatic residual
+    \end{itemize}
+  \item Bueler and Brown 2009, used in PISM
+    \begin{itemize}
+    \item Ad-hoc combination of independent SSA and SIA solutions
+    \item Lower formal order of accuracy, but nonlinear solve is strictly 2D
+    \end{itemize}
+  \end{itemize}
+\end{frame}
