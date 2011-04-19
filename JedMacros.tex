@@ -1,3 +1,4 @@
+\usepackage{slashbox,multirow,listings}
 \usepackage{xspace}
 \makeatletter
 \DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
@@ -12,9 +13,21 @@
 \def\etal{{et al}\onedot}
 \makeatother
 
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning]
+
 \usepackage{siunitx}
 \DeclareSIUnit\year{a}
 \sisetup{retain-unity-mantissa = false}
+
+\usepackage{minted}
+\newminted{c}{gobble=2}
+%\newmint[cverb]{c}{} 
+\newcommand\cverb[1][]{\SaveVerb[%
+    aftersave={\textnormal{\UseVerb[#1]{vsave}}}]{vsave}}
+\def\asm#1{{\tt #1}}
+\def\code#1{{\tt #1}}
+\def\shell#1{{\tt \$ #1}}
 
 \newcommand{\II}{\mathcal{I}}
 \newcommand{\C}{\mathbb{C}}
@@ -30,8 +43,10 @@
 \newcommand{\QQ}{\mathcal Q}
 \newcommand{\VV}{\mathcal V}
 \newcommand{\kb}{\tt}
+\newcommand{\Pk}[1]{P_{#1}}
 \newcommand{\Qk}[1]{Q_{#1}}
 \newcommand{\Pkdisc}[1]{P_{#1}^{\text{disc}}}
+\newcommand{\Qkdisc}[1]{Q_{#1}^{\text{disc}}}
 \newcommand{\blue}{\textcolor{blue}}
 \newcommand{\green}{\textcolor{green!70!black}}
 \newcommand{\red}{\textcolor{red}}
@@ -45,8 +60,6 @@
 \newcommand{\grad}{\nabla}
 %\renewcommand{\div}{\nabla \cdot}
 \DeclareMathOperator{\divrg}{div}
-\def\code#1{{\tt #1}}
-\def\shell#1{{\tt \$ #1}}
 \newcommand\mtab{\hspace{\stretch{1}}}
 \newcommand\ud{\,\mathrm{d}}
 \newcommand\bslash{{$\backslash$}}
@@ -71,6 +84,7 @@
 \DeclareMathOperator{\divergence}{div}
 \renewcommand\div\divergence
 \newcommand{\ip}[2]{{\left\langle #1, #2 \right\rangle}}
+\newcommand{\Linfty}{{L^\infty}}
 
 % Dimensionless numbers
 \newcommand{\Peclet}{{\mathrm{Pe}}}
@@ -80,3 +94,7 @@
 \newcommand{\Prandtl}{{\mathrm{Pr}}}
 \newcommand{\Grashof}{{\mathrm{Gr}}}
 
+\newcommand{\PETSc}{{PETSc}}
+\newcommand{\Dohp}{{Dohp}}
+\newcommand{\secref}[1]{{Section~\ref{#1}}}
+\newcommand{\chapref}[1]{{Chapter~\ref{#1}}}
