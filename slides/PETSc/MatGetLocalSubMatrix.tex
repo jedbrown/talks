@@ -1,0 +1,22 @@
+\begin{frame}
+  \alert{\texttt{MatGetLocalSubMatrix(Mat A,IS rows,IS cols,Mat *B);}}
+  \begin{itemize}
+  \item Primarily for assembly
+    \begin{itemize}
+    \item \texttt{B} is not guaranteed to implement \texttt{MatMult}
+    \item The communicator for \texttt{B} is not specified, \\
+      only safe to use non-collective ops (unless you check)
+    \end{itemize}
+  \item \texttt{IS} represents an index set, includes a block size and communicator
+  \item \texttt{MatSetValuesBlockedLocal()} is implemented
+  \item MatNest returns nested submatrix, no-copy
+  \item No-copy for Neumann-Neumann formats \\ (unassembled across procs, e.g. BDDC, FETI-DP)
+  \item Most other matrices return a lightweight proxy \texttt{Mat}
+    \begin{itemize}
+    \item \texttt{COMM\_SELF}
+    \item Values not copied, does not implement \texttt{MatMult}
+    \item Translates indices to the language of the parent matrix
+    \item Multiple levels of nesting are flattened
+    \end{itemize}
+  \end{itemize}
+\end{frame}

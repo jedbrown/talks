@@ -1,0 +1,29 @@
+\begin{frame}[shrink=5]{Stokes}
+  \begin{block}{Weak form of the Newton step}
+    Find $(\uu,p)$ such that
+    \begin{align*}
+      & \int_\Omega
+      \color{red}{(D\vv)^T \big[\eta\bm 1 + \eta' D\ww \otimes D\ww\big] D\uu} \\
+      &\qquad\quad - {\color{green!55!black}p \nabla\cdot \vv} - {\color{blue} q \nabla\cdot \uu} = - v\cdot F(\ww) & \forall (\vv,q) \\
+    \end{align*}
+  \end{block}
+  \vspace{-2em}
+  \begin{block}{Matrix}
+    \vspace{-1.5em}
+    \[ \begin{bmatrix}\color{red}{A(\ww)} & {\color{green!55!black} B^T}
+      \\ {\color{blue} B} & \end{bmatrix}
+    \begin{pmatrix} u \\ p \end{pmatrix}
+    = - \begin{pmatrix} F_u(\ww) \\ 0 \end{pmatrix} \]
+  \end{block}
+  \begin{block}{Block factorization}
+    \vspace{-1em}
+    \[\begin{bmatrix} A & B^T \\ B & \end{bmatrix} =
+    \begin{bmatrix} 1 & \\ BA^{-1} & 1 \end{bmatrix}
+    \begin{bmatrix} A & B^T \\ & S \end{bmatrix} =
+    \begin{bmatrix} A & \\ B & S \end{bmatrix}
+    \begin{bmatrix} 1 & A^{-1}B^T \\ & 1 \end{bmatrix}
+    \]
+    where the Schur complement is
+    \[  S = -B A^{-1} B^T . \]
+  \end{block}
+\end{frame}

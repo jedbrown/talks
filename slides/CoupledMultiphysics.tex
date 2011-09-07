@@ -3,12 +3,23 @@
   \item Smooth all components together
     \begin{itemize}
     \item Block SOR is the most popular
-    \item Vanka smoothers for indefinite problems
+    \item Block ILU often more robust (\eg transport/anisotropy)
+    \item Vanka field-split smoothers or for saddle-point problems
     \end{itemize}
-  \item Interpolate in a compatible way
   \item Scaling between fields is critical
-  \item First-order upwind for transport
-  \item Coarse space and subdomain problems should be compatible with inf-sup condition
-  \item Open research area
+  \item Indefiniteness
+    \begin{itemize}
+    \item Make smoothers and interpolants respect inf-sup condition
+    \item Difficult to handle anisotropy
+    \item Exotic interpolants for Helmholtz
+    \end{itemize}
+  \item Transport
+    \begin{itemize}
+    \item Define smoother in terms of first-order upwind discretization ($h$-ellipticity)
+    \item Evaluate residuals using high-order discretization
+    \item Use Schur field-split: ``parabolize'' at top level or for smoother on levels
+    \end{itemize}
+  \item Multigrid inside field-split or field-split inside multigrid
+  \item Open research area, hard to write modular software
   \end{itemize}
 \end{frame}

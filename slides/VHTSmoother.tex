@@ -1,0 +1,24 @@
+\begin{frame}[shrink=5]{Everything is better as a smoother (sometimes)}
+  \begin{block}{Block preconditioners work alright, but\ldots}
+    \begin{itemize}
+    \item nested iteration requires more dot products
+    \item more iterations: coarse levels don't ``see'' each other
+    \item finer grained kernels: lower arithmetic intensity, even more limited by memory bandwidth
+    \end{itemize}
+  \end{block}
+  \begin{block}{Coupled multigrid}
+    \begin{itemize}
+    \item need compatible coarsening
+      \begin{itemize}
+      \item can do algebraically (Adams 2004) but would need to assemble
+      \end{itemize}
+    \item stability issues for lowest order $Q_1-P_0^{\text{disc}}$
+      \begin{itemize}
+      \item Rannacher-Turek looks great, but no discrete Korn's inequality
+      \end{itemize}
+    \item coupled ``Vanka'' smoothers difficult to implement with high performance, especially for FEM
+    \item block preconditioners as smoothers reuse software better
+    \item one level by reducing order for the coarse space, more levels need non-nested geometric MG or go all-algebraic and pay for matrix assembly and setup
+    \end{itemize}
+  \end{block}
+\end{frame}

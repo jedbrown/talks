@@ -1,0 +1,174 @@
+%\documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+%\usetheme{Singapore}
+%\usetheme{Warsaw}
+\usetheme{Malmoe}
+\useinnertheme{circles}
+%\useoutertheme[footline=empty,subsection=false]{miniframes}
+\useoutertheme{infolines}
+\setbeamercovered{transparent}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{bm,textpos,alltt,multirow,ulem}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+\usepackage{courier}
+\usepackage[T1]{fontenc}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\input{JedMacros.tex}
+
+\title{Tightly coupled solvers with loosely coupled software}
+\subtitle{Modular linear algebra for multi-physics}
+
+\author{Jed Brown}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute[ETH Z\"urich]
+{
+  Laboratory of Hydrology, Hydraulics, and Glaciology \\
+  ETH Zürich
+}
+
+\date{KAUST 2011-03-27}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+\AtBeginSection[]
+{
+\begin{frame}<beamer>
+\frametitle{Outline}
+\tableofcontents[currentsection]
+\end{frame}
+}
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+% \frametitle{Outline}
+% \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+%\beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents
+% You might wish to add the option [pausesections]
+\end{frame}
+
+\section{Throughput for matrices}
+\input{slides/JFNKBottlenecks.tex}
+\input{slides/HardwareCapability.tex}
+\input{slides/StreamTriad-XT5-BGP.tex}
+\input{slides/SpMVPerformanceModel.tex}
+\input{slides/OptimizingSpMV.tex}
+\input{slides/BAIJPerformance.tex}
+\input{slides/OptimizingSpMVUnassembled.tex}
+\input{slides/Dohp/StokesScaling.tex}
+\begin{frame}{What you can do}
+  \begin{itemize}
+  \item Speak at the most specific language possible
+    \begin{itemize}
+    \item 3D structural analysis: symmetric block size 3
+    \item 3D compressible flow: nonsymmetric block size 5
+    \end{itemize}
+  \item Order unknowns for cache reuse (low-bandwidth like RCM is good)
+  \item Dual order
+    \begin{itemize}
+    \item Assemble a low-order discretization
+    \item Provide matrix-free high-order operator \\
+      (FD, ADI, caching at quadrature points)
+    \item More robust with SOR and ILU due to $h$-ellipticity
+    \item Sometimes Picard linearization has a more compact stencil
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section{Stiffness}
+\input{slides/WhyImplicit.tex}
+\input{slides/CoupledMultiphysics.tex}
+\input{slides/Anisotropy.tex}
+\input{slides/FieldSplit.tex}
+\input{slides/SIPreconditioning.tex}
+\input{slides/Stokes/WeakFormNewtonStep.tex}
+\input{slides/Stokes/PropertiesOfSchurComplement.tex}
+\input{slides/Stokes/PreconditioningSchur.tex}
+\input{slides/Stokes/NavierStokesSchur.tex}
+
+\section{Coupling}
+\input{slides/SNES/FlowControl.tex}
+\begin{frame}{Overwhelmed with choices}
+  \begin{itemize}
+  \item If you have a hard problem, no black-box solver will work well
+  \item Everything in PETSc has a plugin architecture
+    \begin{itemize}
+    \item Put in the ``special sauce'' for your problem
+    \item Your implementations are first-class
+    \end{itemize}
+  \item PETSc exposes an algebra of composition at runtime
+    \begin{itemize}
+    \item Build a good solver from existing components, at runtime
+    \item Multigrid, domain decomposition, factorization, relaxation, field-split
+    \item Choose matrix format that works best with your preconditioner
+    \item structural blocking, Neumann matrices, monolithic versus nested
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/PETSc/MatNest.tex}
+\input{slides/PETSc/MatGetLocalSubMatrix.tex}
+
+\begin{frame}{Wrap-up}
+  \begin{itemize}
+  \item Software modularity while retaining access to good solvers
+    \begin{itemize}
+    \item Reuse single-physics modules
+    \item Unintrusive ``special sauce'' (once you figure it out)
+    \end{itemize}
+  \item Choose the matrix format at runtime, best for your preconditioner
+    \begin{itemize}
+    \item monolithic, nested, Neumann
+    \item scalar or block, symmetric
+    \end{itemize}
+  \item Break into pieces that are ``understood'', keep some block structure for high throughput
+  \end{itemize}
+\end{frame}
+
+\end{document}

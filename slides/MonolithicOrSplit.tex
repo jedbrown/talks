@@ -1,0 +1,38 @@
+\begin{frame}{The Great Solver Schism: Monolithic or Split?}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Monolithic}
+        \begin{itemize}
+        \item Direct solvers
+        \item Coupled Schwarz
+        \item Coupled Neumann-Neumann \\
+          (need unassembled matrices)
+        \item Coupled multigrid
+        \item[X] Need to understand local spectral and compatibility properties of the coupled system
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Split}
+        \begin{itemize}
+        \item Physics-split Schwarz \\
+          (based on relaxation)
+        \item Physics-split Schur \\
+          (based on factorization)
+          \begin{itemize}
+          \item  approximate commutators \\
+            SIMPLE, PCD, LSC
+          \item segregated smoothers
+          \item Augmented Lagrangian
+          \item ``parabolization'' for stiff waves
+          \end{itemize}
+        \item[X] Need to understand global coupling strengths
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \begin{itemize}
+  \item Preferred data structures depend on which method is used.
+  \item Interplay with geometric multigrid.
+  \end{itemize}
+\end{frame}

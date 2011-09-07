@@ -1,0 +1,44 @@
+\begin{frame}{Unsteady Navier-Stokes}
+  % Find $(u,p) \in \VV_D \times \PP$ such that
+  % \begin{equation*}
+  %   \begin{bmatrix} v \\ q \end{bmatrix}^T J(w) \begin{bmatrix} u \\ p \end{bmatrix} = -F(w) \qquad \forall (v,q) \in \VV_0 \times \PP
+  % \end{equation*}
+  % \begin{block}{Weak form}
+  %   \begin{align*}
+  %     \begin{bmatrix} \vv \\ q \end{bmatrix}^T J(\ww) \begin{bmatrix}
+  %       \uu \\ p \end{bmatrix} &\sim
+  %     \int_\Omega \alert{\rho \vv \cdot (\alpha \uu + \ww \cdot \nabla \uu + \uu \cdot \nabla \ww) + \eta D\vv \tcolon D\uu} \\
+  %     &\quad - p \nabla\cdot \vv - q\nabla\cdot \uu
+  %   \end{align*}
+  % \end{block}
+  \begin{block}{Strong form}
+    \vspace{-1em}
+    \begin{align*}
+      J(\ww) \begin{bmatrix} \uu \\ p \end{bmatrix} &\sim \left\{
+        \begin{array}{rl}
+          \alert{\rho(\alpha \uu + \ww \cdot \nabla\uu + \uu\cdot\nabla\ww) - \eta \nabla^2 \uu} + \nabla p &= -F(w) \\
+          \nabla\cdot \uu &= 0
+        \end{array} \right.
+    \end{align*}
+  \end{block}
+  \vspace{-1em}
+  \begin{block}{Matrix form}
+    \vspace{-1em}
+    \[
+    \begin{bmatrix} \alert{A(w)} & B^T \\ B & \end{bmatrix} =
+    \begin{bmatrix} 1 & \\ BA^{-1} & 1 \\ \end{bmatrix}
+    \begin{bmatrix} A & B^T \\ & S \\ \end{bmatrix}\qquad S = -BA^{-1}B^T
+    \]
+  \end{block}
+  \vspace{-0.5em}
+  \begin{block}{Define $A(w)$ in pressure space}
+    \begin{itemize}
+    \item Want $P_S = (BB^T) {\color{blue} A_p^{-1}} \approx B A^{-1} B^T,\qquad P_S^{-1} = {\color{blue} A_p} (BB^T)^{-1}$
+    \item {\color{blue} $A_p \sim \rho \Big(\alpha p + \ww\cdot \nabla p + p \trace (\nabla\ww)\Big) - \eta \nabla^2 p$}
+    \item $p\trace(\nabla\ww)$ term is questionable, not needed for Picard
+    \item Almost mesh-independent, weak Reynolds number dependence
+    \end{itemize}
+  \end{block}
+  \vspace{-0.8em}
+  {\scriptsize (Silvester, Elman, Kay, Wathen. \emph{Efficient preconditioning of the linearized Navier-Stokes equations for incompressible flow}. 2001) \quad (Elman et al. 2005-2010)}
+\end{frame}

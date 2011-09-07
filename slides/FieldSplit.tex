@@ -39,11 +39,11 @@
   \item Factorization: \code{-pc\_fieldsplit\_type schur}
     \begin{align*}
       \begin{bmatrix}
-        1 & \\ CA^{-1} & 1
-      \end{bmatrix}
-      \begin{bmatrix}
         A & B \\ & S
-      \end{bmatrix}, \qquad
+      \end{bmatrix}^{-1}
+      \begin{bmatrix}
+        1 & \\ CA^{-1} & 1
+      \end{bmatrix}^{-1}, \qquad
       S = D - C A^{-1} B
     \end{align*}
     \begin{itemize}

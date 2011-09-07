@@ -1,0 +1,12 @@
+\begin{frame}{Performance of blocked matrix formats}
+  \centering
+  \begin{tabular}{l|c|c|c|c|c|c}
+    \multirow{2}{*}{\backslashbox{Kernel}{Format}} & \multicolumn{3}{c|}{Core 2, 1 process} & \multicolumn{3}{c}{Opteron, 4 processes} \\
+                      & AIJ & BAIJ & SBAIJ & AIJ  & BAIJ & SBAIJ \\ \hline
+    \texttt{MatMult}  & 812 & 985  & 1507  & 2226 & 2918 & 3119  \\
+    \texttt{MatSolve} & 718 & 957  & 955   & 1573 & 2869 & 2858  \\
+  \end{tabular}
+  \bigskip
+
+  {Throughput (Mflop/s) for different matrix formats on Core 2 Duo (P8700) and Opteron 2356 (two sockets). \texttt{MatSolve} is a forward- and back-solve with incomplete Cholesky factors.  The AIJ format is using ``inodes'' which unrolls across consecutive rows with identical nonzero pattern (pairs in this case).}
+\end{frame}

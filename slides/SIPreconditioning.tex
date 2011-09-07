@@ -1,4 +1,4 @@
-\begin{frame}[shrink=1]{Physics-based preconditioners (semi-implicit method)}
+\begin{frame}[shrink=10]{``Physics-based'' preconditioners (semi-implicit method)}
   \begin{block}{Shallow water with stiff gravity wave}
     $h$ is hydrostatic pressure, $u$ is velocity, $\sqrt{gh}$ is fast wave speed
     \begin{gather*}
@@ -6,12 +6,12 @@
       (uh)_t + (u^2h + \half gh^2)_x = 0
     \end{gather*}
   \end{block}
-  \vspace{-2.5em}
+  \vspace{-3em}
   \begin{block}{Semi-implicit method}
     Suppress spatial discretization, discretize in time, implicitly for the terms contributing to the gravity wave
     \begin{gather*}
       \frac{h^{n+1} - h^n}{\Delta t} + (uh)_x^{n+1} = 0 \\
-      \frac{(uh)^{n+1} - (uh)^{n}}{\Delta t} + (u^2h)_x^{n} + gh^n h_x^{n+1} = 0
+      \frac{(uh)^{n+1} - (uh)^{n}}{\Delta t} + (u^2h)_x^{n} + g(h^n h^{n+1})_x = 0
     \end{gather*}
 
     Rearrange, eliminating $(uh)^{n+1}$
@@ -21,19 +21,26 @@
 
 \begin{frame}[shrink=1]{Delta form}
   \begin{itemize}
-  \item Preconditioner should work like the Newton step
-    \[ -F(x) \mapsto \delta x \]
+  \item Preconditioner should work like the Newton step: $-F(x) \mapsto \delta x$
   \item Recast semi-implicit method in delta form
-    \[ \frac{\delta h}{\Delta t} + (\delta uh)_x = -F_0, \qquad \frac{\delta uh}{\Delta t} + g h^n (\delta h)_x = -F_1 \]
+    \[ \frac{\delta h}{\Delta t} + (\delta uh)_x = -F_0, \quad \frac{\delta uh}{\Delta t} + g h^n (\delta h)_x = -F_1,
+    \quad \widehat{J} =
+    \begin{pmatrix}
+      \frac{1}{\Delta t} & \div \\
+      g h^n \nabla & \frac{1}{\Delta t}
+    \end{pmatrix}
+    \]
   \item Eliminate $\delta uh$
-    \[ \frac{\delta h}{\Delta t} - \Delta t(gh^n (\delta h)_x)_x = -F_0 + (\Delta t F_1)_x \]
+    \[ \frac{\delta h}{\Delta t} - \Delta t(gh^n (\delta h)_x)_x = -F_0 + (\Delta t F_1)_x,
+    \quad S \sim \frac{1}{\Delta t} - g \Delta t \div h^n \nabla
+    \]
   \item Solve for $\delta h$, then evaluate
     \[ \delta uh = - \Delta t \big[ gh^n (\delta h)_x - F_1 \big] \]
   \item Fully implicit solver
     \begin{itemize}
-    \item Is nonlinearly consistent (no splitting error)
-    \item Can be high-order in time
-    \item Leverages existing code (the semi-implicit method)
+    \item Is nonlinearly consistent (no splitting error), can be high-order in time
+    \item Uses existing code when a semi-implicit method has been implemented
+    \item Allows efficient bifurcation analysis, steady-state analysis
     \end{itemize}
   \end{itemize}
 \end{frame}

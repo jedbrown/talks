@@ -33,14 +33,25 @@
     \item \code{PETSC\_COMM\_WORLD} common, but \emph{not} required
     \end{itemize}
   \item Can split communicators, spawn processes on new communicators, etc
-  \item Operations are either
+  \item Operations are one of
     \begin{itemize}
     \item Not Collective: \code{VecGetLocalSize(), MatSetValues()}
-    \item Collective: \code{VecNorm(), MatMult(), MatAssemblyBegin()}
+    \item Logically Collective: \code{KSPSetType(), PCMGSetCycleType()}
+      \begin{itemize}
+      \item checked when running in debug mode
+      \end{itemize}
+    \item Neighbor-wise Collective: \code{VecScatterBegin(), MatMult()}
+      \begin{itemize}
+      \item Point-to-point communication between two processes
+      \item Neighbor collectives in upcoming MPI-3
+      \end{itemize}
+    \item Collective: \code{VecNorm(), MatAssemblyBegin(), KSPCreate()}
+      \begin{itemize}
+      \item Global communication, synchronous
+      \item Non-blocking collectives in upcoming MPI-3
+      \end{itemize}
     \end{itemize}
-  \item Deadlock if some process doesn't participate (e.g. wrong order)
-  \item Point-to-point communication between two processes e.g. \code{MatMult()}
-  \item Global communication, like the reduction in \code{VecDot()}
+  \item Deadlock if some process doesn't participate (\eg wrong order)
   \end{itemize}
 \end{frame}
 

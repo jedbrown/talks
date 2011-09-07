@@ -1,0 +1,32 @@
+\begin{frame}[shrink=5]{Preconitioning the Schur complement}
+  \begin{itemize}\item $S = -BA^{-1}B^T$ is dense so we can't form it, we need
+    $S^{-1}$.\end{itemize}
+  \begin{block}{Physics-based commutator: anisotropic pressure diffusion}
+    \[ \vv^T A(\ww) \uu \sim \int (D\vv)^T \big[\eta\bm 1 + \eta' D\ww \otimes D\ww\big] D\uu \]
+    \begin{itemize}
+    \item We would like to find an operator $A_p$ such that
+    \[ -S = B A^{-1} B^T \approx BB^T A_p^{-1} =: P_S \]
+    so that
+    \[ P_S^{-1} = A_p (BB^T)^{-1} \]
+    \item Note
+      \[ BB^T \sim (-\nabla \cdot)\nabla = - \Delta \]
+      corresponds to a Laplacian in the pressure space (multigrid).
+    \item If $\eta',\nabla \eta \ll 1$ then $A_p \sim -\eta \Delta$ so $P_S^{-1} = \eta \bm 1$
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[shrink=5]{Least squares commutator}
+  \begin{itemize}\item Schur complement \[ S = - B A^{-1} B^T \] \end{itemize}
+  Suppose $B$ is square and nonsingular.  Then
+  \[ S^{-1} = -B^{-T} A B^{-1} . \]
+  $B$ is not square, replace $B^{-1}$ with Moore-Penrose pseudoinverse
+  \[ B^{\dagger} = B^T(BB^T)^{-1}, \qquad (B^T)^\dagger = (BB^T)^{-1}B .\]  Then
+  \[ P_S^{-1} = - (BB^T)^{-1} BAB^T (BB^T)^{-1} . \]
+  \vspace{-1em}
+  \begin{itemize}
+  \item Requires 2 Poisson preconditioners for $(BB^T)^{-1}$ per iteration
+  \item Better with scaling, from mass matrices and effective viscosity (Elman et al. 2006, May \& Moresi 2008)
+  \item \texttt{-pc\_type fieldsplit -pc\_fieldsplit\_type schur -fieldsplit\_p\_pc\_type lsc -fieldsplit\_p\_lsc\_pc\_type mg}
+  \end{itemize}
+\end{frame}

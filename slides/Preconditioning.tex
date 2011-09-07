@@ -59,7 +59,7 @@
     \item Expensive, for $m\times m$ sparse matrix with bandwidth $b$, traditionally requires $\bigO(mb^2)$ time and $\bigO(mb)$ space.
       \begin{itemize}
       \item Bandwidth scales as $m^{\frac{d-1}{d}}$ in $d$-dimensions
-      \item Optimal in 2D: $\bigO(m \log m)$ space, $\bigO(m^{3/2})$ time
+      \item Optimal in 2D: $\bigO(m \cdot \log m)$ space, $\bigO(m^{3/2})$ time
       \item Optimal in 3D: $\bigO(m^{4/3})$ space, $\bigO(m^2)$ time
       \end{itemize}
     \item Symbolic factorization is problematic in parallel
@@ -90,6 +90,7 @@
     \item Solve Neumann problems on non-overlapping subdomains
     \item $\textit{its} \in \bigO\big( \frac{L}{H}(1+\log\frac H h) \big)$
     \item Tricky null space issues (floating subdomains)
+    \item Need subdomain matrices, net globally assembled matrix.
     \end{itemize}
   \end{block}
   \begin{itemize}
@@ -134,19 +135,29 @@
 \begin{frame}{Multigrid convergence properties}
   \begin{itemize}
   \item Textbook: $P^{-1}A$ is spectrally equivalent to identity
-  \item Most theory applies to SPD systems
-  \item nonsymmetric (e.g. advection, shallow water, Euler) \\
-    with low-order upwind discretization
-  \item Good when coefficients in problem are smooth
     \begin{itemize}
-    \item large jumps and anisotropy are harder
-    \item build low-energy interpolants
-    \item use stronger smoothers
+    \item Constant number of iterations to converge up to discretization error
     \end{itemize}
-  \item Aggressive coarsening is critical, especially in parallel
-  \item Most theory uses SOR smoothers, ILU often more robust
-  \item Coarsest component usually solved semi-redundantly with direct solver
-  \item Multilevel Schwarz is an extreme case of aggressive coarsening
-    and strong smoothers.  Exotic interpolants for robustness.
+  \item Most theory applies to SPD systems
+    \begin{itemize}
+    \item variable coefficients (\eg discontinuous): low energy interpolants
+    \item mesh- and/or physics-induced anisotropy: semi-coarsening/line smoothers
+    \item complex geometry: difficult to have meaningful coarse levels
+    \end{itemize}
+  \item Deeper algorithmic difficulties
+    \begin{itemize}
+    \item nonsymmetric (\eg advection, shallow water, Euler) \\
+    \item indefinite (\eg incompressible flow, Helmholtz)
+    \end{itemize}
+  \item Performance considerations
+    \begin{itemize}
+    \item Aggressive coarsening is critical in parallel
+    \item Most theory uses SOR smoothers, ILU often more robust
+    \item Coarsest level usually solved semi-redundantly with direct solver
+    \end{itemize}
+  \item Multilevel Schwarz is essentially the same with different language
+    \begin{itemize}
+    \item assume strong smoothers, emphasize aggressive coarsening
+    \end{itemize}
   \end{itemize}
 \end{frame}

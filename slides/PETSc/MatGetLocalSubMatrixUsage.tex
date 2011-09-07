@@ -1,0 +1,64 @@
+\begin{frame}[fragile]{\cfunc|MatGetLocalSubMatrix| spaces}
+  \begin{itemize}
+  \item Newton method for $F(x) = 0$ solves
+    \begin{gather*}
+      J(x) \delta x = - F(x) \\
+      J = \begin{pmatrix}
+      J_{aa} & J_{ab} & J_{ac} \\
+      J_{ba} & J_{bb} & J_{bc} \\
+      J_{ca} & J_{cb} & J_{cc}
+    \end{pmatrix} .
+    \end{gather*}
+  \item Conceptually, there are three spaces in parallel
+    \begin{itemize}
+    \item[$V$] Globally assembled space
+    \item[$V_i$] Global space for a single physics $i$
+    \item[$\bar V_i$] Local space (with ghosts) for a single physcs $i$
+    \item[$\bar V$] $\prod_i \bar V_i$ Concatenation of all single-physics local spaces
+    \end{itemize}
+  \item Different components need different relationships
+    \begin{itemize}
+    \item[$V_i \to V$] field-split
+    \item[$\bar V \to V$] coupled Neumann domain decomposition methods
+    \item[$\bar V_i$] natural language for modular residual evaluation and assembly
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{\cfunc|MatGetLocalSubMatrix| spaces}
+  \begin{block}{Spaces}
+    \begin{itemize}
+    \item[$V$] Globally assembled space
+    \item[$V_i$] Global space for a single physics $i$
+    \item[$\bar V_i$] Local space (with ghosts) for a single physcs $i$
+    \item[$\bar V$] $\prod_i \bar V_i$ Concatenation of all
+      single-physics local spaces
+    \end{itemize}
+  \end{block}
+  \begin{itemize}
+  \item Multiple physics $x = [x_a,x_b,x_c]$
+  \item[$I_i$] Map indices from $V_i$ to $V$.
+  \item[$R_i$] Global physics restriction $R_i : V \to V_i$
+    \[ R_i x = x[I_i] = x_i \]
+  \item[$\bar I_i$] Map indices from $\bar V_i$ to $V_i$
+  \item[$\bar R_i$] Extract local single-physics part from global single-physics
+    \[ \bar R_i x_i = x_i[\bar I_i] = \bar x_i \]
+  \item[$\tilde I_i$] Map indices from $\bar V_i$ to $\bar V$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{\cfunc|MatGetLocalSubMatrix| spaces}
+\begin{itemize}
+    \item Globally assembled coupled matrix in terms of assembled single-physics blocks
+    \[ J = \sum_{ij} R_i^T J_{ij} R_j \]
+    \begin{itemize}
+    \item Language of Schwarz and fieldsplit
+    \end{itemize}
+  \item Assembled single-physics blocks in terms of local single-physics matrices
+    \[ J_{ij} = \bar R_i^T \bar J_{ij} \bar R_j \]
+    \begin{itemize}
+    \item Language of assembly and Neumann/FETI domain decomposition
+    \item \cfunc|MatSetValuesLocal|
+    \end{itemize}
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,20 @@
+\begin{frame}{Variational Inequalities}
+  \begin{itemize}
+  \item Supports inequality and box constraints on solution variables.
+  \item Solution methods
+    \begin{itemize}
+    \item Semismooth Newton
+      \begin{itemize}
+      \item reformulate problem as a non-smooth system, Newton on subdifferential
+      \item Newton step solves diagonally perturbed systems
+      \end{itemize}
+    \item Active set
+      \begin{itemize}
+      \item similar linear algebra to solving PDE
+      \item sometimes slower convergence or ``bouncing''
+      \end{itemize}
+    \end{itemize}
+  \item composes with multigrid and field-split
+  \item demonstrated optimality for phase-field problems with millions of degrees of freedom
+  \end{itemize}
+\end{frame}

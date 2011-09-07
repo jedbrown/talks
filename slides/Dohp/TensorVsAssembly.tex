@@ -1,0 +1,9 @@
+\begin{frame}[shrink=5]{Performance of assembled versus unassembled}
+  \includegraphics[width=\textwidth]{figures/TensorVsAssembly} \\
+  \begin{itemize}
+  \item High order Jacobian stored unassembled using coefficients at quadrature points, can use local AD
+  \item Choose approximation order at run-time, independent for each field
+  \item Precondition high order using assembled lowest order method
+  \item Implementation $> 70\%$ of FPU peak, SpMV bandwidth wall $< 4\%$
+  \end{itemize}
+\end{frame}

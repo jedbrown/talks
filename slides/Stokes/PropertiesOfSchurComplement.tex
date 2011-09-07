@@ -1,0 +1,21 @@
+\begin{frame}{Properties of the Schur complement}
+  \begin{block}{Block factorization}
+    \[
+    \begin{bmatrix} A & B^T \\ B & \end{bmatrix} =
+    \begin{bmatrix} 1 & \\ BA^{-1} & 1 \end{bmatrix}
+    \begin{bmatrix} A & B^T \\ & S \end{bmatrix} =
+    \begin{bmatrix} A & \\ B & S \end{bmatrix}
+    \begin{bmatrix} 1 & A^{-1}B^T \\ & 1 \end{bmatrix}
+    \]
+    where
+    \[  S = -B A^{-1} B^T . \]
+  \end{block}
+  \begin{itemize}
+  \item $S$ is symmetric negative definite if $A$ is SPD and $B$ has full rank (discrete inf-sup condition)
+  \item $S$ is dense
+  \item We only need to multiply $B,B^T$ with vectors.
+  \item We need preconditioners for $A$ and $S$.
+  \item Any definite preconditioner can be used for $A$.
+  \item It's not obvious how to precondition $S$, more on that later.
+  \end{itemize}
+\end{frame}

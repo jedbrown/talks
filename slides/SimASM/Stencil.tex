@@ -1,0 +1,16 @@
+\begin{frame}{Stencil Operation}
+  \centering
+  \includegraphics[width=0.6\textwidth]{figures/27_point_colored}
+  \begin{itemize}
+  \item Cartesian grid, constant coefficient scalar PDE.
+  \item Forward propagation operator or Jacobi smoother.
+  \item Memory bandwidth limited? (Datta \etal 2009, SIAM Review)
+    \begin{itemize}
+    \item Cache blocking: 26 Mstencil/s (41\% of theoretical 63 at FPU peak)
+    \end{itemize}
+  \item Load/store and FPU limited?
+    \begin{itemize}
+    \item Jamming and SIMD: 93\% in L1, 70\% from DRAM
+    \end{itemize}
+  \end{itemize}
+\end{frame}

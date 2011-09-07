@@ -1,0 +1,25 @@
+\newcommand\smallterm[1]{{\color{gray} #1}}
+\begin{frame}{Conservative two-phase formulation}
+  Find momentum density $\rho\uu$, pressure $p$, and total energy density $E$:
+  \begin{gather*}
+    (\rho\uu)_t + \div (\smallterm{\rho\uu\otimes\uu} - \eta D\uu_i + p\bm 1) - \rho \bm g = 0 \\
+    \rho_t + \div \rho\uu = 0 \\
+    E_t + \div \big((E+p)\uu - k_T\nabla T - k_\omega\nabla\omega \big) - \eta D\uu_i\tcolon D\uu_i - \smallterm{\rho\uu\cdot\bm g} = 0
+  \end{gather*}
+\begin{itemize}
+\item Solve for density $\rho$, ice velocity $\uu_i$, temperature $T$, and melt fraction $\omega$ using constitutive relations.
+  \begin{itemize}
+  \item Simplified constitutive relations can be solved explicitly.
+  \item Temperature, moisture, and strain-rate dependent rheology $\eta$.
+  \item High order FEM, typically $Q_3$ momentum \& energy, SUPG (yuck).
+  \end{itemize}
+\item DAEs solved implicitly after semidiscretizing in space.
+\item Newton solver converges quadratically.
+\item Thermocoupled steady state in one nonlinear solve
+  \begin{itemize}
+  \item no time stepping needed, total cost similar to 3 semi-implicit steps
+  \item useful for inverse problems and stability analysis
+  \end{itemize}
+\item (Somewhat) robust preconditioning using nested field-split
+\end{itemize}
+\end{frame}

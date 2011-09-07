@@ -7,13 +7,11 @@
     \item Begin communication to send values to the correct process
     \item Complete the communication
   \end{itemize}
-
   \item {\kb MatSetValues(Mat A, m, rows[], n, cols[], values[], mode)}
   \begin{itemize}
     \item {\kb mode} is either INSERT\_VALUES or ADD\_VALUES
     \item Logically dense block of values
   \end{itemize}
-
 % TODO picture of MatSetValues
   \item Two phase assembly allows overlap of communication and computation
   \begin{itemize}
@@ -21,10 +19,13 @@
     \item {\kb MatAssemblyEnd(Mat m, type)}
     \item {\kb type} is either MAT\_FLUSH\_ASSEMBLY or MAT\_FINAL\_ASSEMBLY
   \end{itemize}
-
   \item<2-> For vector problems\\
     {\kb MatSetValuesBlocked(Mat A, m, rows[], \\
       \qquad\qquad n, cols[], values[], mode)}
+  \item<2-> The same assembly code can build matrices of different format
+    \begin{itemize}
+    \item choose format at run-time.
+    \end{itemize}
 \end{itemize}
 
 \end{frame}

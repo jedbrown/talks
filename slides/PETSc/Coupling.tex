@@ -1,0 +1,31 @@
+\begin{frame}{Multi-physics coupling in PETSc}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \tikzstyle{cloud} = [draw, ellipse,fill=red!20, node distance=3cm, minimum height=2em]
+      \tikzstyle{block} = [rectangle, draw, fill=blue!20, text width=5em, text centered, rounded corners, minimum height=2em]
+      \begin{tikzpicture}
+        \node [cloud] (momentum) {Momentum};
+        \node [cloud, right of=momentum] (pressure) {Pressure};
+        \node<2-> [block, opacity=0.5, fit=(momentum)(pressure), text opacity=0.8] (stokes) {Stokes};
+        \node<3-> [cloud, below=2em of momentum] (energy) {Energy};
+        \node<3-> [cloud, below=2em of pressure] (geometry) {Geometry};
+        \node<4-> [block, opacity=0.4, fit=(stokes)(momentum)(pressure)(energy)(geometry), text opacity=0.8, text height=4em] (ice) {Ice};
+        \node<5-> [block, below=2em of ice, minimum width=16em] (bl) {{Boundary \nolinebreak Layer}};
+        \node<5-> [block, below=2em of bl, minimum width=16em] (ocean) {Ocean};
+        % ]
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item package each ``physics'' independently
+      \item solve single-physics and coupled problems
+      \item semi-implicit and fully implicit
+      \item reuse residual and Jacobian evaluation unmodified
+      \item direct solvers, fieldsplit inside multigrid, multigrid inside fieldsplit without recompilation
+      \item use the best possible matrix format for each physics \\ (e.g. symmetric block size 3)
+      \item matrix-free anywhere
+      \item multiple levels of nesting
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}

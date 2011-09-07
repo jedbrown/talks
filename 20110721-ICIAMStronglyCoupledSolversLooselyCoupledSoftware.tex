@@ -1,0 +1,186 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=5}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{textpos,alltt,listings,multirow,ulem,siunitx}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\input{JedMacros.tex}
+
+\title{Strongly Coupled Solvers with Loosely Coupled Software}
+
+\author{Jed Brown\inst{1,2}, Dave May\inst{2}, and Barry Smith\inst{1}}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  \inst{1}{Argonne National Laboratory} \\
+  \inst{2}{ETH Z\"urich}
+}
+
+\date{2011-07-21}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\input{slides/MonolithicOrSplit.tex}
+
+\section{Coupling software}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/PETSc/MatGetLocalSubMatrixUsage.tex}
+\input{slides/PETSc/MatGetLocalSubMatrix.tex}
+
+\section{Applications}
+\input{slides/GroundingLine/ALEBlockForm.tex}
+\subsection{Ice Flow}
+\input{slides/VHTSolvers.tex}
+\subsection{Geodynamics}
+\begin{frame}[shrink=5]{The Drunken Seaman instability}
+  \includegraphics[width=0.9\textwidth]{figures/DrunkenSeaman} \\
+  \begin{columns}
+    \begin{column}{0.8\textwidth}
+      \begin{itemize}
+      \item Subduction and mantle convection with a free surface.
+      \item Free surface critical to long-term dynamics \\
+        (\eg mountain range formation)
+      \item Advective 0.01 CFL for stability.
+      \item Semi-implicit helps: Kaus, M\"uhlhaus, and May, 2010
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.2\textwidth}
+      \includegraphics[width=0.9\textwidth]{figures/DrunkenSeamanBottle}
+    \end{column}
+  \end{columns}
+\end{frame}
+\begin{frame}[fragile]{Fully implicit free surface}
+  \begin{itemize}
+  \item Velocity $u$, pressure $p$, Lagrangian/ALE coordinates $x$.
+    \begin{equation*}
+      J =
+      \begin{pmatrix}
+        J_{uu} & J_{up} & J_{ux} \\
+        J_{pu} & 0 & J_{ux} \\
+        J_{xu} & 0 & J_{xx}
+      \end{pmatrix} .
+    \end{equation*}
+  \item Precondition with
+    \begin{align*}
+      P &=
+      \begin{bmatrix}
+        \begin{pmatrix}
+          J_{uu} & J_{up} \\
+          J_{pu} & 0
+        \end{pmatrix} & \\
+        \begin{pmatrix}
+          J_{xu} & 0
+        \end{pmatrix}
+        & J_{xx}
+      \end{bmatrix} &
+      P_{\text{Stokes}} &=
+      \begin{pmatrix}
+        J_{uu} & 0 \\
+        J_{pu} & B_{pp}
+      \end{pmatrix}
+    \end{align*}
+  \item {\scriptsize
+\begin{verbatim}
+-dm_mat_type nest -pc_type fieldsplit
+-fieldsplit_stokes_pc_type fieldsplit
+-fieldsplit_stokes_pc_fieldsplit_type schur
+-fieldsplit_stokes_pc_fieldsplit_schur_factorization_type lower
+-fieldsplit_stokes_fieldsplit_u_pc_type mg
+\end{verbatim}
+}
+\item {\scriptsize
+\begin{verbatim}
+-dm_mat_type aij -pc_type lu -pc_factor_mat_solver_package mumps
+\end{verbatim}
+}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Block and symmetric formats, monolithic or nested
+  \item Multigrid inside or outside field splits
+  \item Can use IMEX methods $g(t,x,\dot x) = f(t,x)$
+  \item Preallocation for off-diagonal blocks
+  \item Nonlinear solvers for IMEX systems with structure
+  \item General/nonsymmetric pivoting.
+  \end{itemize}
+\end{frame}
+
+\end{document}

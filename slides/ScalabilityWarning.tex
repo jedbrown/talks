@@ -1,0 +1,20 @@
+\begin{frame}{Scalability Warning}
+  \begin{quote}\Large \centering
+    The easiest way to make software scalable \\
+    is to make it sequentially inefficient. \\
+    (Gropp 1999)
+  \end{quote}
+
+  \begin{itemize}
+  \item We really want \alert{efficient} software
+  \item Need a performance model
+    \begin{itemize}
+    \item memory bandwidth and latency
+    \item algorithmically critical operations (\eg dot products, scatters)
+    \item floating point unit
+    \end{itemize}
+  \item Scalability shows marginal benefit of adding more cores, nothing more
+  \item Constants hidden in the choice of algorithm
+  \item Constants hidden in implementation
+  \end{itemize}
+\end{frame}

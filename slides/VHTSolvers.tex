@@ -1,0 +1,67 @@
+\begin{frame}{Relative effect of the blocks}
+  \begin{equation*}\label{eq:vhtblock}
+    J =
+    \begin{pmatrix}
+      J_{uu} & J_{up} & J_{uE} \\
+      J_{pu} & 0 & 0 \\
+      J_{Eu} & J_{Ep} & J_{EE}
+    \end{pmatrix} .
+  \end{equation*}
+  \begin{itemize}
+  \item[$J_{uu}$] Viscous/momentum terms, nearly symmetric, variable coefficionts, anisotropy from Newton.
+  \item[$J_{up}$] Weak pressure gradient, viscosity dependence on pressure (small), gravitational contribution (pressure-induced density variation).
+    Large, nearly balanced by gravitational forcing.
+  \item[$J_{uE}$] Viscous dependence on energy, very nonlinear, not very large.
+  \item[$J_{pu}$] Divergence (mass conservation), nearly equal to $J_{up}^T$.
+  \item[$J_{Eu}$] Sensitivity of energy on momentum, mostly advective transport.
+    Large in boundary layers with large thermal/moisture gradients.
+  \item[$J_{Ep}$] Thermal/moisture diffusion due to pressure-melting, $\uu \cdot \nabla$.
+  \item[$J_{EE}$] Advection-diffusion for energy, very nonlinear at small regularization.
+    Advection-dominated except in boundary layers and stagnant ice, often balanced in vertical.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{How much nesting?}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{equation*}
+        P_1 =
+        \begin{pmatrix}
+          J_{uu} & J_{up} & J_{uE} \\
+          0 & B_{pp} & 0 \\
+          0 & 0 & J_{EE} \\
+        \end{pmatrix}
+      \end{equation*}
+      \begin{itemize}
+      \item $B_{pp}$ is a mass matrix in the pressure space weighted by inverse of kinematic viscosity.
+      \item Elman, Mihajlovi\'c, Wathen, JCP 2011 for non-dimensional isoviscous Boussinesq.
+      \item Works well for non-dimensional problems on the cube, not for realistic parameters.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{equation*}
+        P =
+        \begin{bmatrix}
+          \begin{pmatrix}
+            J_{uu} & J_{up} \\
+            J_{pu} & 0
+          \end{pmatrix} & \\
+          \begin{pmatrix}
+            J_{Eu} & J_{Ep}
+          \end{pmatrix}
+          & J_{EE}
+        \end{bmatrix}
+      \end{equation*}
+      \begin{itemize}
+      \item Inexact inner solve using upper-triangular with $B_{pp}$ for Schur.
+      \item Another level of nesting.
+      \item GCR tolerant of inexact inner solves.
+      \item Outer converges in 1 or 2 iterations.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \begin{itemize}
+  \item Low-order preconditioning full-accuracy unassembled high order operator.
+  \item Build these on command line with PETSc \cverb|PCFieldSplit|.
+  \end{itemize}
+\end{frame}

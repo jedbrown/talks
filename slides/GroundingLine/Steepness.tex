@@ -11,10 +11,18 @@
     \item Stress ratio: $\lambda = [\tau_{xz}]/[\tau_{\text{membrane}}]$
     \item Discontinuous: frozen to slippery transition at ice stream margins
     \end{itemize}
-  \item<2> \alert{\LARGE Bed slope is discontinuous\\ and of order 1.}
+  \item Standard approach in glaciology: \\
+    Taylor expand in $\epsilon$ and sometimes $\lambda$, drop higher order terms.
+    \begin{itemize}
+    \item[$\lambda \gg 1$] Shallow Ice Approximation (SIA), no horizontal coupling
+    \item[$\lambda \ll 1$] Shallow Shelf Approximation (SSA), 2D elliptic solve in map-plane
+    \item Hydrostatic and various hybrids, 2D or 3D elliptic solves
+    \end{itemize}
+  \item<2> \alert{\large Bed slope is discontinuous and of order 1.}
     \begin{itemize}
     \item Taylor expansions no longer valid
-    \item high resolution, subgrid parametrization, short time steps
+    \item Numerics require high resolution, subgrid parametrization, short time steps
+    \item Still get low quality results in the regions of most interest.
     \end{itemize}
   %\item<2> \alert{\LARGE Basal sliding parameters are discontinuous.}
   \end{itemize}

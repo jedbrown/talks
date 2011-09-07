@@ -1,0 +1,60 @@
+\begin{frame}{What makes compiled code slow?}
+  \begin{block}{Compilers are bad at}
+    \begin{itemize}
+    \item SIMD instructions
+    \item Alignment constraints
+    \item Register allocation
+    \item Scheduling for out-of-order execution
+    \item Transformations to reduce memory bandwidth
+    \end{itemize}
+  \end{block}
+  \begin{block}{But it's not hopeless}
+    \begin{itemize}
+    \item BG/P has rich SIMD instructions
+    \item Large kernels reuse small kernels
+    \item Register allocation usually has a pattern
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Code generation}
+  \begin{block}{Mako templates writing inline assembly}
+    \begin{itemize}
+    \item Easy to control unrolling and jamming
+    \item Hard to manage generators with complex control flow
+    \item Hard to keep track of register names and debug
+    \item How to manage in-order execution?
+    \item Smells bad
+    \end{itemize}
+  \end{block}
+  \begin{block}{SimASM: All Python}
+    \begin{itemize}
+    \item Name some or all registers, can mix pinned and unpinned registers
+    \item Build kernel using generators/loops/objects/etc
+    \item Transform to partial order according to instruction dependencies (hazards)
+    \item Transform/traverse using simulator, can debug correctness too
+    \item Hazards that cause stalls are shown and explained
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile,shrink=5]{Instruction Set}
+\begin{align*}
+  t_p &\gets a_s c_s + b_p \\
+  t_s &\gets a_s c_p + b_s
+\end{align*}
+\begin{minted}{python}
+class fxcxma(Instruction):
+  def __init__(self,rt,ra,rc,rb):
+    Instruction.__init__(self)
+    self.save(locals(),'rt ra rc rb')
+    self.reads(ra,rc,rb)
+    self.writes(rt)
+    self.uses(PPC.FP,5)
+  def run(self,c):
+    ra,rc,rb = c.access_fpregisters(self.ra,self.rc,self.rb)
+    c.fp[self.rt] = FPVal(ra.s*rc.s + rb.p,
+                          ra.s*rc.p + rb.s)
+\end{minted}
+\end{frame}
+

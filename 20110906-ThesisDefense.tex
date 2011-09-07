@@ -1,0 +1,312 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=5}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{textpos,alltt,listings,multirow,ulem,siunitx}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{Computational methods for ice flow simulation \\
+with applications to Jakobshavn Isbr{\ae}}
+\subtitle{Diss. ETH No. 19948}
+
+\author{Jed Brown}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{VAW, ETH Z\"urich}
+
+\date{2011-09-06}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{Perspective}
+\begin{frame}{Grand Challenge Problems}
+  \begin{block}{Global Prosperity Optimization}
+    Maximize the prosperity functional by adjusting energy policy, urban and groundwater planning, geoengineering projects, etc.
+  \end{block}
+  \begin{block}{Ice Sheet Stability Questions (short-term connection via Ocean)}
+    \begin{itemize}
+    \item Where is the stability manifold at Pine Island, Thwaites, and other outlet glaciers relative to current trajectories?
+    \item In the event of entering an unstable regime, how rapid would the resulting sea level rise be?
+    \item What possible anthropogenic sources have the most influence on stability and related sea level rise?
+    \item What are the errors associated with these computations?
+    \item Which field work and remote sensing studies would provide the most cost-effect way to reduce uncertainty?
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Where does computation fit in?}
+  \begin{itemize}
+  \item Scientific applications: use computation to investigate scientific questions
+    \begin{itemize}
+    \item non-model problems: messy, coupled, highly nonlinear
+    \item do not want to spend career focusing on methods
+    \item slow to respond to developments in mathematics
+    \item difficult to evaluate performance/robustness without implementing
+    \end{itemize}
+  \item Applied mathematics: create and analyze new methods
+    \begin{itemize}
+    \item identify key ingredients needed for robustness and accuracy
+    \item well-posed formulations and (quadratically) convergent methods to provide quantitative answers to scientific questions (``why'', ``how'')
+    \item demonstrate on simplified models (geometry, boundary conditions, materials)
+    \item efficient implementation not important: focus on asymptotics
+    \end{itemize}
+  \item Scientific software: make methods available and performant
+    \begin{itemize}
+    \item modify methods for robustness on wider variety of problems
+    \item make interfaces usable by non-experts
+    \item decouple from problem specification
+    \item implementation efficiency is important, follow new hardware
+    \item solved problems should not need to be revisited
+    \item reusable components: experiment in minutes instead of months
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Ingredients for ice sheets}
+  \begin{itemize}
+  \item Implicit solution algorithms and composability
+    \begin{itemize}
+    \item \alert<2>{Stokes and hydrostatic solvers}
+    \item \alert<2>{Coupling strategies: software maintainability vs. algorithms}
+    \item \alert<2>{Exposing the right capability for stability, sensitivity, optimization/inversion, uncertainty quantification}
+    \end{itemize}
+  \item Discretizations well-suited to the problem
+    \begin{itemize}
+    \item \alert<2>{technical issues: aspect ratio, inf-sup stability}
+    \item \alert<2>{surface-volume coupling, identifying stiffness,} topology change
+    \item transport-dominated regions ($\Peclet_h > 10^4$) \uncover<2>{\alert{[badly]}}
+    \item contact problems of many flavors
+    \item \alert<2>{efficiency on modern hardware, memory bandwidth bottleneck}
+    \end{itemize}
+  \item Verification and Validation
+    \begin{itemize}
+    \item \alert<2>{maintaining capability with new material models and additional coupled processes}
+    \item sparse observations: geometry, initial/boundary conditions, materials; cannot validate forward models, only inverse models
+    \end{itemize}
+  \item Conservative model for polythermal ice
+    \begin{itemize}
+    \item \alert<2>{discretization, unstructured meshing, implementation}
+    \item \alert<2>{modularity and implicit solvers}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section[Hydrostatic]{A robust multigrid solver for the hydrostatic equations}
+\input{slides/THI/Equations.tex}
+% \begin{frame}
+%   \includegraphics[width=\textwidth]{figures/THI/x-shear}
+% \end{frame}
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/THI/x-80km-m16p2l6-ew} \\
+  Grid-sequenced Newton-Krylov solution of test $X$. \\
+  \begin{itemize}
+  \item solid lines denote nonlinear iterations
+  \item dotted lines with $\times$ denote linear residuals.
+  \end{itemize}
+\end{frame}
+\input{slides/THI/Y5kmClip.tex}
+\begin{frame}
+  \begin{figure}
+    \includegraphics[width=\textwidth]{figures/THI/y-10km-m10p6l5-ew}
+    \centering\caption{Grid sequenced Newton-Krylov convergence for test $Y$.
+    The ``cliff'' has \SI{58}{\degree} angle in the red line ($12\times 125$ meter elements), \SI{73}{\degree} for the cyan line ($6\times 62$ meter elements).}\label{fig:testy}
+  \end{figure}
+\end{frame}
+\begin{frame}
+  \begin{figure}
+    \includegraphics[width=\textwidth]{figures/THI/linear4}
+    \centering\caption{Average number of Krylov iterations per nonlinear iteration.  Each nonlinear system was solved to a relative tolerance of $10^{-2}$.}\label{fig:linear}
+  \end{figure}
+\end{frame}
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/KeyesStrongWeak} \\
+  \uncover<2>{\large \alert{The easiest way to make software scalable is to make it sequentially inefficient. -- Gropp 1999}}
+\end{frame}
+\input{slides/THI/Shaheen.tex}
+\begin{frame}
+  \begin{center}
+    \alert{\huge One high-accuracy solve \\[0.2em]
+      costs 30 times as much \\[0.5em]
+      as a residual evaluation}
+  \end{center}
+  \begin{center}
+    about 15 to reach truncation error
+
+    \bigskip
+
+    \uncover<2>{\alert{\Large 1000 times faster than methods currently in use} \\
+      e.g. Lemieux, Price, Evans, Knoll, Salinger, Holland, Payne 2011 \\ (J. Computational Physics)}
+    
+    \bigskip
+
+    {(Brown, Smith, Ahmadia 2011; submitted to SIAM J. Scientific Computing)}
+  \end{center}
+\end{frame}
+
+\section{High throughput for high order finite elements}
+\begin{frame}{What hardware is coming down the pike? (2018)}
+  \begin{itemize}
+  \item DOE Exascale program forecasts
+    \begin{itemize}
+    \item $10^6$ nodes, $10^3$ threads/node, $10$ GB/node, $10$ MB/thread
+    \item 1--10 TF/node, \alert<2->{``balanced'' arithmetic intensity: 10--40 flops/byte}
+    \item deep memory hierarchy, locality crucial, ``free'' flops
+    \end{itemize}
+  \item Arithmetic intensity: flops/byte
+  \begin{itemize}
+  \item sparse matrix kernels: 0.17--0.25
+  \item matrix-free kernels: $\ge 5$
+  \end{itemize}
+\item Mitigation
+  \begin{itemize}
+  \item hierarchical methods with fewer/no global reductions
+  \item reduce memory/bandwidth usage in exchange for more flops
+    \begin{itemize}
+    \item \alert<3>{higher order methods, recompute coefficients instead of storing}
+    \end{itemize}
+  \item ``communication avoiding'': apply operators multiple times while coefficients are in cache
+    \begin{itemize}
+    \item mathematics disagrees, sacrifice algorithmic scalability
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\input{slides/Dohp/TensorVsAssembly.tex}
+\input{slides/Dohp/RepresentationOfJacobians.tex}
+
+% \input{slides/VerificationAndValidation.tex}
+% \input{slides/Dohp/ElasticityCodeVerification.tex}
+
+\section{Algebraic coupling algorithms and interfaces}
+\input{slides/MonolithicOrSplit.tex}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/PETSc/LocalSpaces.tex}
+\input{slides/PETSc/MatGetLocalSubMatrix.tex}
+
+\section{Conservative polythermal ice flow}
+\input{slides/VHTEquations.tex}
+\input{slides/VHTNondimensional.tex}
+\input{slides/VHTSolvers.tex}
+%\input{slides/VHTSmoother.tex}
+\input{slides/VHTJako.tex}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item textbook multigrid efficiency for hydrostatic ice
+  \item dual-order $h$ and $p$-version finite element library
+    \begin{itemize}
+    \item alleviate memory bandwidth bottleneck by factor of 50
+    \item run-time choice of order, compatibility for mixed spaces
+    \item $>70\%$ of FPU peak for core library kernels
+    \item geometric model is available to physics/solvers
+    \item automation of code verification
+    \end{itemize}
+  \item bridging the Great Solver Schism
+    \begin{itemize}
+    \item commuting multilevel methods with field-splitting
+    \item data structure independence for assembly
+    \item decouple software packaging from available solution algorithms
+    \end{itemize}
+  \item technical requirements for robust discretizations of ice flow
+  \item 3D implicit polythermal ice flow
+    \begin{itemize}
+    \item new conservative formulation
+    \item quadratically convergent steady-state solver
+    \item run in Jakobshavn geometry
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Need better transport algorithm: discontinuous Galerkin
+  \item Many flavors of contact: large-deformation, self, frictional, thermal
+  \item Unstructured geometric multigrid/full-space DD
+  \item Non-interactive remeshing after topology change/large deformation
+  \item Move from symbolics to AD for manufactured solutions/codegen
+  \item IMEX methods now implemented $G(t,x,\dot x) = F(t,x)$
+  \item General/nonsymmetric pivoting for full-space optimization
+  \item Uncertainty quantification for semi-smooth systems
+  \item Multi-parameter continuation for stability analysis
+  \end{itemize}
+\end{frame}
+
+\end{document}

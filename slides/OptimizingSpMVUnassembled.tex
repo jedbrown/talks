@@ -3,17 +3,21 @@
   \item High order spatial discretizations do more work per node
     \begin{itemize}
     \item Dense tensor product kernel (like small BLAS3)
-    \item Cubic ($Q_3$) elements in 3D can achieve $>60\%$ of peak FPU \\
-      (compare to $< 6\%$ for assembled operators on multicore)
+    \item Cubic ($Q_3$) elements in 3D can achieve $>70\%$ of peak FPU \\
+      (compare to $< 5\%$ for assembled operators on multicore)
     \item Can store Jacobian information at quadrature points \\
       (usually pays off for $Q_2$ and higher in 3D)
-    \item Spectral methods
+    \item Spectral, WENO, DG, FD
     \item Often still need an assembled operator for preconditioning
     \end{itemize}
   \item Boundary element methods
     \begin{itemize}
     \item Dense kernels
     \item Fast Multipole Method (FMM)
+    \end{itemize}
+  \item<2> \alert{Preconditioning requires more effort}
+    \begin{itemize}
+    \item Useful have code to assemble matrices: try out new methods quickly
     \end{itemize}
   \end{itemize}
 \end{frame}

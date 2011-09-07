@@ -22,37 +22,37 @@
   % \begin{example}[$\pp$-Bratu]
   %   Suppose $F$ is a discretization of
   %   \[ -\nabla \cdot \big( \eta \nabla u \big) - \lambda e^u - f = 0 \]
-  %   \[\eta(\gamma) = (\epsilon^2+\gamma)^{\frac{\pp-2}{2}}, \qquad\quad \gamma = \half \abs{\nabla u}^2. \]
+  %   \[\eta(\gamma) = (\epsilon^2+\gamma)^{\frac{\pfrak-2}{2}}, \qquad\quad \gamma = \half \abs{\nabla u}^2. \]
   %   Then $J(u)w$ is a discretization of
   %   \[ -\nabla \cdot \big( \eta \nabla w + \eta' (\nabla u \cdot \nabla w)\nabla u \big) - \lambda e^{u} w . \]
   % \end{example}
 \end{frame}
 
-\subsection{Linear Algebra}
+\subsection{Linear Algebra background/theory}
 \input{slides/MatrixDefinition.tex}
 \input{slides/MatricesImportant.tex}
 \input{slides/MatrixNoEntries.tex}
 \input{slides/GMRES.tex}
 
-% \section{$\pp$-Bratu}
-\begin{frame}{The $\pp$-Bratu equation}
+% \section{$\pfrak$-Bratu}
+\begin{frame}{The $\pfrak$-Bratu equation}
   \begin{itemize}
   \item 2-dimensional model problem
     \begin{equation*}
-      -\div \big(\abs{\nabla u}^{\pp-2} \nabla u \big) - \lambda e^u - f = 0, \qquad 1 \le \pp \le \infty, \quad \lambda < \lambda_{\text{crit}}(\pp)
+      -\div \big(\abs{\nabla u}^{\pfrak-2} \nabla u \big) - \lambda e^u - f = 0, \qquad 1 \le \pfrak \le \infty, \quad \lambda < \lambda_{\text{crit}}(\pfrak)
     \end{equation*}
     Singular or degenerate when $\nabla u = 0$, turning point at $\lambda_{\text{crit}}$.
   \item Regularized variant
     \begin{gather*}
       -\div (\eta \grad u) - \lambda e^u - f = 0 \\
-      \eta(\gamma) = (\epsilon^2 + \gamma)^{\frac{\pp-2}{2}} \qquad \gamma(u) = \half \abs{\grad u}^2
+      \eta(\gamma) = (\epsilon^2 + \gamma)^{\frac{\pfrak-2}{2}} \qquad \gamma(u) = \half \abs{\grad u}^2
     \end{gather*}
   \item Jacobian
     \begin{gather*}
       J(u) w \sim -\div \big[ (\eta \bm 1 + \eta' \nabla u \otimes \nabla u) \grad w \big] - \lambda e^u w \\
-      \eta' = \frac{\pp-2}{2} \eta / (\epsilon^2 + \gamma)
+      \eta' = \frac{\pfrak-2}{2} \eta / (\epsilon^2 + \gamma)
     \end{gather*}
-    Physical interpretation: conductivity tensor flattened in direction $\grad u$ %($\pp < 2$)
+    Physical interpretation: conductivity tensor flattened in direction $\grad u$ %($\pfrak < 2$)
   \end{itemize}
 \end{frame}
 
@@ -67,13 +67,13 @@
 %   \end{itemize}
 % }
 
-\subsection{SNES}
+\subsection{Nonlinear solvers: SNES}
 \input{slides/SNES/FlowControl.tex}
 \input{slides/SNES/Callbacks.tex}
 \input{slides/SNES/Function.tex}
 \input{slides/SNES/Jacobian.tex}
 
-\subsection{DA}
+\subsection{Structured grid distribution: DA}
 \begin{frame}{Distributed Array}
   \begin{itemize}
   \item Interface for topologically structured grids
@@ -109,7 +109,7 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Add $\pp$ nonlinearity}
+\begin{frame}{Add $\pfrak$ nonlinearity}
   \begin{itemize}
   \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
   \item \shell{hg update -r\Rsnesmfp}
@@ -145,7 +145,7 @@
 \input{slides/PETSc/Integration/EfficientMatrixAssembly.tex}
 \input{slides/PETSc/Integration/WhyArePETScMatricesThatWay.tex}
 
-\begin{frame}{$\pp$-Bratu assembly}
+\begin{frame}{$\pfrak$-Bratu assembly}
   \begin{itemize}
   \item Use \code{DAGetMatrix()} (can skip matrix preallocation details)
   \item Start by just assembling Bratu nonlinearity
@@ -156,9 +156,9 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{$\pp$-Bratu assembly}
+\begin{frame}{$\pfrak$-Bratu assembly}
   \begin{itemize}
-  \item We need to assemble the $\pp$ part
+  \item We need to assemble the $\pfrak$ part
     \begin{align*}
       J(u)w \quad &\sim\quad -\div \big[(\eta\bm 1 + \eta' \grad u \otimes \grad u) \grad w\big]
     \end{align*}
@@ -166,7 +166,7 @@
   \item \shell{hg update -r\Rassemblepicard}
   \item Solve exactly with the preconditioner \code{-pc\_type lu}
   \item Try \code{-snes\_mf\_operator}
-  \item Refine the grid, change $\pp$
+  \item Refine the grid, change $\pfrak$
   \item Try algebraic multigrid if available: \code{-pc\_type [ml,hypre]}
   \end{itemize}
 \end{frame}
@@ -214,8 +214,6 @@
 \end{frame}  
 
 \input{slides/PETSc/DebuggingTips.tex}
-
-\subsection{Correctness}
 
 \begin{frame}{Memory error is gone now}
 \begin{itemize}

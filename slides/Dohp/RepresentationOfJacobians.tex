@@ -1,0 +1,24 @@
+\begin{frame}[shrink=5]{Representation of Jacobians, Automation}
+  \begin{itemize}
+  \item For unassembled representations, decomposition, and assembly
+  \item Continuous weak form: find $u$
+    \[ v^T F(u) \sim \int_\Omega v \cdot {\color{green!70!black} f_0(u,\nabla u)}
+    + \nabla v \tcolon {\color{green!70!black} f_1(u,\nabla u)} = 0, \qquad \forall v \in \VV_0 \]
+  \item Weak form of the Jacobian $J(u)$: find $w$
+    \begin{gather*}
+      v^T J(u) w \sim \int_\Omega \begin{bmatrix} v^T & \nabla v^T \end{bmatrix}
+      {\color{blue} \begin{bmatrix} f_{0,0} & f_{0,1} \\ f_{1,0} & f_{1,1} \end{bmatrix}}
+      \begin{bmatrix} w \\ \nabla w \end{bmatrix} \\
+      {\color{blue} [f_{i,j}] = \begin{bmatrix} \dfrac{\partial f_0}{\partial u} & \dfrac{\partial f_0}{\partial \nabla u} \\[1em]
+          \dfrac{\partial f_1}{\partial u} & \dfrac{\partial f_1}{\partial \nabla u} \end{bmatrix} (u,\nabla u) }
+    \end{gather*}
+  \item Terms in ${\color{blue} [f_{i,j}]}$ easy to compute symbolically, AD more scalable.
+  \item Nonlinear terms ${\color{green!70!black}f_0,f_1}$ usually have the most expensive nonlinearities in the computation of scalars
+    \begin{itemize}
+    \item Equations of state, effective viscosity
+    \item Compute gradient with reverse-mode, store at quadrature points.
+    \item Perturb scalars, then use forward-mode to complete the Jacobian.
+    \item Flip for action of the adjoint.
+    \end{itemize}
+  \end{itemize}
+\end{frame}

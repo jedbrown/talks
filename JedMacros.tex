@@ -1,4 +1,4 @@
-\usepackage{slashbox,multirow,listings}
+\usepackage{slashbox,multirow,listings,booktabs}
 \usepackage{xspace}
 \makeatletter
 \DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
@@ -18,35 +18,48 @@
 
 \usepackage{siunitx}
 \DeclareSIUnit\year{a}
+\DeclareSIUnit\byte{B}
 \sisetup{retain-unity-mantissa = false}
 
+\usepackage{fancyvrb}
 \usepackage{minted}
 \newminted{c}{gobble=2}
+\newminted{python}{gobble=2}
 %\newmint[cverb]{c}{} 
 \newcommand\cverb[1][]{\SaveVerb[%
+    aftersave={\textnormal{\UseVerb[#1]{vsave}}}]{vsave}}
+\newcommand\cfunc[1][]{\SaveVerb[%
+    aftersave={\textnormal{\UseVerb[#1]{vsave}\texttt{()}}}]{vsave}}
+\newcommand\pyverb[1][]{\SaveVerb[%
     aftersave={\textnormal{\UseVerb[#1]{vsave}}}]{vsave}}
 \def\asm#1{{\tt #1}}
 \def\code#1{{\tt #1}}
 \def\shell#1{{\tt \$ #1}}
 
+\newcommand\email[1]{{\href{mailto:#1}{\nolinkurl{#1}}}}
+
 \newcommand{\II}{\mathcal{I}}
 \newcommand{\C}{\mathbb{C}}
 \newcommand{\D}{\mathcal{D}}
-\newcommand{\E}{\mathcal{E}}
+\newcommand{\EE}{\mathcal{E}}
 \newcommand{\F}{\mathcal{F}}
 \newcommand{\I}{\mathcal{I}}
 \newcommand{\N}{\mathcal{N}}
 \newcommand{\PP}{\mathcal{P}}
-\newcommand{\bigO}{\mathcal{O}}
+\newcommand\Ppc{\ensuremath{\mathsf P}}
+\newcommand{\bigO}{\ensuremath{\mathcal{O}}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\Rz}{\mathcal{R}}
 \newcommand{\QQ}{\mathcal Q}
 \newcommand{\VV}{\mathcal V}
+\newcommand{\ASM}{\mathrm{ASM}}
+\newcommand{\RASM}{\mathrm{RASM}}
+
 \newcommand{\kb}{\tt}
-\newcommand{\Pk}[1]{P_{#1}}
-\newcommand{\Qk}[1]{Q_{#1}}
-\newcommand{\Pkdisc}[1]{P_{#1}^{\text{disc}}}
-\newcommand{\Qkdisc}[1]{Q_{#1}^{\text{disc}}}
+\newcommand{\Pk}[1]{\ensuremath{P_{#1}}}
+\newcommand{\Qk}[1]{\ensuremath{Q_{#1}}}
+\newcommand{\Pkdisc}[1]{\ensuremath{P_{#1}^{\text{disc}}}}
+\newcommand{\Qkdisc}[1]{\ensuremath{Q_{#1}^{\text{disc}}}}
 \newcommand{\blue}{\textcolor{blue}}
 \newcommand{\green}{\textcolor{green!70!black}}
 \newcommand{\red}{\textcolor{red}}
@@ -58,8 +71,6 @@
 \newcommand{\st}{\mbox{subject to }}
 \newcommand{\lap}{\Delta}
 \newcommand{\grad}{\nabla}
-%\renewcommand{\div}{\nabla \cdot}
-\DeclareMathOperator{\divrg}{div}
 \newcommand\mtab{\hspace{\stretch{1}}}
 \newcommand\ud{\,\mathrm{d}}
 \newcommand\bslash{{$\backslash$}}
@@ -68,8 +79,10 @@
 \newcommand{\bigabs}[1]{\big\lvert #1 \big\rvert}
 \newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
 \newcommand\oneitem[1]{\begin{itemize} \item #1 \end{itemize}}
-\newcommand\pp{{\mathfrak p}}
+\newcommand\pfrak{{\mathfrak p}}
+\newcommand\nfrak{{\mathfrak n}}
 \newcommand\ff{\bm f}
+\newcommand\mm{\bm m}
 \newcommand\nn{\bm n}
 \newcommand\uu{\bm u}
 \newcommand\vv{\bm v}
@@ -79,10 +92,14 @@
 \DeclareMathOperator{\sgn}{sgn}
 \DeclareMathOperator{\card}{card}
 \DeclareMathOperator{\trace}{tr}
+\DeclareMathOperator{\erf}{erf}
 \DeclareMathOperator{\sspan}{span}
 \renewcommand{\bar}{\overline}
-\DeclareMathOperator{\divergence}{div}
-\renewcommand\div\divergence
+% \DeclareMathOperator{\divergence}{div}
+% \renewcommand\div\divergence
+\renewcommand{\div}{{\nabla \cdot}}
+\newcommand\spliceop{\leftrightsquigarrow}
+\newcommand\splice[5]{{#1} \overset{#5}{\underset{#3,#4}{\leftrightsquigarrow}} {#2}}
 \newcommand{\ip}[2]{{\left\langle #1, #2 \right\rangle}}
 \newcommand{\Linfty}{{L^\infty}}
 
@@ -96,5 +113,17 @@
 
 \newcommand{\PETSc}{{PETSc}}
 \newcommand{\Dohp}{{Dohp}}
+\newcommand\libmesh{\texttt{libMesh}}
+\newcommand\dealii{\texttt{Deal.II}}
+\newcommand\MatMult{\cverb|MatMult|}
+\newcommand\MatSolve{\cverb|MatSolve|}
 \newcommand{\secref}[1]{{Section~\ref{#1}}}
 \newcommand{\chapref}[1]{{Chapter~\ref{#1}}}
+\newcommand{\figref}[1]{{Figure~\ref{#1}}}
+\newcommand{\tabref}[1]{{Table~\ref{#1}}}
+\newcommand\AIJ{{\cverb|AIJ|}}
+\newcommand\AIJInode{\cverb|AIJ|/\cverb|Inode|}
+\newcommand\BAIJ[1][]{\ifthenelse{\equal{#1}{}}{\cverb|BAIJ|}{\ensuremath{\cverb|BAIJ|(#1)}}}
+\newcommand\SBAIJ[1][]{\ifthenelse{\equal{#1}{}}{\cverb|SBAIJ|}{\ensuremath{\cverb|SBAIJ|(#1)}}}
+\newcommand\todo[1]{{\color{red}\bf [TODO: #1]}}
+\newcommand\tf[1]{\hat{#1}}     % test functions
