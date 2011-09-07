@@ -5,5 +5,7 @@
 *.snm
 *.toc
 *.vrb
-*.pdf
 *.pyg
+*.bbl
+*.blg
+/*.pdf
