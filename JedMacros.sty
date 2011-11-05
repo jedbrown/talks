@@ -1,7 +1,9 @@
 \ProvidesPackage{JedMacros}
 
-\usepackage{slashbox,multirow,listings,booktabs}
+%\usepackage{slashbox}
+\usepackage{multirow,listings,booktabs}
 \usepackage{xspace}
+\usepackage[iso,american]{isodate}
 \makeatletter
 \DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
 \def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
@@ -96,6 +98,7 @@
 \DeclareMathOperator{\trace}{tr}
 \DeclareMathOperator{\erf}{erf}
 \DeclareMathOperator{\sspan}{span}
+\DeclareMathOperator{\argmin}{arg\,min}
 \renewcommand{\bar}{\overline}
 % \DeclareMathOperator{\divergence}{div}
 % \renewcommand\div\divergence

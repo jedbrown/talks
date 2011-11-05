@@ -15,7 +15,7 @@
     \end{gather*}
 
     Rearrange, eliminating $(uh)^{n+1}$
-    \[ \frac{h^{n+1} - h^n}{\Delta t} - \Delta t(gh^n h_x^{n+1})_x = -S_x^n \]
+    \[ \frac{h^{n+1} - h^n}{\Delta t} - \Delta t(gh^n h_x^{n+1})_x = -(\text{known})^n \]
   \end{block}
 \end{frame}
 
@@ -38,9 +38,10 @@
     \[ \delta uh = - \Delta t \big[ gh^n (\delta h)_x - F_1 \big] \]
   \item Fully implicit solver
     \begin{itemize}
-    \item Is nonlinearly consistent (no splitting error), can be high-order in time
-    \item Uses existing code when a semi-implicit method has been implemented
-    \item Allows efficient bifurcation analysis, steady-state analysis
+    \item Is nonlinearly consistent (no splitting error)
+    \item Implementation used same code as semi-implicit method
+    \item Efficient bifurcation analysis, steady-state analysis, data assimilation
     \end{itemize}
+  \item IMEX methods can also be high order, only need ``stiff part'' $\widehat J$
   \end{itemize}
 \end{frame}

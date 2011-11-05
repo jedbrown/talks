@@ -1,0 +1,63 @@
+\begin{frame}[shrink=5]{The Drunken Seaman instability}
+  \includegraphics[width=0.9\textwidth]{figures/DrunkenSeaman} \\
+  \begin{columns}
+    \begin{column}{0.8\textwidth}
+      \begin{itemize}
+      \item Subduction and mantle convection with a free surface.
+      \item Free surface critical to long-term dynamics \\
+        (\eg mountain range formation)
+      \item Advective 0.01 CFL for stability.
+      \item Semi-implicit helps: Kaus, M\"uhlhaus, and May, 2010
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.2\textwidth}
+      \includegraphics[width=0.9\textwidth]{figures/DrunkenSeamanBottle}
+    \end{column}
+  \end{columns}
+\end{frame}
+\begin{frame}[fragile]{Fully implicit free surface}
+  \begin{itemize}
+  \item Velocity $u$, pressure $p$, Lagrangian/ALE coordinates $x$.
+    \begin{equation*}
+      J =
+      \begin{pmatrix}
+        J_{uu} & J_{up} & J_{ux} \\
+        J_{pu} & 0 & J_{ux} \\
+        J_{xu} & 0 & J_{xx}
+      \end{pmatrix} .
+    \end{equation*}
+  \item Precondition with
+    \begin{align*}
+      P &=
+      \begin{bmatrix}
+        \begin{pmatrix}
+          J_{uu} & J_{up} \\
+          J_{pu} & 0
+        \end{pmatrix} & \\
+        \begin{pmatrix}
+          J_{xu} & 0
+        \end{pmatrix}
+        & J_{xx}
+      \end{bmatrix} &
+      P_{\text{Stokes}} &=
+      \begin{pmatrix}
+        J_{uu} & 0 \\
+        J_{pu} & B_{pp}
+      \end{pmatrix}
+    \end{align*}
+  \item {\scriptsize
+\begin{verbatim}
+-dm_mat_type nest -pc_type fieldsplit
+-fieldsplit_stokes_pc_type fieldsplit
+-fieldsplit_stokes_pc_fieldsplit_type schur
+-fieldsplit_stokes_pc_fieldsplit_schur_factorization_type lower
+-fieldsplit_stokes_fieldsplit_u_pc_type mg
+\end{verbatim}
+}
+\item {\scriptsize
+\begin{verbatim}
+-dm_mat_type aij -pc_type lu -pc_factor_mat_solver_package mumps
+\end{verbatim}
+}
+  \end{itemize}
+\end{frame}

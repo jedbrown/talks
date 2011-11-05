@@ -1,10 +1,10 @@
-\begin{frame}{IMEX time integration in PETSc-3.2}
+\begin{frame}{IMEX time integration in PETSc}
   \begin{itemize}
   \item Additive Runge-Kutta IMEX methods
-    \begin{align*}
-      G(t,x,\dot x) &= F(t,x) \\
-      J_\alpha &= \alpha G_{\dot x} + G_x
-    \end{align*}
+    \begin{gather*}
+      G(t,x,\dot x) = F(t,x) \\
+      J_\alpha = \alpha G_{\dot x} + G_x
+    \end{gather*}
     \begin{itemize}
     \item User provides:
       \begin{itemize}
@@ -16,8 +16,10 @@
     \item Choice of explicit method, \eg SSP
     \item Orders 2 through 5, embedded error estimates
     \item Dense output, hot starts for Newton
-    \item Can use more accurate methods if $G$ is linear
+    \item More accurate methods if $G$ is linear, also Rosenbrock-W
     \item Can use preconditioner from classical ``semi-implicit'' methods
+    \item Adaptive controllers, can change order within a family
+    \item Easy to register new methods
     \end{itemize}
   \item Eliminate many interface quirks
   \item Single step interface so user can have own time loop
