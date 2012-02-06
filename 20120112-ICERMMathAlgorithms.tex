@@ -1,0 +1,193 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=5}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{textpos,alltt,listings,multirow,ulem,siunitx}
+\usepackage{pdfpages}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{Mathematical Algorithms}
+%\author{Jed Brown, Felipe Cruz, Matt Knepley, Richard Mills, John Owens, Jack Poulson, Ulrike Meier Yang}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date{2012-01-12}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Unifying themes}
+  \begin{itemize}
+  \item We want to \alert{\large maximize science}.
+    \begin{itemize}
+    \item Kernel tuning and fusing helps sometimes
+    \item Huge scope remains at problem formulation
+    \end{itemize}
+  \item Raise level of abstraction at which a problem is formally specified
+    \begin{itemize}
+    \item Improves reproducibility of scientific results
+    \item Permits fusing of algorithmic stages, sometimes with better mathematical properties
+      \begin{itemize}
+      \item convergence proofs become more delicate
+      \end{itemize}
+    \end{itemize}
+  \item Algorithmic optimality is crucial
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{itemize}
+  \item Multilevel methods
+    \begin{itemize}
+    \item matrix-free and nonlinear schemes
+    \item reduce dependence on assembly and factorization
+    \item smoothers natural to discretizations (e.g. multigrid with Neumann problems)
+    \item coarse spaces for nonlocal problems (2nd kind, wave ray)
+    \item smoothers for nonlocal problems
+    \item reusing and fusing with different levels of analysis (MLMC, stability, sensitivity)
+    \item traditional robustness and generality (anisotropy, heterogeneity, saddle points, null spaces)
+    \end{itemize}
+  \item (Nonlinear) elimination for arithmetic intensity/communication reduction
+    \begin{itemize}
+    \item at element level: Hybridizable DG
+    \item at subdomain level: nonlinear Schwarz (ASPIN)
+    \item at physics level: low-Mach, IMEX
+    \end{itemize}
+  \item Reconsidering high-coefficient/highly-parallel methods
+    \begin{itemize}
+    \item Strassen
+    \item Alternative Fourier transform algorithms (FMM, butterfly, etc)
+    \item Schulz iteration for inverting structured matrices
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Advanced Analysis}
+  \begin{itemize}
+  \item Uncertainty quantification
+    \begin{itemize}
+    \item intrusive vs unintrusive methods, multilevel
+    \item uncertainty in modeling error
+    \item use subdifferentials for non-smooth processes
+    \item unified handling of heterogeneous observational data
+    \end{itemize}
+  \item PDE-constrained Optimization
+    \begin{itemize}
+    \item multi-objective
+    \item robustness
+    \item rich problem description
+    \item fusing algorithmic steps (LNK and coupled DD fuse gradients with progress)
+    \end{itemize}
+  \item Exploring stability manifolds
+    \begin{itemize}
+    \item solving bordered linear and nonlinear systems
+    \end{itemize}
+  \item (nearly) time-periodic problems
+    \begin{itemize}
+    \item identifying cycles in ocean models, turbomachinery
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{itemize}
+  \item discretizations with special properties
+    \begin{itemize}
+    \item more flops with less memory motion
+    \item more accuracy with less memory motion or with more flops
+    \item local conservation for FP/memory error detection
+    \item high order schemes with small vertex separators
+    \item continuously differentiable when possible (e.g. TVD; enables adjoints, Newton)
+    \item unified discretization frameworks enable multiphysics
+    \end{itemize}
+  \item circumventing order barriers
+    \begin{itemize}
+    \item high order downwind SSP time integrators
+    \item positivity and maximum-principle preservation with high order accuracy
+    \end{itemize}
+  \item multi-rate time integration for stiff systems
+  \item variational inequalities, contact
+    \begin{itemize}
+    \item awkwardly large spaces for inequalities
+    \item detection
+    \end{itemize}
+  \item synchronization for particle in cell methods
+  \end{itemize}
+\end{frame}
+
+\end{document}
