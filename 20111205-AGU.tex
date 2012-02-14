@@ -196,32 +196,7 @@
 \end{frame}
 
 \input{slides/Dohp/TensorVsAssembly.tex}
-
-\begin{frame}{Memory Bandwidth}
-  \begin{tabular}{lc}
-    \toprule
-    Operation                         & Arithmetic Intensity (flop/s per byte) \\
-    \midrule
-    Sparse matrix-vector product      & 1/6                  \\
-    Dense matrix-vector product       & 1/4                  \\
-    Unassembled matrix-vector product & $\approx 8$          \\
-    High-order residual evaluation    & $> 5$                \\
-    \bottomrule
-  \end{tabular}
-  \bigskip
-  \begin{tabular}{lrrr}
-    \toprule
-    Processor           & BW (GB/s) & Peak (GF/s) & Balanced AI (F/s/B) \\
-    \midrule
-    Sandy Bridge 6-core & 21*       & 150         & 7.2                 \\
-    Magny Cours 16-core & 42*       & 281         & 6.7                 \\
-    Blue Gene/Q node    & 43        & 205         & 4.8                 \\
-    GeForce 9400M       & 21        & 54          & 2.6                 \\
-    GTX 285             & 159       & 1062        & 6.8                 \\
-    Tesla M2050         & 144       & 1030        & 7.1                 \\
-    \bottomrule
-  \end{tabular}
-\end{frame}
+\input{slides/HardwareArithmeticIntensity.tex}
 
 \begin{frame}{Outlook}
   \begin{itemize}
