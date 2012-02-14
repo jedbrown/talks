@@ -21,47 +21,4 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{How much nesting?}
-  \begin{columns}
-    \begin{column}{0.5\textwidth}
-      \begin{equation*}
-        P_1 =
-        \begin{pmatrix}
-          J_{uu} & J_{up} & J_{uE} \\
-          0 & B_{pp} & 0 \\
-          0 & 0 & J_{EE} \\
-        \end{pmatrix}
-      \end{equation*}
-      \begin{itemize}
-      \item $B_{pp}$ is a mass matrix in the pressure space weighted by inverse of kinematic viscosity.
-      \item Elman, Mihajlovi\'c, Wathen, JCP 2011 for non-dimensional isoviscous Boussinesq.
-      \item Works well for non-dimensional problems on the cube, not for realistic parameters.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \begin{equation*}
-        P =
-        \begin{bmatrix}
-          \begin{pmatrix}
-            J_{uu} & J_{up} \\
-            J_{pu} & 0
-          \end{pmatrix} & \\
-          \begin{pmatrix}
-            J_{Eu} & J_{Ep}
-          \end{pmatrix}
-          & J_{EE}
-        \end{bmatrix}
-      \end{equation*}
-      \begin{itemize}
-      \item Inexact inner solve using upper-triangular with $B_{pp}$ for Schur.
-      \item Another level of nesting.
-      \item GCR tolerant of inexact inner solves.
-      \item Outer converges in 1 or 2 iterations.
-      \end{itemize}
-    \end{column}
-  \end{columns}
-  \begin{itemize}
-  \item Low-order preconditioning full-accuracy unassembled high order operator.
-  \item Build these on command line with PETSc \cverb|PCFieldSplit|.
-  \end{itemize}
-\end{frame}
+\input{slides/VHTSolversNesting.tex}

@@ -61,12 +61,14 @@ def plot_work(opts):
     ax1.loglog(xv, work_overlap(x,2,2), 'go', label='$p=2, s=3$')
     ax1.loglog(xv, y1interior*5, 'b-', label='$p=2$ x4')
     ax1.loglog(xv, work_overlap(x,2,4), 'b^', label='$p=2, s=5$')
+    ax1.set_xlabel('dofs/process')
 
     ax2.set_title('memory')
     ax2.loglog(xv, memory_overlap(x,1,1), 'r-', label='$p=1, s=1$')
     ax2.loglog(xv, memory_overlap(x,2,1), 'g-', label='$p=2, s=1$')
     ax2.loglog(xv, memory_overlap(x,2,2), 'go', label='$p=2, s=3$')
     ax2.loglog(xv, memory_overlap(x,2,4), 'b^', label='$p=2, s=5$')
+    ax2.set_xlabel('dofs/process')
 
     ax3.set_title('communication')
     ax3.loglog(xv, communication_incoming(x,1,1), 'rs', label='$p=1, s=1$')
@@ -74,6 +76,7 @@ def plot_work(opts):
     ax3.loglog(xv, communication_incoming(x,2,3), 'go', label='$p=2, s=3$')
     ax3.loglog(xv, communication_incoming(x,2,1)*5, 'b-', label='$p=2$ x5')
     ax3.loglog(xv, communication_incoming(x,2,5), 'b^', label='$p=2, s=5$')
+    ax3.set_xlabel('dofs/process')
     #ax1.set_ylabel('work (vertices)')
     #ax2.set_ylabel('communication (vertices)')
     plt.axes(ax2); plt.legend(loc='lower right')
