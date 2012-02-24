@@ -1,0 +1,23 @@
+\begin{frame}[fragile]{Monolithic nonlinear solvers}
+  \begin{block}{Coupled nonlinear multigrid accelerated by NGMRES with multi-stage smoothers}
+  \begin{Verbatim}[formatcom=\footnotesize]
+    -lidvelocity 200 -grashof 1e4
+    -snes_grid_sequence 5 -snes_monitor -snes_view
+    -snes_type ngmres
+    -npc_snes_type fas
+    -npc_snes_max_it 1
+    -npc_fas_coarse_snes_type ls
+    -npc_fas_coarse_ksp_type preonly
+    -npc_fas_snes_type ms
+    -npc_fas_snes_ms_type vltp61
+    -npc_fas_snes_max_it 1
+    -npc_fas_ksp_type preonly
+    -npc_fas_pc_type pbjacobi
+    -npc_fas_snes_max_it 1
+  \end{Verbatim}
+  \begin{itemize}
+  \item Uses only residuals and point-block diagonal
+  \item High arithmetic intensity and parallelism
+  \end{itemize}
+\end{block}
+\end{frame}

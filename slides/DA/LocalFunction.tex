@@ -2,7 +2,7 @@
 \frametitle{DA Local Function}
 
 The user provided function which calculates the nonlinear residual in 2D has signature \\
-{\kb PetscErrorCode (*lfunc)(DALocalInfo *info, \\
+{\kb PetscErrorCode (*lfunc)(DMDALocalInfo *info, \\
   \qquad \qquad \qquad Field **x, Field **r, void *ctx)}
 \begin{columns}\begin{column}{0.15\textwidth}\end{column}\begin{column}{0.85\textwidth}
 \begin{itemize}
@@ -12,14 +12,15 @@ The user provided function which calculates the nonlinear residual in 2D has sig
     \item Notice that it is a multidimensional array
   \end{itemize}
   \item[ {\kb r}:] The residual
-  \item[ {\kb ctx}:] The user context passed to {\kb DASetLocalFunction()}
+  \item[ {\kb ctx}:] The user context passed to {\kb DMSetApplicationContext()} or to SNES
 \end{itemize}
 \end{column}\end{columns}
 
 \bigskip
 
-The local DA function is activated by calling
+The local DMDA function is activated by calling
 \begin{center}
+  {\kb SNESSetDM(snes,dm)}
   {\kb SNESSetFunction(snes, r, SNESDAFormFunction, ctx)}
 \end{center}
 }

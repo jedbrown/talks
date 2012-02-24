@@ -1,0 +1,26 @@
+\begin{frame}[fragile]{Finer grained parallelism for GPU FEM}
+  \begin{itemize*}
+  \item One element per thread uses too much local memory.
+  \item Would like to use \emph{about} one quadrature point per thread.
+  \item Tensor product requires several synchronizations
+    \begin{align*}
+      % q_{ijk} &= (A_i^{i'} \otimes B_j^{j'} \otimes C_k^{k'}) x^{ijk} \\
+      % &= (A_i^{i'} \otimes I \otimes I) (I \otimes B_j^{j'} \otimes I) (I \otimes I \otimes C_k^{k'}) x^{ijk}
+      \tilde\uu &= (A \otimes B \otimes C) \bm u \\
+      &= (A \otimes I \otimes I) (I \otimes B \otimes I) (I \otimes I \otimes C) \bm u
+    \end{align*}
+  \item Accumulation easy if only one thread accumulates into a location.
+  \item Threads within a warp are implicitly synchronized, no need for \cfunc|__syncthreads|.
+  \item Synchronization scope depends on approx order
+    \begin{tabular}{llll}
+      \toprule
+      Element & \# quad pts & 32T warps/element & TB size \\
+      \midrule
+      $Q_1$ & 8 & 1/4 & any \\
+      $Q_2$ & 27 & 1 (5T unused) & any \\
+      $Q_3$ & 64 & 2 & 64 \\
+      $Q_4$ & 125 & 4 (3T unused) & 128 \\
+      \bottomrule
+    \end{tabular}
+  \end{itemize*}
+\end{frame}

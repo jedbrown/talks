@@ -1,4 +1,4 @@
-\begin{frame}{Newton iteration: foundation of SNES}
+\begin{frame}{Newton iteration: workhorse of SNES}
   \begin{textblock}{3}(11,0)
     \includegraphics[width=\textwidth]{figures/Newton}
   \end{textblock}
@@ -56,35 +56,24 @@
   \end{itemize}
 \end{frame}
 
-% \frame{
-%   \begin{itemize}
-%   \item Start with 2-Laplacian plus Bratu, define only residuals
-%   \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
-%   \item \shell{hg update -r\Rsnesmf}
-%   \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-%   \item \shell{./pbratu -da\_grid\_x 20 -da\_grid\_y 20 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-%   \item \shell{./pbratu -da\_grid\_x 40 -da\_grid\_y 40 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-%   \end{itemize}
-% }
-
 \subsection{Nonlinear solvers: SNES}
 \input{slides/SNES/FlowControl.tex}
 \input{slides/SNES/Callbacks.tex}
 \input{slides/SNES/Function.tex}
 \input{slides/SNES/Jacobian.tex}
 
-\subsection{Structured grid distribution: DA}
+\subsection{Structured grid distribution: DMDA}
 \begin{frame}{Distributed Array}
   \begin{itemize}
   \item Interface for topologically structured grids
   \item Defines (topological part of) a finite-dimensional function space
-    \oneitem{Get an element from this space: \code{DACreateGlobalVector()}}
+    \oneitem{Get an element from this space: \code{DMCreateGlobalVector()}}
   \item Provides parallel layout
   \item Refinement and coarsening
-    \oneitem{\code{DARefineHierarchy()}}
+    \oneitem{\code{DMRefineHierarchy()}}
   \item Ghost value coherence
-    \oneitem{\code{DAGlobalToLocalBegin()}}
-  \item Matrix preallocation: \oneitem{\code{DAGetMatrix()}}
+    \oneitem{\code{DMGlobalToLocalBegin()}}
+  \item Matrix preallocation: \oneitem{\code{DMCreateMatrix()} (formerly \code{DMGetMatrix()})}
   \end{itemize}
 \end{frame}
 \input{slides/DA/GhostValues.tex}
@@ -98,25 +87,141 @@
 \input{slides/DA/LocalFunction.tex}
 \input{slides/DA/BratuResidual.tex}
 
-\begin{frame}{Start with 2-Laplacian plus Bratu nonlinearity}
+\frame{
   \begin{itemize}
+  \item Start with 2-Laplacian, define only residuals
   \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
-  \item \shell{hg update -r\Rsnesmflambda}
-  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 6.7 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-  \item \shell{./pbratu -da\_grid\_x 20 -da\_grid\_y 20 \\ -lambda 6.7 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-  \item \shell{./pbratu -da\_grid\_x 40 -da\_grid\_y 40 \\ -lambda 6.7 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-  \item Watch linear and nonlinear convergence
+  \item \shell{hg update -r\Rrlap}
+  \item \shell{./pbratu -da\_refine \alert{1} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+\only<2>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 1.752912528326e+00 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 5\\
+  1 SNES Function norm 8.186334097904e-09 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 1}}
+  \item \shell{./pbratu -da\_refine \alert{2} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+\only<3>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 9.078219847428e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 15\\
+  1 SNES Function norm 2.345486877865e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 21\\
+  2 SNES Function norm 2.120611747328e-11 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 2}}
+  \item \shell{./pbratu -da\_refine \alert{3} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+\only<4>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 4.604375080629e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 29\\
+  1 SNES Function norm 4.110014777182e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 45\\
+  2 SNES Function norm 3.864064684640e-11 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 2}}
+  \item \shell{./pbratu -da\_refine \alert{4} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+\only<5->{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 2.316943448149e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 134\\
+  1 SNES Function norm 2.220182991371e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 218\\
+  2 SNES Function norm 2.203863493979e-11 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 2
+}}
+\item<6> The number of iterations is growing with grid refinement.
   \end{itemize}
-\end{frame}
+}
+
+\frame{
+  \begin{itemize}
+  \item Add Bratu nonlinearity
+  \item \shell{hg update -r\Rrbratu}
+  \item \shell{./pbratu -da\_refine 4 -snes\_monitor -ksp\_converged\_reason -snes\_mf -lambda 6.8}
+\only<2>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 2.523928952419e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 371\\
+  1 SNES Function norm 2.378016101715e-03 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 209\\
+  2 SNES Function norm 4.979483775461e-04 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 1185\\
+  3 SNES Function norm 7.198447805127e-05 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 1299\\
+  4 SNES Function norm 3.019524899772e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 1234\\
+  5 SNES Function norm 6.360412159907e-09 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 2544\\
+  6 SNES Function norm 1.974175133857e-13 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 6
+}}
+ \item \shell{./pbratu -da\_refine 4 -snes\_monitor -ksp\_converged\_reason -snes\_mf -lambda 6.8 -ksp\_gmres\_restart 300}
+\only<3>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 2.523928952419e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 75\\
+  1 SNES Function norm 2.377891871718e-03 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 60\\
+  2 SNES Function norm 4.979176174277e-04 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 63\\
+  3 SNES Function norm 7.197415857110e-05 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 77\\
+  4 SNES Function norm 3.018119513163e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 85\\
+  5 SNES Function norm 6.330165324363e-09 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 104\\
+  6 SNES Function norm 1.907493716656e-13 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 6}}
+ \item \shell{./pbratu -da\_refine 4 -snes\_monitor -ksp\_converged\_reason -snes\_mf -lambda 6.8 -ksp\_type minres}
+\only<4>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 2.523928952419e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 75\\
+  1 SNES Function norm 2.377891809517e-03 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 60\\
+  2 SNES Function norm 4.979175037852e-04 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 63\\
+  3 SNES Function norm 7.197415110757e-05 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 77\\
+  4 SNES Function norm 3.018110523948e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 86\\
+  5 SNES Function norm 6.331007767896e-09 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 104\\
+  6 SNES Function norm 1.913567537762e-13\\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 6}}
+\item<5> Restarts were costing a lot of iterations
+\item<5> This problem is SPD, can use methods that do not need restarts
+  \end{itemize}
+}
 
 \begin{frame}{Add $\pfrak$ nonlinearity}
   \begin{itemize}
   \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
-  \item \shell{hg update -r\Rsnesmfp}
-  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 1 -p 1.3 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-  \item \shell{./pbratu -da\_grid\_x 20 -da\_grid\_y 20 \\ -lambda 1 -p 1.3 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-  \item \shell{./pbratu -da\_grid\_x 40 -da\_grid\_y 40 \\ -lambda 1 -p 1.3 -snes\_mf -snes\_monitor -ksp\_converged\_reason}
-  \item Watch linear and nonlinear convergence
+  \item \shell{hg update -r\Rrpbratu}
+  \item \shell{./pbratu -da\_refine 2 -snes\_monitor -ksp\_converged\_reason -ksp\_type cg -snes\_mf -lambda 1}
+\only<2>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 7.707838205703e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 14 \\
+  1 SNES Function norm 2.786071950913e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 14 \\
+  2 SNES Function norm 2.053436183700e-05 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 16 \\
+  3 SNES Function norm 4.623664928688e-11 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 3
+}}
+  \item \shell{./pbratu -da\_refine 2 -snes\_monitor -ksp\_converged\_reason -ksp\_type cg -snes\_mf -lambda 1 -p 1.3}
+\only<3>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 5.372922175703e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 93\\
+  1 SNES Function norm 4.960941807840e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 146\\
+...\\
+ 19 SNES Function norm 1.114114799631e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 218\\
+ 20 SNES Function norm 2.614411991992e-03 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 206\\
+ 21 SNES Function norm 7.290631967536e-04 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 192\\
+ 22 SNES Function norm 7.720137073784e-05 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 127\\
+ 23 SNES Function norm 3.294214912940e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 95\\
+ 24 SNES Function norm 1.215476814277e-07 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 95\\
+ 25 SNES Function norm 4.427077405228e-09 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 25
+}}
   \end{itemize}
 \end{frame}
 
@@ -124,15 +229,59 @@
 
 \input{slides/SNES/FiniteDifferenceJacobian.tex}
 
-\begin{frame}{Add finite difference Jacobian by coloring}
+\begin{frame}{Finite difference Jacobian by coloring}
   \begin{itemize}
-  \item \shell{hg update -r\Rcolor}
-  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 1 -p 1.3 -snes\_fd -snes\_monitor -ksp\_converged\_reason}
-  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 1 -p 1.3 -fd\_jacobian -snes\_monitor -ksp\_converged\_reason}
-  \item \shell{./pbratu -da\_grid\_x 10 -da\_grid\_y 10 \\ -lambda 1 -p 1.3 -fd\_jacobian -snes\_monitor -ksp\_converged\_reason}
-  \item Try some different preconditioners (\code{jacobi,sor,asm,hypre,ml})
+  \item No new code (\shell{hg update -r\Rrpbratu})
+  \item \shell{./pbratu -da\_refine 1 -mat\_fd\_coloring\_view\_draw -draw\_pause -1}
+\only<2>{\includegraphics[width=0.7\textwidth]{figures/Mat/Coloring}}
+  \item Examples that do not use DM can use \code{-snes\_fd} (finite difference a dense Jacobian)
+  \item \shell{./pbratu -da\_refine 2 -snes\_monitor -ksp\_converged\_reason -ksp\_type cg -lambda 1 -p 5}
+\only<3>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 1.337999256479e+01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 5\\
+  1 SNES Function norm 4.221581115790e+00 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 5\\
+  2 SNES Function norm 1.318747744230e+00 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 5\\
+  3 SNES Function norm 4.004180902376e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 5\\
+  4 SNES Function norm 1.101910723937e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 5\\
+  5 SNES Function norm 2.144935275365e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 6\\
+  6 SNES Function norm 1.384267556574e-03 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 6\\
+  7 SNES Function norm 5.596157953103e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 6\\
+  8 SNES Function norm 7.299558689109e-11 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 8
+}}
+  \item \shell{./pbratu -da\_refine 2 -snes\_monitor -ksp\_converged\_reason -ksp\_type cg -lambda 1 -p 1.3}
+\only<3>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 5.372922175703e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 13\\
+  1 SNES Function norm 4.960486874742e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 9\\
+  2 SNES Function norm 3.599512943027e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 10\\
+  3 SNES Function norm 1.345553700887e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 10\\
+  4 SNES Function norm 1.178005041938e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 10\\
+  5 SNES Function norm 8.533380204312e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 12\\
+  6 SNES Function norm 7.206148357097e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 12\\
+  7 SNES Function norm 6.231065478788e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 12\\
+  8 SNES Function norm 5.528442185538e-02 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 11\\
+DIVERGED\_LINE\_SEARCH Number of Newton iterations = 8    
+}}
+  \item Add \code{-snes\_mf\_operator} (use matrix-free differencing to apply)
+  \item Add \code{-mat\_fd\_type ds} (other choice of differencing parameter)
+  \item Try some different preconditioners (\code{jacobi,sor,asm,gamg,hypre,ml})
   \item Try changing the physical parameters
-  \item May need \code{-mat\_fd\_type ds}
   \end{itemize}
 \end{frame}
 

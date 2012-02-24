@@ -1,0 +1,19 @@
+\begin{frame}{TS Examples}
+  \begin{itemize}
+  \item 1D nonlinear hyperbolic conservation laws
+    \begin{itemize}
+    \item \code{src/ts/examples/tutorials/ex9.c}
+    \item {\footnotesize \code{./ex9 -da\_grid\_x 100 -initial 1 -physics shallow -limit minmod -ts\_ssp\_type rks2 -ts\_ssp\_nstages 8 -ts\_monitor\_solution}}
+    \end{itemize}
+  \item Stiff linear advection-reaction test problem
+    \begin{itemize}
+    \item \code{src/ts/examples/tutorials/ex22.c}
+    \item {\footnotesize \code{./ex22 -da\_grid\_x 200 -ts\_monitor\_solution -ts\_type rosw -ts\_rosw\_type ra34pw2 -ts\_adapt\_monitor}}
+    \end{itemize}
+  \item 1D Brusselator (reaction-diffusion)
+    \begin{itemize}
+    \item \code{src/ts/examples/tutorials/ex25.c}
+    \item {\footnotesize \code{./ex25 -da\_grid\_x 40 -ts\_monitor\_solution -ts\_type rosw -ts\_rosw\_type 2p -ts\_adapt\_monitor}}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

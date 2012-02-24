@@ -1,0 +1,231 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=5}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{textpos,alltt,listings,multirow,ulem,siunitx}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{Utilizing Multicore and GPU Hardware for Multiphysics Simulation through Implicit High-order Finite Element Methods with Tensor Product Structure}
+\author{Jed Brown\inst{1}, Aron Ahmadia\inst{2}, Matt Knepley\inst{3}, Barry Smith\inst{1}}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  \inst{1}{Mathematics and Computer Science Division, Argonne National Laboratory} \\
+  \inst{2}{King Abdullah University of Science and Technology} \\
+  \inst{3}{Computation Institute, University of Chicago}
+}
+
+\date{2012-02-15}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\input{slides/HardwareRoadmap.tex}
+
+\begin{frame}{How to program this beast?}
+  \begin{itemize}
+  \item Decouple physics from discretization
+    \begin{itemize*}
+    \item Expose small, embarrassingly parallel operations to user
+    \item Library schedules user threads for reuse between kernels
+    \item User provides physics in kernels run at each quadrature point
+    \item Continuous weak form: find $u \in \VV_D$
+      \[ v^T F(u) \sim \int_\Omega v \cdot {\color{green!70!black} f_0(u,\nabla u)}
+      + \nabla v \tcolon {\color{green!70!black} f_1(u,\nabla u)} = 0, \qquad \forall v \in \VV_0 \]
+    \item Similar form at faces, but may involve Riemann solve
+    \end{itemize*}
+  \item Library manages reductions
+    \begin{itemize*}
+    \item Interpolation and differentiation on elements
+    \item Interaction with neighbors (limiting, edge stabilization)
+    \item Exploit tensor product structure to keep working set small
+    \item Assembly into solution/residual vector (sum over elements)
+    \end{itemize*}
+  \end{itemize}
+\end{frame}
+
+\input{slides/Dohp/TensorFEM.tex}
+\input{slides/Dohp/RepresentationOfJacobians.tex}
+\newcommand\smallterm[1]{{\color{gray} #1}}
+\begin{frame}{Conservative (non-Boussinesq) two-phase ice flow}
+  Find momentum density $\rho\uu$, pressure $p$, and total energy density $E$:
+  \begin{gather*}
+    (\rho\uu)_t + \div (\smallterm{\rho\uu\otimes\uu} - \eta D\uu_i + p\bm 1) - \rho \bm g = 0 \\
+    \rho_t + \div \rho\uu = 0 \\
+    E_t + \div \big((E+p)\uu - k_T\nabla T - k_\omega\nabla\omega \big) - \eta D\uu_i\tcolon D\uu_i - \smallterm{\rho\uu\cdot\bm g} = 0
+  \end{gather*}
+\begin{itemize}
+\item Solve for density $\rho$, ice velocity $\uu_i$, temperature $T$, and melt fraction $\omega$ using constitutive relations.
+  \begin{itemize}
+  \item Simplified constitutive relations can be solved explicitly.
+  \item Temperature, moisture, and strain-rate dependent rheology $\eta$.
+  \item High order FEM, typically $Q_3$ momentum \& energy, SUPG (yuck).
+  \end{itemize}
+\item DAEs solved implicitly after semidiscretizing in space.
+\item Preconditioning using nested fieldsplit
+\end{itemize}
+\end{frame}
+\input{slides/VHTSolversNesting.tex}
+
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/VHT/TopViewStreamline}
+\end{frame}
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/VHT/VHTJakoContourStream}
+\end{frame}
+
+\input{slides/Dohp/CPUTraversalCode.tex}
+\input{slides/GPU/FinerGrainedParallelismForGPUFEM.tex}
+\input{slides/GPU/FEMIntegrationTranspose.tex}
+
+\begin{frame}[fragile]{Avoiding copies}
+  \begin{ccode}
+    typedef enum {
+      PETSC_CUSP_UNALLOCATED,
+      PETSC_CUSP_GPU,
+      PETSC_CUSP_CPU,
+      PETSC_CUSP_BOTH
+    } PetscCUSPFlag;
+  \end{ccode}
+  \begin{itemize}
+  \item Flag used for matrices and vectors.
+  \item Data stays on GPU until it is needed on CPU (e.g. for MPI).
+  \item Control flow for matrix and vector operations resides on CPU
+    \begin{itemize}
+    \item almost all implementations run on GPU
+    \item can mix and match CPU-only and GPU-accelerated algorithms \\
+      (but would need to pay for more copies)
+    \end{itemize}
+  \item Currently always update the whole array
+    \begin{itemize}
+    \item could order for low-volume updates
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\input{slides/Dohp/TensorVsAssembly.tex}
+\input{slides/HardwareArithmeticIntensity.tex}
+
+\begin{frame}{On preconditioning and multigrid}
+  \begin{itemize}
+  \item Currently using assembled matrices for preconditioning
+  \item Want matrix-free preconditioners for high hardware utilization
+  \item Geometric $h$- and $p$-multigrid, could be FAS
+  \item Smoothers build/solve with small dense matrices
+    \begin{itemize}
+    \item ``point'' matrices: can use single threads
+    \item ``element'' matrices: need to cooperate within thread blocks
+    \item I want a dense linear algebra library to be called collectively within a thread block
+    \end{itemize}
+  \item Multiplicative (Gauss-Seidel) is algorithmically nice
+  \item Spectral analysis for polynomial/multi-stage smoothers
+  \item Coarser levels better to do on CPU
+    \begin{itemize}
+    \item Potential for additive correction to run concurrently
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Sparse matrix assembly (for preconditioning)
+    \begin{itemize}
+    \item $> 100$ GF/s for lowest order Stokes (Matt Knepley)
+    \item common ``pointwise'' physics code with CPU implementation
+    \item Dohp CPU version faster than libMesh and Deal.II for $Q_1$
+    \item $Q_1$ assembly embedded in higher order is 8\% slower than hand-rolled
+    \end{itemize}
+  \item Matrix-free tensor-product versions reliably get about 70\% of peak flops
+  \item Finer grained parallelism in GPU tensor product kernels
+  \item Can't wait for OpenCL to implement indirect function calls
+  \item Symbolic differentiation too slow, tired of hand-differentiation
+    \begin{itemize}
+    \item I want source-transformation AD with indirect function calls
+    \end{itemize}
+  \item Find correct amount of reuse between face and cell integration
+  \item Riemann solves harder to vectorize
+  \item Hide dispatch to pointwise kernels inside library
+    \begin{itemize}
+    \item Easy, but scary. Library/framework becomes \alert{\bf F}ramework.
+    \item Interoperbility of user-rolled, library-provided, and generated traversal code.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}

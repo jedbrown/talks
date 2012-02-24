@@ -1,4 +1,4 @@
-\begin{frame}{IMEX time integration in PETSc}
+\begin{frame}[shrink=5]{IMEX time integration in PETSc}
   \begin{itemize}
   \item Additive Runge-Kutta IMEX methods
     \begin{gather*}
@@ -18,8 +18,8 @@
     \item Dense output, hot starts for Newton
     \item More accurate methods if $G$ is linear, also Rosenbrock-W
     \item Can use preconditioner from classical ``semi-implicit'' methods
-    \item Adaptive controllers, can change order within a family
-    \item Easy to register new methods
+    \item Extensible adaptive controllers, can change order within a family
+    \item Easy to register new methods: \code{TSARKIMEXRegister()}
     \end{itemize}
   \item Eliminate many interface quirks
   \item Single step interface so user can have own time loop

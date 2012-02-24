@@ -1,0 +1,26 @@
+\begin{frame}[fragile]{Example $3\times 3$ problem with nested $2\times 2$ split}
+\begin{Verbatim}[formatcom=\footnotesize]
+-fieldsplit_s_ksp_type gcr
+-fieldsplit_s_ksp_rtol 1e-1
+-fieldsplit_s_ksp_monitor_vht
+-fieldsplit_s_ksp_monitor_singular_value
+-fieldsplit_s_pc_type fieldsplit
+-fieldsplit_s_pc_fieldsplit_type schur
+-fieldsplit_s_pc_fieldsplit_real_diagonal
+-fieldsplit_s_pc_fieldsplit_schur_factorization_type lower
+-fieldsplit_s_fieldsplit_u_ksp_type gmres
+-fieldsplit_s_fieldsplit_u_ksp_max_it 10
+-fieldsplit_s_fieldsplit_u_pc_type asm
+-fieldsplit_s_fieldsplit_u_sub_pc_type ilu
+-fieldsplit_s_fieldsplit_u_sub_pc_factor_levels 1
+-fieldsplit_s_fieldsplit_u_ksp_converged_reason
+-fieldsplit_s_fieldsplit_p_ksp_type preonly
+-fieldsplit_s_fieldsplit_p_ksp_max_it 1
+-fieldsplit_s_fieldsplit_p_pc_type jacobi
+-fieldsplit_e_ksp_type gmres
+-fieldsplit_e_ksp_converged_reason
+-fieldsplit_e_pc_type asm
+-fieldsplit_e_sub_pc_type ilu
+-fieldsplit_e_sub_pc_factor_levels 2
+\end{Verbatim}
+\end{frame}

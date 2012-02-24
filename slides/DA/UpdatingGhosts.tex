@@ -6,14 +6,14 @@ computation and communication
 \medskip
 
 \begin{itemize}
-  \item {\kb DAGlobalToLocalBegin(da, gvec, mode, lvec)}
+  \item {\kb DMGlobalToLocalBegin(dm, gvec, mode, lvec)}
   \begin{itemize}
     \item {\kb gvec} provides the data 
     \item {\kb mode} is either {\kb INSERT\_VALUES} or {\kb ADD\_VALUES}
     \item {\kb lvec} holds the local and ghost values
   \end{itemize}
 
-  \item {\kb DAGlobalToLocalEnd(da, gvec, mode, lvec)}
+  \item {\kb DMGlobalToLocalEnd(dm, gvec, mode, lvec)}
   \begin{itemize}
     \item Finishes the communication
   \end{itemize}
@@ -21,5 +21,5 @@ computation and communication
 
 \medskip
 
-The process can be reversed with {\kb DALocalToGlobal()}.
+The process can be reversed with {\kb DMLocalToGlobalBegin()} and {\kb DMLocalToGlobalEnd()}.
 \end{frame}

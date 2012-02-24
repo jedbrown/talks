@@ -34,7 +34,7 @@
 \end{frame}
 
 \begin{frame}{Sequential Sparse Matrices}
-{\kb MatSeqAIJPreallocation(Mat A, int nz, int nnz[])}
+{\kb MatSeqAIJSetPreallocation(Mat A, int nz, int nnz[])}
 \hbox{\qquad
 \vbox{
 \begin{itemize}
@@ -73,7 +73,7 @@
 \hbox{
 \quad
 \vbox{
-{\kb MatMPIAIJPreallocation(Mat A, int dnz, int dnnz[], \\
+{\kb MatMPIAIJSetPreallocation(Mat A, int dnz, int dnnz[], \\
   \qquad \qquad int onz, int onnz[])}
 \begin{itemize}
   \item[dnz:] expected number of nonzeros in any row in the diagonal block
@@ -87,6 +87,9 @@
 
 \begin{frame}{Verifying Preallocation}
 \begin{itemize}
+  \item Use runtime options \\
+    {\kb -mat\_new\_nonzero\_location\_err} \\
+    {\kb -mat\_new\_nonzero\_allocation\_err}
   \item Use runtime option {\kb -info}
   \item Output: \\
 {\kb

@@ -11,20 +11,20 @@
   \item Get the PETSc release
   \begin{itemize}\footnotesize
     \item \shell{\small hg clone \mtab\bslash \\
-     \scriptsize http://petsc.cs.iit.edu/petsc/releases/petsc-3.1}
-    \item \shell{cd petsc-3.1}
-    \item \shell{\scriptsize hg clone http://petsc.cs.iit.edu/petsc/releases/BuildSystem-3.1 \mtab\bslash \\
+     \scriptsize http://petsc.cs.iit.edu/petsc/releases/petsc-3.2}
+    \item \shell{cd petsc-3.2}
+    \item \shell{\scriptsize hg clone http://petsc.cs.iit.edu/petsc/releases/BuildSystem-3.2 \mtab\bslash \\
         \qquad config/BuildSystem}
     \item Get the latest bug fixes with \shell{hg pull -{}-update}
   \end{itemize}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Configuration}
+\begin{frame}[fragile]{Configuration}
 \begin{block}{Basic configuration}
 \begin{itemize}\footnotesize
   \item \shell{export PETSC\_DIR=\$PWD PETSC\_ARCH=mpich-gcc-dbg}
-  \item \shell{./configure -{}-with-shared \mtab \bslash \\
+  \item \shell{./configure -{}-with-shared-libraries \mtab \bslash \\
   	\qquad\qquad -{}-with-blas-lapack-dir=/usr \mtab\bslash \\
   	\qquad\qquad -{}-download-\{mpich,ml,hypre\}}
   \item \shell{make all test}
@@ -33,9 +33,10 @@
 \begin{itemize}
 \item Other common options
   \begin{itemize}\footnotesize
-  \item \item \code{-{}-with-mpi-dir=/path/to/mpi}
+  \item \code{-{}-with-mpi-dir=/path/to/mpi}
   \item \code{-{}-with-scalar-type=$<$real or complex$>$}
-  \item \code{-{}-with-precision=$<$single,double,longdouble$>$}
+  \item %\code{-{}-with-precision=$<$single,double,__float128$>$}
+    \verb|--with-precision=<single,double,__float128>|
   \item \code{-{}-with-64-bit-indices}
   \item \code{-{}-download-\{umfpack,mumps,scalapack,blacs,parmetis\}}
   \end{itemize}

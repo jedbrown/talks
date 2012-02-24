@@ -1,0 +1,19 @@
+\begin{frame}{The Roadmap}
+  \begin{block}{Hardware trends}
+    \begin{itemize}
+    \item More cores (keep hearing $\bigO(1000)$ per node)
+    \item Long vector registers (already 32 bytes for AVX and BG/Q)
+    \item Must use SMT to hide memory latency
+    \item Must use SMT for floating point performance (GPU, BG/Q)
+    \item Large penalty for non-contiguous memory access
+    \end{itemize}
+  \end{block}
+  \begin{block}{``Free flops'', but how can we use them?}
+    \begin{itemize}
+    \item High order methods good: better accuracy per storage
+    \item High order methods bad: work unit gets larger
+    \item GPU threads have very little memory, must keep work unit small
+    \item Need library composability, keep user contribution embarrassingly parallel
+    \end{itemize}
+  \end{block}
+\end{frame}

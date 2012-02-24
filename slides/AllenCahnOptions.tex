@@ -1,0 +1,31 @@
+\begin{frame}[fragile]{Phase field models}
+  State variables $\bm{u} = (u_1,...,u_N)^{T}$ are concentrations of different phases satisfying the inequality and sum constraints
+\[ \bm{u}(x,t) \in G = \{\bm{v}\in \mathbb{R}^{d}| v_i \geq 0, \sum_{i = 1}^{N} v_i = 1\},\quad \forall (x,t) \in Q. \]
+Minimize free energy, reduced space active set method
+\begin{equation*}
+J =
+\begin{pmatrix}
+A  & 0  & 0  & -I \\
+0  & A  & 0  & -I \\
+0  & 0  & A  & -I \\
+-I & -I & -I & 0 
+\end{pmatrix}, \qquad
+P = 
+\begin{pmatrix}
+A  & 0  & 0  & 0 \\
+0  & A  & 0  & 0 \\
+0  & 0  & A  & 0 \\
+-I & -I & -I & S_{\text{LSC}}
+\end{pmatrix}
+\end{equation*}
+\begin{Verbatim}[formatcom=\footnotesize]
+-ksp_type fgmres -pc_type fieldsplit 
+-pc_fieldsplit_detect_saddle_point 
+-pc_fieldsplit_type schur
+-pc_fieldsplit_schur_precondition self 
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_pc_type hypre
+-fieldsplit_1_ksp_type fgmres 
+-fieldsplit_1_pc_type lsc
+\end{Verbatim}
+\end{frame}

@@ -1,0 +1,45 @@
+\begin{frame}[fragile]{Multiphysics Assembly Code: Residuals}
+\begin{minted}[fontsize=\footnotesize]{c}
+FormFunction_Coupled(SNES snes,Vec X,Vec F,void *ctx) {
+  struct UserCtx *user = ctx;
+  // ...
+  SNESGetDM(snes,&pack);
+  DMCompositeGetEntries(pack,&dau,&dak);
+  DMDAGetLocalInfo(dau,&infou);
+  DMDAGetLocalInfo(dak,&infok);
+  DMCompositeScatter(pack,X,Uloc,Kloc);
+  DMDAVecGetArray(dau,Uloc,&u);
+  DMDAVecGetArray(dak,Kloc,&k);
+  DMCompositeGetAccess(pack,F,&Fu,&Fk);
+  DMDAVecGetArray(dau,Fu,&fu);
+  DMDAVecGetArray(dak,Fk,&fk);
+  FormFunctionLocal_U(user,&infou,u,k,fu); // u residual with k given
+  FormFunctionLocal_K(user,&infok,u,k,fk); // k residual with u given
+  DMDAVecRestoreArray(dau,Fu,&fu);
+  // More restores
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Multiphysics Assembly Code: Jacobians}
+\begin{minted}[fontsize=\footnotesize]{c}
+FormJacobian_Coupled(SNES snes,Vec X,Mat *J,Mat *B,...) {
+  // Access components as for residuals
+  MatGetLocalSubMatrix(*B,is[0],is[0],&Buu);
+  MatGetLocalSubMatrix(*B,is[0],is[1],&Buk);
+  MatGetLocalSubMatrix(*B,is[1],is[0],&Bku);
+  MatGetLocalSubMatrix(*B,is[1],is[1],&Bkk);
+  FormJacobianLocal_U(user,&infou,u,k,Buu);         // single physics
+  FormJacobianLocal_UK(user,&infou,&infok,u,k,Buk); // coupling
+  FormJacobianLocal_KU(user,&infou,&infok,u,k,Bku); // coupling
+  FormJacobianLocal_K(user,&infok,u,k,Bkk);         // single physics
+  MatRestoreLocalSubMatrix(*B,is[0],is[0],&Buu);
+  // More restores
+\end{minted}
+\begin{itemize}
+\item Assembly code is independent of matrix format
+\item Single-physics code is used unmodified for coupled problem
+\item No-copy fieldsplit: \verb|-pack_dm_mat_type nest -pc_type fieldsplit|
+\item Coupled direct solve: \\
+  {\scriptsize \verb|-pack_dm_mat_type aij -pc_type lu -pc_factor_mat_solver_package mumps|}
+\end{itemize}
+\end{frame}

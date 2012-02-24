@@ -6,9 +6,8 @@
 \end{equation*}
 
 \small
-% \begin{verbatim}
-\begin{minted}{c}
-BratuResidualLocal(DALocalInfo *info,Field **x,Field **f,
+\begin{minted}[fontsize=\footnotesize]{c}
+BratuResidualLocal(DMDALocalInfo *info,Field **x,Field **f,
                    UserCtx *user)
 {
   /* Not Shown: Handle boundaries */
@@ -23,7 +22,6 @@ BratuResidualLocal(DALocalInfo *info,Field **x,Field **f,
   }
 }
 \end{minted}
-%\end{verbatim}
 
 \begin{center}\small
 \$PETSC\_DIR/src/snes/examples/tutorials/ex5.c

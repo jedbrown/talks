@@ -1,17 +1,10 @@
 \begin{frame}[fragile]{SNES Jacobian}
-
 The user provided function which calculates the Jacobian has signature
-\begin{center}\small
-% {\code{PetscErrorCode (*func)(SNES snes,Vec x,Mat *J,Mat *M, \\
-%                        \qquad MatStructure *flag,void *ctx)}}
-
 \begin{minted}{c}
 PetscErrorCode (*func)(SNES snes,Vec x,Mat *J,Mat *M,
                        MatStructure *flag,void *ctx)
-                     
 \end{minted}
 
-\end{center}
 \begin{itemize}
   \item[{\kb x}:] The current solution
   \item[{\kb J}:] The Jacobian

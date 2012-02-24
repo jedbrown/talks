@@ -1,0 +1,28 @@
+\begin{frame}[fragile,shrink=5]{CPU traversal code}
+  \begin{itemize*}
+  \item CPU traversal computes coefficients of test functions, \url{https://github.com/jedbrown/dohp/}
+  \begin{ccode}
+  while (IteratorHasPatch(iter)) {
+    IteratorGetPatchApplied(iter,&Q,&jw,
+        &x,&dx,NULL,NULL,
+        &u,&du,&u_,&du_, &p,&dp,&p_,NULL, &e,&de,&e_,&de_);
+    IteratorGetStash(iter,NULL,&stash);
+    for (dInt i=0; i<Q; i++) {
+      PointwiseFunction(context,x[i],dx[i],jw[i],
+          u[i],du[i],p[i],dp[i],e[i],de[i],
+          &stash[i], u_[i],du_[i],p_[i],e_[i],de_[i]);
+    }
+    IteratorCommitPatchApplied(iter,INSERT_VALUES, NULL,NULL,
+                               u_,du_, p_,NULL, e_,de_);
+    IteratorNextPatch(iter);
+  }
+  \end{ccode}
+  \item GPU version calls \cfunc|PointwiseFunction| directly.
+  \item Unassembled Jacobian application reuses \cverb|stash|
+    \begin{ccode}
+  PointwiseJacobian(context,&stash[i],dx[i],jw[i],
+                    u[i],du[i],p[i],dp[i],e[i],de[i],
+                    u_[i],du_[i],p_[i],e_[i],de_[i]);
+    \end{ccode}
+  \end{itemize*}
+\end{frame}

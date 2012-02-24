@@ -1,12 +1,49 @@
 
-\begin{frame}{Running the driven cavity}
+\begin{frame}[fragile]{Running the driven cavity}
+\footnotesize
   \begin{itemize}
-  \item \code{./ex19 -lidvelocity 100 -grashof 1e2 -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -dmmg\_view -nlevels 3}
-  \item \code{./ex19 -lidvelocity 100 -grashof 1e4 -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -dmmg\_view -nlevels 3}
-  \item \code{./ex19 -lidvelocity 100 -grashof 1e5 -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -dmmg\_view -nlevels 3}
-  \item<2-> Uh oh, we have convergence problems
-  \item<2-> Run with \code{-snes\_monitor\_convergence}
-  \item<2-> Does \code{-dmmg\_grid\_sequence} help? 
+  \item \code{./ex50 -lidvelocity 100 -grashof \alert{1e2} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2}
+\only<2>{{\scriptsize \color{green!30!black} \tt \\
+lid velocity = 100, prandtl \# = 1, grashof \# = 1000 \\
+  0 SNES Function norm 7.682893957872e+02 \\
+  1 SNES Function norm 6.574700998832e+02 \\
+  2 SNES Function norm 5.285205210713e+02 \\
+  3 SNES Function norm 3.770968117421e+02 \\
+  4 SNES Function norm 3.030010490879e+02 \\
+  5 SNES Function norm 2.655764576535e+00 \\
+  6 SNES Function norm 6.208275817215e-03 \\
+  7 SNES Function norm 1.191107243692e-07 \\
+Number of SNES iterations = 7
+}}
+  \item \code{./ex50 -lidvelocity 100 -grashof \alert{1e4} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2}
+\only<3>{{\scriptsize \color{green!30!black} \tt \\
+lid velocity = 100, prandtl \# = 1, grashof \# = 10000 \\
+  0 SNES Function norm 7.854040793765e+02 \\
+  1 SNES Function norm 6.630545177472e+02 \\
+  2 SNES Function norm 5.195829874590e+02 \\
+  3 SNES Function norm 3.608696664876e+02 \\
+  4 SNES Function norm 2.458925075918e+02 \\
+  5 SNES Function norm 1.811699413098e+00 \\
+  6 SNES Function norm 4.688284580389e-03 \\
+  7 SNES Function norm 4.417003604737e-08 \\
+Number of SNES iterations = 7
+}}
+  \item \code{./ex50 -lidvelocity 100 -grashof \alert{1e5} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2 -pc\_type lu}
+\only<4>{{\scriptsize \color{green!30!black} \tt \\
+lid velocity = 100, prandtl \# = 1, grashof \# = 100000 \\
+  0 SNES Function norm 1.809960438828e+03 \\
+  1 SNES Function norm 1.678372489097e+03 \\
+  2 SNES Function norm 1.643759853387e+03 \\
+  3 SNES Function norm 1.559341161485e+03 \\
+  4 SNES Function norm 1.557604282019e+03 \\
+  5 SNES Function norm 1.510711246849e+03 \\
+  6 SNES Function norm 1.500472491343e+03 \\
+  7 SNES Function norm 1.498930951680e+03 \\
+  8 SNES Function norm 1.498440256659e+03 \\
+  ...
+}}
+  \item<5-> Uh oh, we have convergence problems
+  \item<5-> Does \code{-snes\_grid\_sequence} help?
   \end{itemize}
 \end{frame}
 
@@ -35,20 +72,85 @@
 \end{frame}
 
 \begin{frame}{Globalizing the lid-driven cavity}
-  \begin{block}{Pseudotransient continuation continuation ($\Psi tc$)}
+  \begin{itemize}
+  \item Pseudotransient continuation continuation ($\Psi tc$)
     \begin{itemize}
     \item Do linearly implicit backward-Euler steps, driven by
       steady-state residual
-    \item Clever way to adjust step sizes to retain quadratic
+    \item Residual-based adaptive controller retains quadratic
       convergence in terminal phase
     \end{itemize}
-  \end{block}
-  \begin{itemize}
-  \item Implemented in \code{src/snes/examples/tutorials/ex27.c}
-  \item \shell{make runex27}
-  \item Make the method linearly implicit: \code{-snes\_max\_it 1}
+  \item Implemented in \code{src/ts/examples/tutorials/ex26.c}
+  \item {\footnotesize \shell{./ex26 -ts\_type pseudo -lidvelocity 100 -grashof 1e5 -da\_grid\_x 16 -da\_grid\_y 16 -ts\_monitor}}
+\only<2>{{\tiny \color{green!30!black} \tt \\
+16x16 grid, lid velocity = 100, prandtl \# = 1, grashof \# = 100000 \\
+0 TS dt 0.03125 time 0 \\
+1 TS dt 0.034375 time 0.034375 \\
+2 TS dt 0.0398544 time 0.0742294 \\
+3 TS dt 0.0446815 time 0.118911 \\
+4 TS dt 0.0501182 time 0.169029 \\
+... \\
+24 TS dt 3.30306 time 11.2182 \\
+25 TS dt 8.24513 time 19.4634 \\
+26 TS dt 28.1903 time 47.6537 \\
+27 TS dt 371.986 time 419.64 \\
+28 TS dt 379837 time 380257 \\
+29 TS dt 3.01247e+10 time 3.01251e+10 \\
+30 TS dt 6.80049e+14 time 6.80079e+14 \\
+CONVERGED\_TIME at time 6.80079e+14 after 30 steps
+}}
+  \item<3> Make the method nonlinearly implicit: \code{-snes\_type ls -snes\_monitor}
     \oneitem{Compare required number of linear iterations}
-  \item Try increasing \code{-lidvelocity}, \code{-grashof}, and problem size
-  \item Coffey, Kelley, and Keyes, \emph{Pseudotransient continuation and differential algebraic equations}, SIAM J. Sci. Comp, 2003.
+  \item<3> Try error-based adaptivity: \code{-ts\_type rosw}
+  \item<3> Try increasing \code{-lidvelocity}, \code{-grashof}, and problem size
+  \item<3> Coffey, Kelley, and Keyes, \emph{Pseudotransient continuation and differential algebraic equations}, SIAM J. Sci. Comp, 2003.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Nonlinear multigrid (full approximation scheme)}
+\footnotesize
+  \begin{itemize}
+  \item V-cycle structure, but use nonlinear relaxation and skip the matrices
+  \item \code{./ex50 -da\_refine 4 -snes\_monitor -snes\_type \alert{nrichardson} -npc\_snes\_type fas -npc\_fas\_snes\_type gs -npc\_snes\_max\_it 1 -npc\_fas\_snes\_max\_it 6 -lidvelocity 100 -grashof 4e4}
+\only<2>{{\tiny \color{green!30!black} \tt \\
+lid velocity = 100, prandtl \# = 1, grashof \# = 40000 \\
+  0 SNES Function norm 1.065744184802e+03 \\
+  1 SNES Function norm 5.213040454436e+02 \\
+  2 SNES Function norm 6.416412722900e+01 \\
+  3 SNES Function norm 1.052500804577e+01 \\
+  4 SNES Function norm 2.520004680363e+00 \\
+  5 SNES Function norm 1.183548447702e+00 \\
+  6 SNES Function norm 2.074605179017e-01 \\
+  7 SNES Function norm 6.782387771395e-02 \\
+  8 SNES Function norm 1.421602038667e-02 \\
+  9 SNES Function norm 9.849816743803e-03 \\
+ 10 SNES Function norm 4.168854365044e-03 \\
+ 11 SNES Function norm 4.392925390996e-04 \\
+ 12 SNES Function norm 1.433224993633e-04 \\
+ 13 SNES Function norm 1.074357347213e-04 \\
+ 14 SNES Function norm 6.107933844115e-05 \\
+ 15 SNES Function norm 1.509756087413e-05 \\
+ 16 SNES Function norm 3.478180386598e-06 \\
+Number of SNES iterations = 16
+}}
+\item \code{./ex50 -da\_refine 4 -snes\_monitor -snes\_type \alert{ngmres} -npc\_snes\_type fas -npc\_fas\_snes\_type gs -npc\_snes\_max\_it 1 -npc\_fas\_snes\_max\_it 6 -lidvelocity 100 -grashof 4e4}
+\only<3>{{\tiny \color{green!30!black} \tt \\
+lid velocity = 100, prandtl \# = 1, grashof \# = 40000 \\
+  0 SNES Function norm 1.065744184802e+03 \\
+  1 SNES Function norm 9.413049447497e+01 \\
+  2 SNES Function norm 2.224880766452e+01 \\
+  3 SNES Function norm 9.189326874763e+00 \\
+  4 SNES Function norm 1.393259858466e+00 \\
+  5 SNES Function norm 8.181096927684e-01 \\
+  6 SNES Function norm 1.032746339507e-01 \\
+  7 SNES Function norm 2.180399296949e-02 \\
+  8 SNES Function norm 3.666037217003e-03 \\
+  9 SNES Function norm 6.303345712094e-04 \\
+ 10 SNES Function norm 1.336313106893e-04 \\
+ 11 SNES Function norm 2.804102467169e-05 \\
+ 12 SNES Function norm 1.265512744399e-05 \\
+ 13 SNES Function norm 3.217267233936e-06 \\
+Number of SNES iterations = 13
+}}
   \end{itemize}
 \end{frame}

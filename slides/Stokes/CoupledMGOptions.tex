@@ -1,0 +1,28 @@
+\begin{frame}[fragile]{Coupled MG for Stokes, split smoothers}
+\begin{columns}
+  \begin{column}{0.3\textwidth}
+    \begin{align*}
+      J &=
+      \begin{pmatrix}
+        A & B^T \\ B & C
+      \end{pmatrix} \\
+      P_{\text{smooth}} &=
+      \begin{pmatrix}
+        A_{\text{SOR}} & 0 \\
+        B & M
+      \end{pmatrix}
+    \end{align*}
+  \end{column}
+  \begin{column}{0.7\textwidth}
+    \includegraphics[width=\textwidth]{figures/Sinker2}
+  \end{column}
+\end{columns}
+\begin{Verbatim}[formatcom=\footnotesize]
+-pc_type mg -pc_mg_levels 5 -pc_mg_galerkin
+-mg_levels_pc_type fieldsplit
+-mg_levels_pc_fieldsplit_block_size 3
+-mg_levels_pc_fieldsplit_0_fields 0,1
+-mg_levels_pc_fieldsplit_1_fields 2
+-mg_levels_fieldsplit_0_pc_type sor
+\end{Verbatim}
+\end{frame}
