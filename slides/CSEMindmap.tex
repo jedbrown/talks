@@ -1,0 +1,40 @@
+\begin{frame}
+  \begin{center}
+    \begin{tikzpicture}
+      [small mindmap,concept color=black,text=white,
+      %level 1 concept/.append style={level distance=120,sibling angle=30},
+      extra concept/.append style={color=blue!50,text=black}]
+
+      \node [concept] {Computational Science \& Engineering}
+      child [concept color=green!50!black,grow=150] {
+        node [concept] {Application \\ Areas}[counterclockwise from=60]
+        child {node [concept] (cont) {Continuum modeling}}
+        child {node [concept] (policy) {Policy \& Market}}
+        child[grow=-150] {node [concept] (obs) {Observation}}
+        child[grow=-90] {node [concept] (qoi) {Quantities of interest}}
+      }
+      child [concept color=red,text=white,grow=30] {
+        node [concept] {Deterministic Modeling}[clockwise from=145,sibling angle=25]
+        child {node [concept] (disc) {Discretization}}
+        child {node [concept] (solver) {Solvers}}
+        child {node [concept] (alg) {Parallel Algorithms}}
+        child {node [concept] (eff) {Efficiency}}
+        child {node [concept] (software) {Software}}
+      }
+      child [concept color=blue,text=white,grow=-90] {
+        node[concept] (analysis) {Analysis \& Uncertainty}[clockwise from=0]
+        child {node [concept] (stab) {Stability}}
+        child {node [concept] (sens) {Sensitivity}}
+        child {node [concept] (opt) {Optimization}}
+        child {node [concept] (assim) {Data assimilation \\ \& validation}}
+      }
+      ;
+      \begin{pgfonlayer}{background}
+        \path (analysis) to[circle connection bar switch color=from (blue) to (red)] (software);
+        \path (cont) to[circle connection bar switch color=from (green!50!black) to (red)] (disc);
+        \path (qoi) to[circle connection bar switch color=from (green!50!black) to (blue)] (analysis);
+        \path (obs) to[circle connection bar switch color=from (green!50!black) to (blue)] (assim);
+      \end{pgfonlayer}
+    \end{tikzpicture}
+  \end{center}
+\end{frame}

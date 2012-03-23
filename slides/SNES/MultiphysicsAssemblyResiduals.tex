@@ -1,0 +1,21 @@
+\begin{frame}[fragile]{Multiphysics Assembly Code: Residuals}
+\begin{minted}[fontsize=\footnotesize]{c}
+FormFunction_Coupled(SNES snes,Vec X,Vec F,void *ctx) {
+  struct UserCtx *user = ctx;
+  // ...
+  SNESGetDM(snes,&pack);
+  DMCompositeGetEntries(pack,&dau,&dak);
+  DMDAGetLocalInfo(dau,&infou);
+  DMDAGetLocalInfo(dak,&infok);
+  DMCompositeScatter(pack,X,Uloc,Kloc);
+  DMDAVecGetArray(dau,Uloc,&u);
+  DMDAVecGetArray(dak,Kloc,&k);
+  DMCompositeGetAccess(pack,F,&Fu,&Fk);
+  DMDAVecGetArray(dau,Fu,&fu);
+  DMDAVecGetArray(dak,Fk,&fk);
+  FormFunctionLocal_U(user,&infou,u,k,fu); // u residual with k given
+  FormFunctionLocal_K(user,&infok,u,k,fk); // k residual with u given
+  DMDAVecRestoreArray(dau,Fu,&fu);
+  // More restores
+\end{minted}
+\end{frame}

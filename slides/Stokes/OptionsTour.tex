@@ -1,0 +1,123 @@
+\begin{frame}[fragile]{Stokes Example}
+The common block preconditioners for Stokes require only options:
+\begin{columns}
+\begin{column}[c]{0.74\textwidth}
+\begin{itemize}
+  \item[]<2-> \code{-pc\_type fieldsplit}
+  \item[]<2-> \code{-pc\_field\_split\_type \only<2>{additive}\only<3>{multiplicative}\only<4->{schur}}
+
+  \only<1-7>{
+  \medskip
+
+% Change ml to hypre and gamg for some
+
+% Slide to say testing is necessary ()
+%   Math should guide testing
+%   Ask Mark for references about negative results
+%   Gives algorithmic pieces to customize for different problems (No Black Box)
+
+  \item[]<2-> \code{-fieldsplit\_0\_pc\_type ml}
+  \item[]<2-> \code{-fieldsplit\_0\_ksp\_type preonly}
+
+  \medskip
+
+  \item[]<2-> \only<2-3>{\code{-fieldsplit\_1\_pc\_type jacobi}}  \only<4-6>{\code{-fieldsplit\_1\_pc\_type none}} \only<7>{\code{-fieldsplit\_1\_pc\_type lsc}}
+  \item[]<2-> \only<2-3>{\code{-fieldsplit\_1\_ksp\_type preonly}}\only<4->{\code{-fieldsplit\_1\_ksp\_type minres}}
+  }
+\end{itemize}
+\end{column}
+%
+% TODO: Add citations for each solver choice
+\begin{column}[c]{0.26\textwidth}
+\only<1-7>{
+\Huge
+\begin{equation*}
+\left(
+\only<1>{
+\begin{matrix}
+A & B \\
+B^T & 0
+\end{matrix}
+}
+\only<2>{
+\begin{matrix}
+\hat A & 0 \\
+    0  & I
+\end{matrix}
+}
+\only<3>{
+\begin{matrix}
+\hat A & B \\
+    0  & I
+\end{matrix}
+}
+\only<4>{
+\begin{matrix}
+\hat A & 0 \\
+    0  & -\hat S
+\end{matrix}
+}
+\only<5>{
+\begin{matrix}
+\hat A & 0 \\
+  B^T  & \hat S
+\end{matrix}
+}
+\only<6>{
+\begin{matrix}
+\hat A & B \\
+    0  & \hat S
+\end{matrix}
+}
+\only<7>{
+\begin{matrix}
+\hat A & B \\
+    0  & \hat S_{\text{LSC}}
+\end{matrix}
+}
+\right)
+\end{equation*}
+}
+\end{column}
+\end{columns}
+
+\medskip
+
+\only<4->{
+\hskip1pt\quad\ \ \code{-pc\_fieldsplit\_schur\_factorization\_type \only<4>{diag}\only<5>{lower}\only<6>{upper}\only<7>{full}}
+}
+
+\only<2-7>{\scriptsize
+\begin{itemize}
+\item[]
+  \only<2>{Cohouet and Chabard, \emph{Some fast 3D finite element solvers for the generalized Stokes problem}, 1988.}
+  \only<3>{Elman, \emph{Multigrid and Krylov subspace methods for the discrete Stokes equations}, 1994.}
+  \only<4-7>{May and Moresi, \emph{Preconditioned iterative methods for Stokes flow problems arising in computational geodynamics}, 2007.}
+\item[]
+  \only<4>{Olshanskii, Peters, and Reusken \emph{Uniform preconditioners for a parameter dependent saddle point problem with application to generalized Stokes interface equations}, 2006.}
+  \only<7>{Elman, Howle, Shadid, Shuttleworth, and Tuminaro, \emph{Block preconditioners based on approximate commutators}, 2006.}
+\end{itemize}
+}%\medskip
+
+\only<8>{
+\Huge
+\begin{equation*}
+\left(
+\begin{matrix}
+      I        &  0 \\
+    B^T A^{-1}  &  I
+\end{matrix}
+\right) \left(
+\begin{matrix}
+\hat A & 0 \\
+    0  & \hat S
+\end{matrix}
+\right) \left(
+\begin{matrix}
+ I & A^{-1} B \\
+ 0 & I
+\end{matrix}
+\right)
+\end{equation*}
+}
+\end{frame}

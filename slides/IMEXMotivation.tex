@@ -1,0 +1,27 @@
+\begin{frame}{Motivation for IMEX time integration}
+  \begin{itemize}
+  \item Explicit methods are easy and accurate, but must resolve all time scales
+    \begin{itemize}
+    \item reactions, acoustics, incompressibility
+    \end{itemize}
+  \item Implicit methods are robust
+    \begin{itemize}
+    \item mathematically good for stiff systems
+    \item harder to implement, need efficient solvers
+    \end{itemize}
+  \item Implicit-explicit methods are fragile and complicated
+    \begin{itemize}
+    \item Severe order reduction
+    \item Still need implicit solvers, similar complexity to implicit
+    \item \only<2>{\alert{Why bother?}}
+      \only<3->{\alert{Very expensive non-stiff residual evaluation}}
+\only<3->{
+    \item<3-> \alert{Non-stiff components are non-smooth.}
+      \begin{itemize}
+      \item TVD limiters for monotone transport
+      \item Phase change
+      \end{itemize}
+}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

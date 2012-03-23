@@ -19,6 +19,7 @@
 \usepackage[latin1]{inputenc}
 \usepackage{textpos,alltt,listings,multirow,ulem,siunitx}
 \usepackage{pdfpages}
+\usepackage{multimedia}
 \newcommand\hmmax{0}
 \newcommand\bmmax{0}
 \usepackage{bm}
@@ -30,15 +31,16 @@
 % \usepackage{courier}
 \usepackage[T1]{fontenc}
 \usepackage{tikz}
-\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning]
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning,trees,mindmap,backgrounds]
 
 % \usepackage{pgfpages}
 % \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
 
 \usepackage{JedMacros}
 
-\title{Towards Algorithmic and Software Composability for Implicit Multiphysics with High Throughput}
-\author{Jed Brown\inst{1}, Matt Knepley\inst{2}, Dave May\inst{3}, Barry Smith\inst{1}}
+\title{Towards High Throughput Composable Multilevel Solvers for Implicit Multiphysics Simulation}
+\author{Jed Brown\inst{1},\\
+Matt Knepley\inst{2}, Dave May\inst{3}, Barry Smith\inst{1}}
 
 
 % - Use the \inst command only if there are several affiliations.
@@ -50,7 +52,7 @@
   \inst{3}{ETH Z\"urich}
 }
 
-\date{ICES 2012-02-23}
+\date{MIT 2012-03-21}
 
 % This is only inserted into the PDF information catalog. Can be left
 % out.
@@ -97,15 +99,18 @@
   \titlepage
 \end{frame}
 
+\input{slides/CSEMindmap.tex}
+
 \section{Composable Solvers}
 \input{slides/MultiphysicsExamples.tex}
 \input{slides/MonolithicOrSplit.tex}
 \input{slides/PETSc/Coupling.tex}
 \input{slides/FieldSplit.tex}
 \input{slides/PETSc/LocalSpaces.tex}
-\input{slides/SNES/MultiphysicsAssemblyResiduals.tex}
 \input{slides/SNES/MultiphysicsAssemblyJacobians.tex}
 \input{slides/PETSc/MatGetLocalSubMatrix.tex}
+\input{slides/Stokes/OptionsTour.tex}
+\input{slides/Stokes/CoupledMGOptions.tex}
 \input{slides/SNES/MonolithicFASMultistage.tex}
 \begin{frame}{Nonlinear solvers in PETSc SNES}
   \begin{description}
@@ -115,27 +120,64 @@
   \item[QN] Quasi-Newton methods like BFGS
   \item[NGMRES] Nonlinear GMRES
   \item[NCG] Nonlinear Conjugate Gradients
-  \item[SORQN] SOR quasi-Newton
-  \item[GS] Nonlinear Gauss-Seidel sweeps
+  \item[SORQN] Multiplicative Schwarz quasi-Newton
+  \item[GS] Nonlinear Gauss-Seidel/multiplicative Schwarz sweeps
   \item[FAS] Full approximation scheme (nonlinear multigrid)
   \item[MS] Multi-stage smoothers, often used with FAS for hyperbolic problems
   \item[Shell] Your method, often used as a (nonlinear) preconditioner
   \end{description}
 \end{frame}
 
+\input{slides/DrunkenSeaman.tex}
 \setbeamertemplate{background canvas}{}
 \includepdf[pages=1-3]{davemay.pdf}
 
+\input{slides/GroundingLine/ThwaitesPIG.tex}
+\input{slides/GroundingLine/Steepness.tex}
+\begin{frame}
+  \includegraphics[width=0.8\textwidth]{figures/VHT/VHTJakoContourStream}
+\end{frame}
+\begin{frame}{Polythermal ice}
+  \begin{itemize}
+  \item Interface tracking methods (Greve's SICOPOLIS)
+    \begin{itemize}
+    \item Different fields for temperate and cold ice.
+    \item Lagrangian or Eulerian, problems with changing topology
+    \item No discrete conservation
+    \end{itemize}
+  \item Interface capturing
+    \begin{itemize}
+    \item Enthalpy: Aschwanden, Bueler, Khroulev, Blatter (J. Glac. 2012)
+      \begin{itemize}
+      \item Not in conservation form
+      \item Only conservative for infinitesimal melt fraction
+      \end{itemize}
+    \item Energy
+      \begin{itemize}
+      \item Conserves mass, momentum, and energy for arbitrary melt fraction
+      \item Implicit equation of state
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
 \input{slides/VHTEquationsSimple.tex}
 \input{slides/VHTSolvers.tex}
-\input{slides/VHTSolverOptions.tex}
-\input{slides/Stokes/CoupledMGOptions.tex}
+%\input{slides/VHTSolverOptions.tex}
 
 \input{slides/AllenCahnOptions.tex}
 
+\section{Time Integration}
+\input{slides/IMEXMotivation.tex}
 \input{slides/PETSc/TSARKIMEX.tex}
 \input{slides/TS/IMEXPlots.tex}
-\begin{frame}{Outlook}
+\begin{frame}{3D Resistive MHD}
+  \includegraphics[width=\textwidth]{figures/MHD.png}
+  \begin{itemize}
+  \item Designing IMEX methods with specific stability properties, e.g. $L$-stable implicit, $A$-stable embedded, SSP explicit with optimal stability on the imaginary axis.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outlook on Solver Composition}
   \begin{itemize}
   \item Unintrusive composition of multigrid and block preconditioning
   \item We can build many preconditioners from the literature \\
@@ -148,17 +190,12 @@
     \item Algebraic coarsening of ``dual'' variables
     \item Improving operator-dependent semi-geometric multigrid
     \item More automatic spectral analysis and smoother optimization
-    \item Better interaction with IMEX time integration
-    \begin{itemize}
-    \item Additive Runge-Kutta, Rosenbrock-W, linear multistep
-    \item Composability with FAS
-    \item Parallel-in-time approaches
-    \end{itemize}
+    \item Automated support for mixing analysis into levels
   \end{itemize}
 \end{block}
 \end{frame}
 
-\section{Throughput}
+\section{Implementation Efficiency}
 \input{slides/HardwareRoadmap.tex}
 
 \begin{frame}{How to program this beast?}
@@ -185,15 +222,15 @@
 
 \input{slides/Dohp/TensorFEM.tex}
 \input{slides/Dohp/RepresentationOfJacobians.tex}
-\input{slides/Dohp/CPUTraversalCode.tex}
+%\input{slides/Dohp/CPUTraversalCode.tex}
 \input{slides/Dohp/TensorVsAssembly.tex}
 \input{slides/HardwareArithmeticIntensity.tex}
 \input{slides/GPU/FinerGrainedParallelismForFEM.tex}
 \input{slides/GPU/FEMIntegrationTranspose.tex}
 \begin{frame}{On preconditioning and multigrid}
   \begin{itemize}
-  \item Currently using assembled matrices for preconditioning
-  \item Want matrix-free preconditioners for high hardware utilization
+  \item Often using assembled matrices for preconditioning
+  \item Prefer matrix-free preconditioners for high hardware utilization
   \item Geometric $h$- and $p$-multigrid, could be FAS
   \item Smoothers build/solve with small dense matrices
     \begin{itemize}
@@ -233,6 +270,15 @@
     \item Easy, but scary. Library/framework becomes \alert{\bf F}ramework.
     \item Interoperbility of user-rolled, library-provided, and generated traversal code.
     \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}\LARGE
+  \begin{itemize}
+  \item Maximize science per Watt
+  \item Huge scope remains at problem formulation
+  \item Raise level of abstraction at which a problem is formally specified
+  \item Algorithmic optimality is crucial
   \end{itemize}
 \end{frame}
 
