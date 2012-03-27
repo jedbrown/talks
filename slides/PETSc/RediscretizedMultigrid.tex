@@ -1,0 +1,31 @@
+\begin{frame}{Rediscretized Multigrid using \texttt{DM}}
+  \begin{itemize}
+{\scriptsize
+  \item \texttt{DM} manages problem data beyond purely algebraic objects
+    \begin{itemize}
+    \item structured, redundant, and (less mature) unstructured implementations in PETSc
+    \item third-party implementations
+    \end{itemize}
+  \item \texttt{DMCoarsen(dmfine,coarse\_comm,\&coarsedm)} to create ``geometric'' coarse level
+    \begin{itemize}
+    \item Also \texttt{DMRefine()} for grid sequencing and convenience
+    \item \texttt{DMCoarsenHookAdd()} for external clients to move resolution-dependent data for rediscretization and FAS
+    \end{itemize}
+  \item \texttt{DMCreateInterpolation(dmcoarse,dmfine,\&Interp,\&Rscale)}
+    \begin{itemize}
+    \item Usually uses geometric information, can be operator-dependent
+    \item Can be improved subsequently, e.g. using energy-minimization from AMG
+    \end{itemize}
+  \item \texttt{DMCreateDecomposition(dm,\&nsplits,\&splitnames,\&splits,\&dms)}
+    \begin{itemize}
+    \item New/tentative API to expose split information to preconditioner and nonlinear solvers
+    \item Can have multiple named decompositions
+    \end{itemize}
+  \item Resolution-dependent solver-specific callbacks use attribute caching on \texttt{DM}.
+    \begin{itemize}
+    \item Managed by solvers, not visible to users unless they need exotic things (e.g. custom homogenization, reduced models)
+    %\item This implementation aspect is subject to change, but should not affect user interface.
+    \end{itemize}
+}
+  \end{itemize}
+\end{frame}

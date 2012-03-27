@@ -1,0 +1,164 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=100}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{textpos,alltt,listings,multirow,ulem,siunitx}
+\usepackage{pdfpages}
+\usepackage{multimedia}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning,trees,mindmap,backgrounds]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{Commuting block preconditioning with multigrid}
+\author{{\bf Jed Brown}\inst{1},\\
+Mark Adams\inst{2}, Peter Brune\inst{1}, Matt Knepley\inst{3}, Dave May\inst{4}, \\ Lois Curfman McInnes\inst{1}, Barry Smith\inst{1}}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  \inst{1}{Mathematics and Computer Science Division, Argonne National Laboratory} \\
+  \inst{2}{Columbia University} \\
+  \inst{3}{Computation Institute, University of Chicago} \\
+  \inst{4}{ETH Z\"urich}
+}
+
+\date{Copper Mountain 2012-03-27}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\input{slides/MultiphysicsExamples.tex}
+\input{slides/MonolithicOrSplit.tex}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/FieldSplit.tex}
+\input{slides/PETSc/LocalSpaces.tex}
+\input{slides/SNES/MultiphysicsAssemblyJacobians.tex}
+\input{slides/PETSc/MatGetLocalSubMatrix.tex}
+\input{slides/Stokes/OptionsTour.tex}
+\input{slides/Stokes/CoupledMGOptions.tex}
+\input{slides/PETSc/RediscretizedMultigrid.tex}
+
+\input{slides/SNES/MonolithicFASMultistage.tex}
+\begin{frame}{Nonlinear solvers in PETSc SNES}
+  \begin{description}
+  \item[LS, TR] Newton-type with line search and trust region
+  \item[NRichardson] Nonlinear Richardson, usually preconditioned
+  \item[VIRS, VIRSAUG, and VISS] reduced space and semi-smooth methods for variational inequalities
+  \item[QN] Quasi-Newton methods like BFGS
+  \item[NGMRES] Nonlinear GMRES
+  \item[NCG] Nonlinear Conjugate Gradients
+  \item[SORQN] Multiplicative Schwarz quasi-Newton
+  \item[GS] Nonlinear Gauss-Seidel/multiplicative Schwarz sweeps
+  \item[FAS] Full approximation scheme (nonlinear multigrid)
+  \item[MS] Multi-stage smoothers, often used with FAS for hyperbolic problems
+  \item[Shell] Your method, often used as a (nonlinear) preconditioner
+  \end{description}
+\end{frame}
+\input{slides/SNES/QuasiNewtonRevisited.tex}
+
+\input{slides/DrunkenSeaman.tex}
+\setbeamertemplate{background canvas}{}
+\includepdf[pages=1-3]{davemay.pdf}
+
+\input{slides/VHTEquationsSimple.tex}
+\input{slides/VHTSolvers.tex}
+%\input{slides/VHTSolverOptions.tex}
+\input{slides/Dohp/TensorVsAssembly.tex}
+
+\input{slides/AllenCahnOptions.tex}
+
+\input{slides/PETSc/TSARKIMEX.tex}
+
+\begin{frame}{Outlook on Solver Composition}
+  \begin{itemize}
+  \item Unintrusive composition of multigrid and block preconditioning
+  \item We can build many preconditioners from the literature \\
+    \emph{on the command line}
+  \item User code does not depend on matrix format, preconditioning method, nonlinear solution method, time integration method (implicit or IMEX), or size of coupled system (except for driver).
+  \item Similar infrastructure extends to nonlinear methods
+  \end{itemize}
+  \begin{block}{In development}
+    \begin{itemize}
+    \item Distributive relaxation, Vanka smoothers, coarsening for ``dual'' variables
+    \item Improving operator-dependent semi-geometric multigrid
+    \item More automatic spectral analysis and smoother optimization
+    \item Automated support for mixing analysis into levels
+    \item Nonlinear change of basis for preconditioner
+    \item IMEX time stepping with FAS
+  \end{itemize}
+\end{block}
+\end{frame}
+\end{document}

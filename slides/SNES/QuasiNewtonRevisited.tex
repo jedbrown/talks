@@ -1,0 +1,47 @@
+\begin{frame}[shrink=5]{Quasi-Newton revisited: ameliorating setup costs}
+    \begin{itemize}
+    \item Newton-Krylov with analytic Jacobian
+{\footnotesize
+      \begin{tabular}{lllll}
+        \toprule
+        Lag & FunctionEval & JacobianEval & PCSetUp & PCApply \\
+        \midrule
+        % 14 & 11 & 11 & 11 \\
+        1 bt & 12 & 8 & 8 & 31 \\
+        1 cp & 31 & 6 & 6 & 24 \\
+        2 bt & \multicolumn{4}{c}{--- diverged ---} \\
+        2 cp & 41 & 4 & 4 & 35 \\
+        3 cp & 50 & 4 & 4 & 44 \\
+        \bottomrule
+      \end{tabular}
+}
+    \item Jacobian-free Newton-Krylov with lagged preconditioner
+{\footnotesize
+      \begin{tabular}{lllll}
+        \toprule
+        Lag & FunctionEval & JacobianEval & PCSetUp & PCApply \\
+        \midrule
+        1 bt & 23 & 11 & 11 & 31 \\
+        2 bt & 48 & 4 & 4 & 36 \\
+        3 bt & 64 & 3 & 3 & 52 \\
+        4 bt & 87 & 3 & 3 & 75 \\
+        \bottomrule
+      \end{tabular}
+}
+    \item Limited-memory Quasi-Newton/BFGS with lagged solve for $H_0$
+{\footnotesize
+      \begin{tabular}{llllll}
+        \toprule
+        Restart & $H_0$ & FunctionEval & JacobianEval & PCSetUp & PCApply \\
+        \midrule
+        1 cp & $10^{-5}$ & 17 & 4 & 4 & 35 \\
+        1 cp & preonly & 21 & 5 & 5 & 10 \\
+        3 cp & $10^{-5}$ & 21 & 3 & 3 & 43 \\
+        3 cp & preonly & 23 & 3 & 3 & 11 \\
+        6 cp & $10^{-5}$ & 29 & 2 & 2 & 60 \\
+        6 cp & preonly & 29 & 2 & 2 & 14 \\
+        \bottomrule
+      \end{tabular}
+}
+    \end{itemize}
+\end{frame}
