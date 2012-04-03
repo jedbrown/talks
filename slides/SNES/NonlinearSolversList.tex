@@ -1,0 +1,15 @@
+\begin{frame}{Nonlinear solvers in PETSc SNES}
+  \begin{description}
+  \item[LS, TR] Newton-type with line search and trust region
+  \item[NRichardson] Nonlinear Richardson, usually preconditioned
+  \item[VIRS, VIRSAUG, and VISS] reduced space and semi-smooth methods for variational inequalities
+  \item[QN] Quasi-Newton methods like BFGS
+  \item[NGMRES] Nonlinear GMRES
+  \item[NCG] Nonlinear Conjugate Gradients
+  \item[SORQN] Multiplicative Schwarz quasi-Newton
+  \item[GS] Nonlinear Gauss-Seidel/multiplicative Schwarz sweeps
+  \item[FAS] Full approximation scheme (nonlinear multigrid)
+  \item[MS] Multi-stage smoothers, often used with FAS for hyperbolic problems
+  \item[Shell] Your method, often used as a (nonlinear) preconditioner
+  \end{description}
+\end{frame}

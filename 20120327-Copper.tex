@@ -112,21 +112,7 @@ Mark Adams\inst{2}, Peter Brune\inst{1}, Matt Knepley\inst{3}, Dave May\inst{4},
 \input{slides/PETSc/RediscretizedMultigrid.tex}
 
 \input{slides/SNES/MonolithicFASMultistage.tex}
-\begin{frame}{Nonlinear solvers in PETSc SNES}
-  \begin{description}
-  \item[LS, TR] Newton-type with line search and trust region
-  \item[NRichardson] Nonlinear Richardson, usually preconditioned
-  \item[VIRS, VIRSAUG, and VISS] reduced space and semi-smooth methods for variational inequalities
-  \item[QN] Quasi-Newton methods like BFGS
-  \item[NGMRES] Nonlinear GMRES
-  \item[NCG] Nonlinear Conjugate Gradients
-  \item[SORQN] Multiplicative Schwarz quasi-Newton
-  \item[GS] Nonlinear Gauss-Seidel/multiplicative Schwarz sweeps
-  \item[FAS] Full approximation scheme (nonlinear multigrid)
-  \item[MS] Multi-stage smoothers, often used with FAS for hyperbolic problems
-  \item[Shell] Your method, often used as a (nonlinear) preconditioner
-  \end{description}
-\end{frame}
+\input{slides/SNES/NonlinearSolversList.tex}
 \input{slides/SNES/QuasiNewtonRevisited.tex}
 
 \input{slides/DrunkenSeaman.tex}
