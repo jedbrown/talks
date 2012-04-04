@@ -1,0 +1,163 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=100}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{textpos,alltt,listings,multirow,ulem,siunitx}
+\usepackage{pdfpages}
+\usepackage{multimedia}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning,trees,mindmap,backgrounds]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{Scalable and Composable Implicit Solvers for Polythermal Ice Flow with Steep Topography}
+\author{{\bf Jed Brown}\inst{1},\\
+Matt Knepley\inst{2}, Dave May\inst{3}, Barry Smith\inst{1}}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  \inst{1}{Mathematics and Computer Science Division, Argonne National Laboratory} \\
+  \inst{2}{Computation Institute, University of Chicago} \\
+  \inst{3}{ETH Z\"urich}
+}
+
+\date{SCA 2012-04-03}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%\input{slides/GroundingLine/ThwaitesPIG.tex}
+\input{slides/GroundingLine/Steepness.tex}
+\input{slides/THI/Equations.tex}
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/THI/x-80km-m16p2l6-ew} \\
+  Grid-sequenced Newton-Krylov solution of test $X$.  The solid lines denote nonlinear iterations, and the dotted lines with $\times$ denote linear residuals.
+\end{frame}
+\input{slides/THI/Y5kmClip.tex}
+\begin{frame}
+  \begin{figure}
+    \includegraphics[width=\textwidth]{figures/THI/y-10km-m10p6l5-ew}
+    \centering\caption{Grid sequenced Newton-Krylov convergence for test $Y$.
+    The ``cliff'' has \SI{58}{\degree} angle in the red line ($12\times 125$ meter elements), \SI{73}{\degree} for the cyan line ($6\times 62$ meter elements).}\label{fig:testy}
+  \end{figure}
+\end{frame}
+\begin{frame}
+  \includegraphics[width=0.8\textwidth]{figures/VHT/VHTJakoContourStream}
+\end{frame}
+\input{slides/VHTMotivation.tex}
+\input{slides/VHTEquationsSimple.tex}
+
+\input{slides/MonolithicOrSplit.tex}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/FieldSplit.tex}
+\input{slides/PETSc/LocalSpaces.tex}
+\input{slides/SNES/MultiphysicsAssemblyJacobians.tex}
+\input{slides/Stokes/OptionsTour.tex}
+\input{slides/Stokes/CoupledMGOptions.tex}
+%\input{slides/PETSc/RediscretizedMultigrid.tex}
+
+%\input{slides/SNES/MonolithicFASMultistage.tex}
+\input{slides/SNES/NonlinearSolversList.tex}
+\input{slides/SNES/QuasiNewtonRevisited.tex}
+
+\input{slides/VHTSolvers.tex}
+%\input{slides/VHTSolverOptions.tex}
+\input{slides/Dohp/TensorVsAssembly.tex}
+\input{slides/HardwareArithmeticIntensity.tex}
+\input{slides/Dohp/PMultigrid.tex}
+
+\input{slides/GroundingLine/Normals.tex}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Unintrusive composition of multigrid and block preconditioning
+  \item We can build many preconditioners from the literature \\
+    \emph{on the command line}
+  \item User code does not depend on matrix format, preconditioning method, nonlinear solution method, time integration method (implicit or IMEX), or size of coupled system (except for driver).
+  \item Similar infrastructure extends to nonlinear methods
+  \item Preliminary implementations on GPU
+  \end{itemize}
+  \begin{block}{In development}
+    \begin{itemize}
+    \item Distributive relaxation and Vanka smoothers
+    \item Improved operator-dependent semi-geometric multigrid
+    \item Automated support for mixing analysis/UQ into levels
+    \item IMEX time stepping for geometry evolution
+    \item Special basis functions for corners
+  \end{itemize}
+\end{block}
+\end{frame}
+\end{document}

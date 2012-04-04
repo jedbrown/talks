@@ -1,0 +1,22 @@
+\begin{frame}{One level of $p$-multigrid}
+  \begin{itemize}
+  \item Want to skip assembly on finest level (for better throughput)
+  \item High order operators lack $h$-ellipticity
+    \begin{itemize}
+    \item Necessary and sufficient condition for existence of pointwise smoother
+    \end{itemize}
+  \item Use embedded low-order operator as smoother
+    \begin{itemize}
+    \item Rescaled to recover a consistent inner product
+    \item Does not destroy symmetry for point-block Jacobi
+    \end{itemize}
+  \item Polynomial smoothers
+    \begin{itemize}
+    \item Target upper part of PBJacobi-preconditioned spectrum
+    \item Efficient GPU implementation
+    \end{itemize}
+  \item Reordered incomplete factorization to couple ``columns''
+  \item Operator-dependent interpolation is more delicate
+  \item Strict semi-coarsening requires semi-structured grid
+  \end{itemize}
+\end{frame}
