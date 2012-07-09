@@ -1,0 +1,27 @@
+\begin{frame}{Changing Associativity: Distributive Smoothing}
+  \begin{align*}
+    P A x &= P b & AP y = b, & \quad x = Py
+  \end{align*}
+  \begin{itemize}
+  \item Normal Preconditioning: make $PA$ or $AP$ well-conditioned
+  \item Alternative: amplify high-frequency modes
+    \begin{itemize}
+    \item Multigrid smoothers only need to relax high-frequency modes
+    \item Easier to do when spectrally separated: $h$-ellipticity
+      \begin{itemize}
+      \item pointwise smoothers (Gauss-Seidel) and polynomial/multistage methods
+      \end{itemize}
+    \item Mechanics: form the product $PA$ or $AP$ and apply ``normal'' method
+    \item Example (Stokes)
+      \begin{align*}
+        A &\sim \begin{pmatrix} -\nabla^2 & -\nabla \\ \nabla\cdot &
+          0 \end{pmatrix} &
+        P &\sim \begin{pmatrix} \bm 1 & -\nabla \\ 0 & -\nabla^2 \end{pmatrix} &
+        AP &\sim
+        \begin{pmatrix}
+          -\nabla^2 & \text{``0''} \\ \nabla\cdot & -\nabla^2
+        \end{pmatrix}
+      \end{align*}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

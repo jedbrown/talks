@@ -1,7 +1,8 @@
-\begin{frame}[fragile]{Stokes Example}
+\begin{frame}[fragile]{Stokes example}
 The common block preconditioners for Stokes require only options:
 \begin{columns}
-\begin{column}[c]{0.7\textwidth}
+\begin{column}[c]{0.67\textwidth}
+\only<1>{\begin{center}\Huge The Stokes System\end{center}}
 \begin{itemize}
   \item[]<2-> \code{-pc\_type fieldsplit}
   \item[]<2-> \code{-pc\_field\_split\_type \only<2>{additive}\only<3>{multiplicative}\only<4->{schur}}
@@ -16,7 +17,10 @@ The common block preconditioners for Stokes require only options:
 %   Ask Mark for references about negative results
 %   Gives algorithmic pieces to customize for different problems (No Black Box)
 
-  \item[]<2-> \code{-fieldsplit\_0\_pc\_type ml}
+  \item[]<2->
+    \only<2>{\code{-fieldsplit\_0\_pc\_type ml}}
+    \only<3>{\code{-fieldsplit\_0\_pc\_type hypre}}
+    \only<4->{\code{-fieldsplit\_0\_pc\_type gamg}}
   \item[]<2-> \code{-fieldsplit\_0\_ksp\_type preonly}
 
   \medskip
@@ -28,9 +32,10 @@ The common block preconditioners for Stokes require only options:
 \end{column}
 %
 % TODO: Add citations for each solver choice
-\begin{column}[c]{0.3\textwidth}
+\begin{column}[c]{0.33\textwidth}
 \only<1-7>{
 \Huge
+\only<2-7>{\begin{center}PC\end{center}}
 \begin{equation*}
 \left(
 \only<1>{
@@ -84,7 +89,7 @@ B^T & 0
 \medskip
 
 \only<4->{
-\hskip1pt\quad\ \ \code{-pc\_fieldsplit\_schur\_factorization\_type \only<4>{diag}\only<5>{lower}\only<6>{upper}\only<7>{full}}
+\hskip1pt\quad\ \ \code{-pc\_fieldsplit\_schur\_factorization\_type \only<4>{diag}\only<5>{lower}\only<6-7>{upper}\only<8>{full}}
 }
 
 \only<2-7>{\scriptsize
@@ -94,13 +99,16 @@ B^T & 0
   \only<3>{Elman, \emph{Multigrid and Krylov subspace methods for the discrete Stokes equations}, 1994.}
   \only<4-7>{May and Moresi, \emph{Preconditioned iterative methods for Stokes flow problems arising in computational geodynamics}, 2007.}
 \item[]
-  \only<4>{Olshanskii, Peters, and Reusken \emph{Uniform preconditioners for a parameter dependent saddle point problem with application to generalized Stokes interface equations}, 2006.}
+  \only<4>{Olshanskii, Peters, and Reusken, \emph{Uniform preconditioners for a parameter dependent saddle point problem with application to generalized Stokes interface equations}, 2006.}
+  \only<7>{Kay, Loghin and Wathen, \emph{A Preconditioner for the Steady-State N-S Equations}, 2002.}
+%  \only<7>{Kay, Loghin and Wathen, \emph{A Preconditioner for the Steady-State Navier--Stokes Equations}, 2002.}
   \only<7>{Elman, Howle, Shadid, Shuttleworth, and Tuminaro, \emph{Block preconditioners based on approximate commutators}, 2006.}
 \end{itemize}
 }%\medskip
 
 \only<8>{
 \Huge
+\begin{center}PC\end{center}
 \begin{equation*}
 \left(
 \begin{matrix}
@@ -118,6 +126,102 @@ B^T & 0
  0 & I
 \end{matrix}
 \right)
+\end{equation*}
+}
+\end{frame}
+%
+\begin{frame}[fragile]{Stokes example}
+All block preconditioners can be \textit{embedded} in MG using only options:
+\begin{columns}
+\begin{column}[c]{0.67\textwidth}
+\begin{itemize}\scriptsize
+  \item[]<1-> \code{-pc\_type mg -pc\_mg\_levels 5 -pc\_mg\_galerkin}
+  \item[]<2-> \code{-mg\_levels\_pc\_type fieldsplit}
+  \item[]<2-> \code{-mg\_levels\_pc\_field\_split\_type \only<2>{additive}\only<3>{multiplicative}\only<4->{schur}}
+
+  \only<2-7>{
+  \medskip
+  \item[]<2-> \code{-mg\_levels\_fieldsplit\_0\_pc\_type gamg}
+  \item[]<2-> \code{-mg\_levels\_fieldsplit\_0\_ksp\_type preonly}
+
+  \medskip
+
+  \item[]<2-> \only<2-3>{\code{-mg\_levels\_fieldsplit\_1\_pc\_type jacobi}}  \only<4-6>{\code{-mg\_levels\_fieldsplit\_1\_pc\_type none}} \only<7>{\code{-mg\_levels\_fieldsplit\_1\_pc\_type lsc}}
+  \item[]<2-> \only<2-3>{\code{-mg\_levels\_fieldsplit\_1\_ksp\_type preonly}}\only<4->{\code{-mg\_levels\_fieldsplit\_1\_ksp\_type minres}}
+  }
+\end{itemize}
+\end{column}
+%
+\begin{column}[c]{0.33\textwidth}
+\only<2-7>{
+\Huge
+\only<2-7>{\begin{center}Smoother PC\end{center}}
+\begin{equation*}
+\left(
+\only<1>{
+\begin{matrix}
+A & B \\
+B^T & 0
+\end{matrix}
+}
+\only<2>{
+\begin{matrix}
+\hat A & 0 \\
+    0  & I
+\end{matrix}
+}
+\only<3>{
+\begin{matrix}
+\hat A & B \\
+    0  & I
+\end{matrix}
+}
+\only<4>{
+\begin{matrix}
+\hat A & 0 \\
+    0  & -\hat S
+\end{matrix}
+}
+\only<5>{
+\begin{matrix}
+\hat A & 0 \\
+  B^T  & \hat S
+\end{matrix}
+}
+\only<6>{
+\begin{matrix}
+\hat A & B \\
+    0  & \hat S
+\end{matrix}
+}
+\only<7>{
+\begin{matrix}
+\hat A & B \\
+    0  & \hat S_{\text{LSC}}
+\end{matrix}
+}
+\right)
+\end{equation*}
+}
+\end{column}
+\end{columns}
+
+\medskip
+
+\only<4->{\scriptsize
+\hskip1pt\quad\ \ \code{-mg\_levels\_pc\_fieldsplit\_schur\_factorization\_type \only<4>{diag}\only<5>{lower}\only<6-7>{upper}}
+}
+
+\only<1>{
+\Huge
+\begin{center}\Huge System on each Coarse Level\end{center}
+\begin{equation*}
+R \left(
+\begin{matrix}
+ A    & B \\
+ B^T  & 0
+\end{matrix}
+\right) P
 \end{equation*}
 }
 \end{frame}

@@ -1,0 +1,227 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=100}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{textpos,alltt,listings,multirow,ulem,siunitx}
+\usepackage{pdfpages}
+\usepackage{multimedia}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning,trees,mindmap,backgrounds]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{A parallel unstructured implicit 3D polythermal model for outlet glaciers}
+\author{Jed Brown,\\
+Iulian Grindeanu, Dmitry Karpeev, Barry Smith, Tim Tautges}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  Mathematics and Computer Science Division, Argonne National Laboratory
+}
+
+\date{IGS 2012-06-28}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{Conservative models}
+\input{slides/GroundingLine/Steepness.tex}
+\begin{frame}
+  \includegraphics[width=0.8\textwidth]{figures/VHT/VHTJakoContourStream}
+\end{frame}
+\input{slides/VHTMotivation.tex}
+\input{slides/VHTEquationsSimple.tex}
+
+\section{Conforming boundaries and model non-smoothness}
+\begin{frame}{Why care about conforming and non-smoothness?}
+  \begin{itemize}
+  \item Subshelf ocean circulation is physically richer and more difficult to solve than ice flow
+    \begin{itemize}
+    \item Heat transfer is sensitive to boundary layer processes with thickness $< \SI{1}{\metre}$, $\Reynolds \sim 10^6$
+    \item Countless engineering studies: wall modeling is limited, significant normal resolution still necessary
+    \item Unaligned interface anisotropy is bad for Eulerian AMR methods
+    \end{itemize}
+  \item We care about high-dimensional sensitivity analysis and inversion
+    \begin{itemize}
+    \item Forward model evaluations alone are an inefficient way to explore a high-dimensional space
+    \item Each source of model non-smoothness requires a lot of analysis to use adjoint methods
+    \item Conforming moving mesh methods eliminate all but ``essential'' non-smoothness (like contact)
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Mesh motion via Inverse Beltrami formulation}
+  \begin{itemize}
+  \item nonlinear elliptic (or parabolic) equation for mesh location
+  \item prescribe resolution and anisotropy using target metric tensor
+  \item efficient solution using Newton-Krylov multigrid or nonlinear multigrid
+  \item conservative slip boundary conditions at most surfaces
+  \item ALE transport scheme corrected to satisfy geometric conservation law
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Transport}
+  \begin{theorem}[Godunov 1954]
+    Non-oscillatory linear spatial discretizations for transport are at most first order accurate.
+  \end{theorem}
+
+  \begin{itemize}
+  \item First order accurate discretizations have unacceptably high numerical diffusion
+  \item Discretization choices:
+    \begin{itemize}
+    \item Limited or reconstructed finite volume or finite difference
+      \begin{itemize}
+      \item Second order TVD limiters have corners
+      \item Weighted Essential Non-Oscillatory (WENO) smooth, but very nonlinear
+      \item Central or upwind
+      \item Inconvenient for unstructured grids
+      \end{itemize}
+    \item Nonlinearly stabilized continuous finite element
+      \begin{itemize}
+      \item Currently used, but fragile and messy
+      \end{itemize}
+    \item Discontinuous Galerkin
+      \begin{itemize}
+      \item Cell-wise entropy stability without limiters
+      \item Improved robustness with smooth limiters
+      \item Transitioning to this
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{}
+  \begin{center}
+    \color{red}{\Huge Joke}
+  \end{center}
+\end{frame}
+
+\section{Multilevel Solvers}
+\begin{frame}{Why do we need multilevel solvers?}
+  \begin{itemize}
+  \item Elliptic problems are globally coupled
+  \item Without a coarse level, number of iterations proportional to inverse mesh size
+  \item High-volume local communication is an inefficient way to communicate long-range information, bad for parallel models
+  \item Most important with 3D flow features and/or slippery beds
+  \item Nested/split multilevel methods
+    \begin{itemize}
+    \item Decompose problem into simpler sub-problems, use multilevel methods on each
+    \item Good reuse of existing software
+    \item More synchronization due to nesting, more suitable after linearization
+    \end{itemize}
+  \item Monolithic/coupled multilevel methods
+    \begin{itemize}
+    \item Better convergence and lower synchronization, but harder to get right
+    \item Internal nonlinearities resolved locally
+    \item More discretization-specific, less software reuse
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\input{slides/VHTSolvers.tex}
+\begin{frame}{Full Approximation Scheme}
+  \begin{align*}
+    \tilde u^h &\gets S^h_{\text{pre}} u^h_0 & \text{pre-smooth} \\
+    L^H u^H &= I_h^H f^h + \underbrace{L^H \hat I_h^H \tilde u^h - I_h^H L^h \tilde u^h}_{\tau_h^H} & \text{solve coarse problem for $u^H$} \\
+    u^h & \gets S^h_{\text{post}} \Big[ \tilde u^h + I_H^h (u^H - \hat I_h^H \tilde u^h) \Big] & \text{apply correction and post-smooth}
+  \end{align*}
+  \begin{itemize}
+  \item Nonlinearities from spatial discretization fixed locally
+  \item No assembled matrices so better floating point utilization, less memory
+  \item Makes progress on all physical components at once
+  \item FD and DG good, less efficient for continuous finite element methods
+  \item Influence of surface evolution is low rank, no need to visit finest level on each iteration
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Basal hydrology model
+    \begin{itemize}
+    \item Need mesh-independent statistics
+    \item Numerical homogenization?
+    \end{itemize}
+  \item True inverse and sensitivity support, but need to invert for the right thing
+  \item Dynamic remeshing after large topology changes
+  \item Finish FAS multigrid for full coupled system including geometry
+  \item User-friendliness of process
+    \begin{itemize}
+    \item Currently using georeferenced initial/boundary data via GDAL
+    \item But meshing process is not fully automatic
+    \item Better: multiresolution database (Mark Fahnestock)
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\end{document}
