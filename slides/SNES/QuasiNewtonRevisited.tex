@@ -1,4 +1,11 @@
 \begin{frame}[shrink=5]{Quasi-Newton revisited: ameliorating setup costs}
+  \begin{textblock}{0.25}[1,0](0.99,0.2)
+    {\small pseudo-plastic rheology} \\
+    {\scriptsize
+      \texttt{-snes\_type qn
+        -snes\_qn\_scale\_type jacobian}}
+  \end{textblock}
+
     \begin{itemize}
     \item Newton-Krylov with analytic Jacobian
 {\footnotesize
