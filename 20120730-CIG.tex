@@ -1,0 +1,391 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=100}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{multimedia}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning,trees,mindmap,backgrounds]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{Multilevel Stokes flow solvers}
+\subtitle{Adapting to heterogeneity and rheology}
+\author{{\bf Jed Brown}}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  {Mathematics and Computer Science Division, Argonne National Laboratory} \\
+}
+
+\date{CIG Mantle/Lithosphere 2012-07-30}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Intent of this talk}
+  \begin{itemize}
+  \item observation: solver scalability is the bottleneck at scale
+  \item ``black box'' solvers are not sustainable
+    \begin{itemize}
+    \item optimal solvers must accurately handle all scales
+    \item optimality is crucial for large-scale problems
+    \item hardware puts up a spirited fight to abstraction
+    \end{itemize}
+  \item introduce multilevel solver concepts
+  \item outline ingredients that discretizations can provide to solvers
+  \item discuss algorithmic trade-offs
+  \item current state of solver software and what we are working on
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Introduction}
+\begin{frame}
+  \includegraphics[width=1.05\textwidth]{figures/KeyesAllAboutAlgorithms}
+\end{frame}
+\begin{frame}{Challenges for elliptic solvers}
+  \begin{itemize}
+  \item multiscale material coefficients
+    \begin{itemize}
+    \item long, thin high viscosity: transmit stresses long distances
+    \item ``jelly sandwich'': release long-range stresses locally
+    \end{itemize}
+  \item nonlinearity
+    \begin{itemize}
+    \item plasticity: creates ``jelly sandwich''
+    \item Newton linearization produces local anisotropy
+    \item heating: localization
+    \item coupling to other physical processes
+    \end{itemize}
+  \item multilevel methods
+    \begin{itemize}
+    \item need accurate coarse grids
+    \item need effective smoothers
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Multigrid separates scales, feedback between scales}
+  \includegraphics[width=\textwidth]{figures/YangAMGSummary} \\
+\end{frame}
+
+\input{slides/MonolithicOrSplit.tex}
+
+\section{Multiscale Toolbox}
+\begin{frame}{Three schools of thought}
+  \begin{itemize}
+  \item Multigrid (Brandt, Hackbusch, $\dotsc$)
+    \begin{itemize}
+    \item originally for resolved/asymptotic spatial discretizations
+    \item textbook: reach discretization error in one F-cycle
+    \item matrix-light/free, good for bandwidth
+    \item FAS well-developed for nonlinear problems
+    \end{itemize}
+  \item Multilevel Domain Decomposition (Mandel, Dohrmann, Widlund)
+    \begin{itemize}
+    \item leverage direct subdomain solvers, minimize communication
+    \item rapid coarsening $\kappa(P^{-1}A) \sim \big(1 + \log \frac H h \big)^{2(L-1)}$
+    \item often formulated only as two-level methods
+    \item typically with domain-conforming coefficients
+    \item lightly developed for nonlinear (e.g. ASPIN [Cai and Keyes])
+    \end{itemize}
+  \item Multiscale Finite Elements (Babuska, Arbogast, $\dotsc$)
+    \begin{itemize}
+    \item local preprocessing to construct coarse space
+    \item rarely/never revisit fine space
+    \item mostly restricted to linear problems
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\subsection{Coarse grids}
+\begin{frame}{Computable Convergence Measures}
+\newcommand\Vcoarse{V_{\text{coarse}}}
+\newcommand\Vfine{V_{\text{fine}}}
+  \begin{itemize}
+  \item Prolongation $P: \Vcoarse \to \Vfine$
+  \item Restriction $R: \Vfine \to \Vcoarse$
+  \item $I - PR: \Vfine \to \Vfine$ removes part of vector visible in coarse space
+  \item Error iteration matrix $I - M^{-1}A$, worst-case convergence factor is $\lambda_{\max}$
+  \item ``Interpolation must be able to approximate an eigenvector with error bound proportional to the size of the associated eigenvalue.''
+    \begin{itemize}
+    \item $\max_x \norm{x}_{(I-PR)S(I-PR)}/{\norm{x}_A}$
+    \end{itemize}
+  \item What can we do before we have prolongation $P$?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Compatible Relaxation}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/LivneHabituatedCR} \\
+      {\small [Livne 2004]}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item Apply smoother subject to constraint $\hat R x = 0$
+        \begin{enumerate}
+        \item $\tilde x_n = x_{n-1} + S_A^{-1}\big(r(x_{n-1}) \big)$
+        \item $x_n = \tilde x_n + S_R^{-1}\big(\hat R\tilde x_n) \big)$
+        \end{enumerate}
+      \item Method to determine when coarse space is rich enough
+      \item Slow to relax points/regions good candidates for coarse points/aggregates
+      \item If subdomain solves used for smoothing, only interfaces are candidates
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Coarse basis functions}
+  \begin{itemize}
+  \item $\norm{PR x}_A + \norm{(I - PR)x}_A \le C \norm{x}_A$
+  \item ``decompose any $x$ into parts without increasing energy much''
+  \item near-null spaces must be represented exactly (partition of unity)
+  \item number of rows of $R$ determined already, usually $P = R^T$
+  \item energy minimization with specified support [Wan, Chan, Smith; Mandel, Brezina, Vanek]
+  \item smoothed aggregation: $P_{\text{smooth}} = (I - \omega D^{-1} A) P_{\text{agg}}$
+  \item classical AMG: each fine point processed independently
+  \item domain decomposition/multiscale FEM: solve subdomain problems
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Example: BDDC/FETI-DP coarse basis function}
+    \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \includegraphics[width=\textwidth]{figures/MandelSousedikBDDCCoarseBasis} \\
+      {\small [Mandel and Sousedik 2010]}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{itemize}
+      \item only low-order continuity between subdomains
+      \item corrected by more technical subdomain smoother
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Why I like subdomain problems}
+  \begin{columns}
+    \begin{column}{0.4\textwidth}
+      \includegraphics[width=\textwidth]{figures/ArbogastCoarse} \\
+      \includegraphics[width=\textwidth]{figures/ArbogastCoarseMs} \\
+      {\small [Arbogast 2011]}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+  \begin{itemize}
+  \item subassembly avoids explicit matrix triple product $A_{\text{coarse}} \gets P^T A_{\text{fine}} P$
+  \item can update the coarse operator locally (e.g.~local nonlinearity)
+  \item need not assemble entire fine grid operator
+  \item can coarsen very rapidly (at least in smooth regions)
+  \item lower communication setup phase
+  \end{itemize}      
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Complication for saddle point problems}
+  \[ \begin{pmatrix}
+    A & B^T \\ B & 0
+  \end{pmatrix} \]
+  \begin{itemize}
+  \item want uniform stability for coarse problem
+    \begin{itemize}
+    \item respect inf-sup condition, similar to fine grid
+    \end{itemize}
+  \item want exact representation of volumetric mode
+    \begin{itemize}
+    \item i.e. we can't cheat on conservation while upscaling
+    \end{itemize}
+  \item to be rigorous, we need to evaluate face integrals
+    \begin{itemize}
+    \item self-similar coarse discretizations are attractive
+    \end{itemize}
+  \item heuristic algebraic coarsening also possible [Adams 2004]
+  \end{itemize}
+\end{frame}
+
+\subsection{Smoothing}
+\begin{frame}{Nonlinear problems}
+  \begin{itemize}
+  \item matrix-based smoothers require global linearization
+  \item nonlinearity often more efficiently resolved locally
+  \item nonlinear additive or multiplicative Schwarz
+  \item nonlinear/matrix-free is good if
+    \[ C = \frac{(\text{cost to evaluate residual at one point}) \cdot N}{(\text{cost of global residual})} \sim 1 \]
+    \begin{itemize}
+    \item finite difference: $C < 2$
+    \item finite volume: $C \sim 2$, depends on reconstruction
+    \item finite element: $C \sim \text{number of vertices per cell}$
+    \end{itemize}
+  \item larger block smoothers help reduce $C$
+  \end{itemize}
+  \vspace{-2.5em}
+  \hfill \includegraphics[width=0.3\textwidth]{figures/NodeStencil}
+\end{frame}
+
+\begin{frame}{Smoothing for saddle point systems}
+  \[ \begin{pmatrix}
+    A & B^T \\ B & 0
+  \end{pmatrix} \]
+  \begin{itemize}
+  \item pressure has no self-coupling
+  \item pressure error modes not spectrally separated
+  \item approaches
+    \begin{itemize}
+    \item block smoothers (Vanka)
+    \item splitting with approximate Schur complement
+    \item amplify fine-grid modes
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Vanka block smoothers}
+  \includegraphics[width=0.9\textwidth]{figures/VankaStaggeredGrid} \\
+  \begin{itemize}
+  \item solve pressure-centered cell problems \\
+    \quad (better for discontinuous pressure)
+  \item robust convergence factor $\sim 0.3$ \emph{if} coarse grids are accurate
+  \item 1D energy minimizing interpolants easy and effective
+  \item can use assembled sparse matrices, but more efficient without
+  \end{itemize}
+\end{frame}
+\input{slides/PETSc/DistributiveSmoothing.tex}
+\input{slides/Stokes/CoupledMGOptions.tex}
+
+\section{Software and performance}
+\subsection{Coupling software}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/FieldSplit.tex}
+\input{slides/PETSc/LocalSpaces.tex}
+\input{slides/SNES/MultiphysicsAssemblyJacobians.tex}
+% \input{slides/PETSc/MatGetLocalSubMatrix.tex}
+% \input{slides/Stokes/OptionsTour.tex}
+
+% \input{slides/SNES/MonolithicFASMultistage.tex}
+% \input{slides/SNES/NonlinearSolversList.tex}
+\input{slides/SNES/QuasiNewtonRevisited.tex}
+
+% \input{slides/DrunkenSeaman.tex}
+% \setbeamertemplate{background canvas}{}
+% \includepdf[pages=1-3]{davemay.pdf}
+
+% \input{slides/VHTEquationsSimple.tex}
+% \input{slides/VHTSolvers.tex}
+% %\input{slides/VHTSolverOptions.tex}
+\subsection{Performance considerations}
+\input{slides/Dohp/TensorVsAssembly.tex}
+\begin{frame}{Coarse levels may not be cheaper than fine levels}
+  \begin{center}
+    \includegraphics[width=0.6\textwidth]{figures/YangAMGLevelCost} \\
+    {\scriptsize [Gahvari, Schulz, Yang, Jordan, Gropp 2011]}
+  \end{center}
+  \begin{itemize}
+  \item latency for longer-range communication outweighs smaller data
+  \item very aggressive coarsening important to limit number of levels
+  \item alternatives: additive multigrid, redundant coarse grids
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Multilevel Solvers are a \emph{Way of Life}}
+  \begin{itemize}
+  \item ingredients that discretizations can provide
+    \begin{itemize}
+    \item identify ``fields''
+    \item topological coarsening, possibly for fields
+    \item near-null space information
+    \item ``natural'' subdomains
+    \item subdomain integration, face integration
+    \item element or subdomain assembly/matrix-free smoothing
+    \end{itemize}
+  \item solver composition
+    \begin{itemize}
+    \item most splitting methods accessible from command line
+    \item energy optimization for tentative coarse basis functions
+    \item algebraic form of distributive relaxation
+    \item generic assembly for large systems and components
+    \item working on flexibile ``library-assisted'' nonlinear multigrid
+    \item adding support for interactive eigenanalysis
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}
