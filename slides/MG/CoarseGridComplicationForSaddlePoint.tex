@@ -1,0 +1,20 @@
+\begin{frame}{Complication for saddle point problems}
+  \[ \begin{pmatrix}
+    A & B^T \\ B & 0
+  \end{pmatrix} \]
+  \begin{itemize}
+  \item want uniform stability for coarse problem
+    \begin{itemize}
+    \item respect inf-sup condition, similar to fine grid
+    \end{itemize}
+  \item want exact representation of volumetric mode
+    \begin{itemize}
+    \item i.e. we can't cheat on conservation while upscaling
+    \end{itemize}
+  \item to be rigorous, we need to evaluate face integrals
+    \begin{itemize}
+    \item self-similar coarse discretizations are attractive
+    \end{itemize}
+  \item heuristic algebraic coarsening also possible [Adams 2004]
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,12 @@
+\begin{frame}{Coarse basis functions}
+  \begin{itemize}
+  \item $\norm{PR x}_A + \norm{(I - PR)x}_A \le C \norm{x}_A$
+  \item ``decompose any $x$ into parts without increasing energy much''
+  \item near-null spaces must be represented exactly (partition of unity)
+  \item number of rows of $R$ determined already, usually $P = R^T$
+  \item energy minimization with specified support [Wan, Chan, Smith; Mandel, Brezina, Vanek]
+  \item smoothed aggregation: $P_{\text{smooth}} = (I - \omega D^{-1} A) P_{\text{agg}}$
+  \item classical AMG: each fine point processed independently
+  \item domain decomposition/multiscale FEM: solve subdomain problems
+  \end{itemize}
+\end{frame}

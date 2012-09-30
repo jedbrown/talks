@@ -1,0 +1,25 @@
+\begin{frame}{Three schools of thought}
+  \begin{itemize}
+  \item Multigrid (Brandt, Hackbusch, $\dotsc$)
+    \begin{itemize}
+    \item originally for resolved/asymptotic spatial discretizations
+    \item textbook: reach discretization error in one F-cycle
+    \item matrix-light/free, good for bandwidth
+    \item FAS well-developed for nonlinear problems
+    \end{itemize}
+  \item Multilevel Domain Decomposition (Mandel, Dohrmann, Widlund)
+    \begin{itemize}
+    \item leverage direct subdomain solvers, minimize communication
+    \item rapid coarsening $\kappa(P^{-1}A) \sim \big(1 + \log \frac H h \big)^{2(L-1)}$
+    \item often formulated only as two-level methods
+    \item typically with domain-conforming coefficients
+    \item lightly developed for nonlinear (e.g. ASPIN [Cai and Keyes])
+    \end{itemize}
+  \item Multiscale Finite Elements (Babuska, Arbogast, $\dotsc$)
+    \begin{itemize}
+    \item local preprocessing to construct coarse space
+    \item rarely/never revisit fine space
+    \item mostly restricted to linear problems
+    \end{itemize}
+  \end{itemize}
+\end{frame}

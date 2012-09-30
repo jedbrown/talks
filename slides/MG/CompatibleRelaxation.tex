@@ -1,0 +1,20 @@
+\begin{frame}{Compatible Relaxation}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/LivneHabituatedCR} \\
+      {\small [Livne 2004]}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item Apply smoother subject to constraint $\hat R x = 0$
+        \begin{enumerate}
+        \item $\tilde x_n = x_{n-1} + S_A^{-1}\big(r(x_{n-1}) \big)$
+        \item $x_n = \tilde x_n + S_R^{-1}\big(\hat R\tilde x_n) \big)$
+        \end{enumerate}
+      \item Method to determine when coarse space is rich enough
+      \item Slow to relax points/regions good candidates for coarse points/aggregates
+      \item If subdomain solves used for smoothing, only interfaces are candidates
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
