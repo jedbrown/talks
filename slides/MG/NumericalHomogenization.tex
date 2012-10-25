@@ -1,0 +1,24 @@
+\begin{frame}{Numerical Homogenization/Upscaling}
+  \begin{enumerate}
+  \item Multiscale basis functions
+    \begin{itemize}
+    \item integrate against microscale coefficients
+    \item robust theory for linear elliptic equations
+    \item popular in porous media and composite materials
+    \item practically computable using multigrid ideas, partition of unity method
+    \item no support for stochastic microscale
+    \end{itemize}
+  \item Coefficient/equation upscaling
+    \begin{itemize}
+    \item a good method reproduces statistics
+    \item cannot recover fine grid solution
+    \item suitable for nonlinear coarse problems
+    \item can derive coarse Hamiltonian
+    \end{itemize}
+  \end{enumerate}
+  \begin{itemize}
+  \item can exploit repetitive structure in fine grid
+  \item coarse space is \emph{sufficient} if compatible relaxation/Monte-Carlo converges fast
+  \item procedure can be global or local
+  \end{itemize}
+\end{frame}
