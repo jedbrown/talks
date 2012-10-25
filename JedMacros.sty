@@ -10,7 +10,7 @@
 \def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
 \def\eg{{e.g}\onedot} \def\Eg{{E.g}\onedot}
 \def\ie{{i.e}\onedot} \def\Ie{{I.e}\onedot}
-\def\cf{{c.f}\onedot} \def\Cf{{C.f}\onedot}
+\def\cf{{cf}\onedot} \def\Cf{{Cf}\onedot}
 \def\etc{{etc}\onedot}
 \def\vs{{vs}\onedot}
 \def\wrt{w.r.t\onedot}
@@ -75,7 +75,6 @@
 \newcommand{\mini}{\mathop{\rm minimize}}
 \newcommand{\st}{\mbox{subject to }}
 \newcommand{\lap}{\Delta}
-\newcommand{\grad}{\nabla}
 \newcommand\mtab{\hspace{\stretch{1}}}
 \newcommand\ud{\,\mathrm{d}}
 \newcommand\bslash{{$\backslash$}}
@@ -117,10 +116,12 @@
 \newcommand{\Prandtl}{{\mathrm{Pr}}}
 \newcommand{\Grashof}{{\mathrm{Gr}}}
 
-\newcommand{\PETSc}{{PETSc}}
-\newcommand{\Dohp}{{Dohp}}
-\newcommand\libmesh{\texttt{libMesh}}
-\newcommand\dealii{\texttt{Deal.II}}
+\newcommand{\sw}[1]{\textsf{\small #1}}
+\newcommand{\PETSc}{\sw{PETSc}\xspace}
+\newcommand{\PyClaw}{\sw{PyClaw}\xspace}
+\newcommand{\Dohp}{\sw{Dohp}\xspace}
+\newcommand\libmesh{\sw{libMesh}\xspace}
+\newcommand\dealii{\sw{Deal.II}\xspace}
 \newcommand\MatMult{\cverb|MatMult|}
 \newcommand\MatSolve{\cverb|MatSolve|}
 \newcommand{\secref}[1]{{Section~\ref{#1}}}
