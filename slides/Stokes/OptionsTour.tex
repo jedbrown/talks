@@ -137,11 +137,11 @@ All block preconditioners can be \textit{embedded} in MG using only options:
 \begin{itemize}\scriptsize
   \item[]<1-> \code{-pc\_type mg -pc\_mg\_levels 5 -pc\_mg\_galerkin}
   \item[]<2-> \code{-mg\_levels\_pc\_type fieldsplit}
-  \item[]<2-> \code{-mg\_levels\_pc\_field\_split\_type \only<2>{additive}\only<3>{multiplicative}\only<4->{schur}}
+  \item[]<2-> \code{-mg\_levels\_pc\_fieldsplit\_type \only<2>{additive}\only<3>{multiplicative}\only<4->{schur}}
 
   \only<2-7>{
   \medskip
-  \item[]<2-> \code{-mg\_levels\_fieldsplit\_0\_pc\_type gamg}
+  \item[]<2-> \code{-mg\_levels\_fieldsplit\_0\_pc\_type sor}
   \item[]<2-> \code{-mg\_levels\_fieldsplit\_0\_ksp\_type preonly}
 
   \medskip
