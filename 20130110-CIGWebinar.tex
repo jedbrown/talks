@@ -1,0 +1,391 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+  %\setbeamercovered{transparent=100}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{multimedia}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes,shapes.arrows,arrows,shapes.misc,fit,positioning,trees,mindmap,backgrounds]
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{High Performance Implicit Solvers for Geodynamics}
+\subtitle{These slides: \url{http://59A2.org/files/20130110-CIGWebinar.pdf}}
+\author{{\bf Jed Brown} \\ \url{jedbrown@mcs.anl.gov}}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  {Mathematics and Computer Science Division, Argonne National Laboratory} \\
+}
+
+\date{CIG Webinar 2013-01-10}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Role of implicit solvers}
+\begin{frame}{Why do we need solvers?}
+  \begin{definition}[Stiffness]
+    A discretized PDE is stiff if the true physics propagates information much more than one grid cell over a time step length desirable for resolving transient dynamics.
+  \end{definition}
+  \vspace{-1.5em}
+  \uncover<2->{
+  \begin{gather*}
+    {\color<5->{gray} (\rho\uu)_t} + \div ({\color<4->{gray} \rho\uu\otimes\uu} - \eta D\uu + p\bm 1) - \rho \bm g = 0 \\
+    {\color<3->{gray} \rho_t} + \div \rho\uu = 0
+  \end{gather*}}
+  \vspace{-1.5em}
+  \begin{enumerate}
+  \item<3-> Incompressibility: acoustic wave travels much faster than mantle or lithosphere time scale (anelastic; Mach number)
+  \item<4-> Convection insignificant compared to viscosity (unrelated to stiffness; Reynolds number)
+  \item<5-> Relaxation fast compared to dynamical time scale (depends on observational scale)
+  \end{enumerate}
+\end{frame}
+\begin{frame}
+  \includegraphics[width=1.05\textwidth]{figures/KeyesAllAboutAlgorithms}
+\end{frame}
+
+\section{Common methods and algorithmic barriers}
+\begin{frame}{Evaluating methods}
+  \begin{itemize}
+  \item Performance of methods will depend on \alert{grid resolution} and \alert{model parameters} (regime and heterogeneity).
+  \item A method is:
+    \begin{itemize}
+    \item \alert{scalable} (also ``optimal'') if its performance is independent of resolution and parallelism
+    \item \alert{robust} if its performance is (nearly) independent of model parameters
+    \item \alert{efficient} if it solves the problem in a small multiple of the cost to evaluate the residual\footnote{We'll settle for ``as fast as the best known method''.}
+    \end{itemize}
+  \item<2-> Linear problems typically arise from linearizing a nonlinear problem.
+    This step is \alert{not necessary}, but it is convenient for \alert{reusing software} and for \alert{debugging}.
+  \end{itemize}
+\end{frame}
+\begin{frame}{Taxonomy of implicit solvers}
+  \begin{block}{Global linearization: Picard and Newton}
+    \begin{itemize}
+    \item Linear solve ``$J(u) w = -F(u)$''
+      \begin{itemize}
+      \item (sparse) direct vs. iterative (Krylov) with preconditioning
+      \item classical relaxation (Jacobi, Gauss-Seidel), incomplete factorization (ILU)
+      \item \alert<2->{domain decomposition and multigrid}
+      \end{itemize}
+    \item Globalization: ``$u_{\text{next}} = u + \alpha w$''
+      \begin{itemize}
+      \item Line search, trust region, continuation
+      \end{itemize}
+    \end{itemize}
+  \end{block}
+  \begin{block}{Inherently nonlinear methods}
+    \begin{itemize}
+    \item Nonlinear GMRES, Nonlinear CG (can use preconditioning)
+    \item \alert<2->{Nonlinear domain decomposition}
+    \item \alert<2->{Nonlinear multigrid: Full Approximation Scheme (FAS)}
+    \end{itemize}
+  \end{block}
+  \begin{itemize}
+  \item<2-> \only<2>{\alert{These methods can be {\bf scalable}.}}
+    \only<3>{\alert{How nonlinear are the scales? How expensive is setup?}}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{What about direct linear solvers?}
+  \begin{centering}
+    \includegraphics[width=0.8\textwidth]{figures/MG/StokesScalingDirectVsChebySchur}
+  \end{centering}
+  \begin{itemize}
+  \item By all means, start with a direct solver
+  \item Direct solvers are \alert{robust}, but \alert{not scalable}
+  \item {\bf 2D}: $\bigO(n^{1.5})$ flops, $\bigO(n\log n)$ memory.
+  \item {\bf 3D}: $\bigO(n^2)$ flops, $\bigO(n^{4/3})$ memory
+  \item We will focus on \alert{iterative} linear solvers
+  \end{itemize}
+\end{frame}
+\input{slides/MatrixDefinition.tex}
+\input{slides/MatricesImportant.tex}
+\input{slides/MatrixNoEntries.tex}
+\begin{frame}{The $\pfrak$-Bratu equation}
+  \begin{itemize}
+  \item 2-dimensional model problem
+    \begin{equation*}
+      -\div \big(\abs{\nabla u}^{\pfrak-2} \nabla u \big) - \lambda e^u - f = 0, \qquad 1 \le \pfrak \le \infty, \quad \lambda < \lambda_{\text{crit}}(\pfrak)
+    \end{equation*}
+    Singular or degenerate when $\nabla u = 0$, turning point at $\lambda_{\text{crit}}$.
+  \item Regularized variant
+    \begin{gather*}
+      -\div (\alert<1>{\eta} \nabla u) - \lambda e^u - f = 0 \\
+      \eta(\gamma) = (\epsilon^2 + \gamma)^{\frac{\pfrak-2}{2}} \qquad \gamma(u) = \half \abs{\nabla u}^2
+    \end{gather*}
+  \item Jacobian
+    \begin{gather*}
+      J(u) w \sim -\div \big[ \alert<1>{(\eta \bm 1 + \eta' \nabla u \otimes \nabla u)} \nabla w \big] - \lambda e^u w \\
+      \eta' = \frac{\pfrak-2}{2} \eta / (\epsilon^2 + \gamma)
+    \end{gather*}
+    Interpretation: conductivity tensor flattened in direction $\nabla u$ %($\pfrak < 2$)
+  \item Simple finite difference discretization in PETSc: \\
+    \shell{cd petsc/src/snes/examples/tutorials/; make ex15}
+  \item<2> \alert{Step 1: Write the residual.}
+  \end{itemize}
+\end{frame}
+\begin{frame}{Step 1: Write the residual}
+  \begin{itemize}
+  \item Start with $\pfrak=2$ (standard Laplacian), define only residuals
+  \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
+  \item \shell{./ex15 -da\_refine \alert{1} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+    \only<2>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 9.324361041196e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 7\\
+  1 SNES Function norm 4.534365556764e-09 \\
+CONVERGED\_FNORM\_RELATIVE Number of nonlinear iterations = 1
+}}
+  \item \shell{./pbratu -da\_refine \alert{2} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+    \only<3>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 5.363535697720e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 18\\
+  1 SNES Function norm 1.276738526722e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 18\\
+  2 SNES Function norm 1.263046904535e-11 \\
+CONVERGED\_FNORM\_RELATIVE Number of nonlinear iterations = 2
+}}
+  \item \shell{./pbratu -da\_refine \alert{3} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+    \only<4>{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 2.820917170607e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 42\\
+  1 SNES Function norm 2.782839451653e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 45\\
+  2 SNES Function norm 2.682642095006e-11 \\
+CONVERGED\_FNORM\_RELATIVE Number of nonlinear iterations = 2
+}}
+  \item \shell{./pbratu -da\_refine \alert{4} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
+    \only<5->{{\tiny \color{green!30!black} \tt \\
+  0 SNES Function norm 1.441189193029e-01 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 101\\
+  1 SNES Function norm 1.409860069506e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 154\\
+  2 SNES Function norm 1.390912345257e-11 \\
+CONVERGED\_FNORM\_RELATIVE Number of nonlinear iterations = 2
+}}
+  \item<6> The number of iterations is growing with grid refinement.
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Experimenting with algorithms}
+  \begin{itemize}
+  \item \verb|-pc_type asm -sub_pc_type lu|
+  \item \verb|-pc_type gamg -pc_gamg_agg_nsmooths 1|
+  \item \verb|-jtype PICARD -pc_type lu|
+  \item \verb|-snes_mf_operator -jtype PICARD -pc_type ml|
+  \item \verb|-snes_type ngmres -snes_ngmres_m 10| \\
+    \qquad \verb|-npc_snes_max_it 1 -npc_snes_type fas|
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Barriers}
+  \begin{itemize}
+  \item Krylov method: $(\text{iteration count}) \sim \sqrt{\text{condition number}}$
+  \item Elliptic ill-conditioning
+    \begin{itemize}
+    \item $\kappa(A) \sim h^{-2}$ for second order elliptic problems
+    \item \emph{Asymptotics} not improved for standard methods:\\
+      \verb|-pc_type jacobi|, \verb|-pc_type sor|, \verb|-pc_type ilu|
+    \item 1-level Domain Decomposition: $\kappa \sim H^{-2} \phi(H/h)$ \\
+      \verb|-pc_type bjacobi|, \verb|-pc_type asm|
+    \item Multilevel/multigrid: $\kappa \sim 1$ \\
+      \verb|-pc_type gamg|, \verb|-pc_type ml|, \verb|-pc_type hypre|, \verb|-pc_type mg|
+    \end{itemize}
+  \item Heterogeneity
+    \begin{itemize}
+    \item Conditioning proportional to maximum material contrast
+    \item In friendly circumstances, a local preconditioner restores $\sim h^{-2}$ ill-conditioning
+    \item Coarse approximations and subdomain transmission conditions become difficult
+    \item Fine grids necessary \emph{because of} heterogeneity
+    \item Coarse grid must accurately represent long-range coupling
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section{Failure modes and troubleshooting}
+\input{slides/MG/ElasticityCheckerboard.tex}
+\begin{frame}[fragile]{Linear solver convergence problems\footnote{\url{http://scicomp.stackexchange.com/questions/513}}}
+  \begin{itemize}
+  \item Watch the true residual \verb|-ksp_monitor_true_residual|
+  \item Make the problem small and create an environment to test rapidly
+  \item Are boundary conditions correct? \verb|-pc_type svd -pc_svd_monitor| and \verb|-pc_type lu|
+  \item Is the system singular? Known nullspace?
+  \item Is the condition number reasonable? \verb|-ksp_monitor_singular_value|
+  \item Compare preconditioned residual to true residual (unstable preconditioner)
+  \item Is GMRES restart a problem? \verb|-ksp_gmres_restart 300|
+  \item Is preconditioner nonlinear? \verb|-ksp_type gcr|, \verb|-ksp_type fgmres|
+  \item Geometric multigrid with rediscretization: boundary condition scaling.
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Nonlinear solver convergence problems\footnote{\url{http://scicomp.stackexchange.com/questions/30}}}
+  \begin{itemize}
+  \item Is the Jacobian assembled correctly?
+    \begin{itemize}
+    \item \verb|-snes_mf_operator -pc_type lu|
+    \item \verb|-snes_type test| or \verb|-snes_compare_explicit|
+    \item \verb|-snes_mf_type ds|
+    \end{itemize}
+  \item Is the linear system solved accurately enough?
+  \item Does the linear system become singular?
+  \item Is there a bug in residual evaluation?
+  \item Is the residual function discontinuous?
+  \item \verb|-snes_linesearch_monitor|
+  \item \verb|./configure --with-precision=__float128|
+  \end{itemize}
+\end{frame}
+
+\section{Coupling approaches}
+\input{slides/MonolithicOrSplit.tex}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/FieldSplit.tex}
+\input{slides/PETSc/LocalSpaces.tex}
+\input{slides/SNES/MultiphysicsAssemblyJacobians.tex}
+% \input{slides/PETSc/MatGetLocalSubMatrix.tex}
+
+% \input{slides/SNES/MonolithicFASMultistage.tex}
+% \input{slides/SNES/NonlinearSolversList.tex}
+
+\section{Stokes problems}
+\input{slides/Stokes/OptionsTour.tex}
+\input{slides/MG/SmoothingSaddlePoint.tex}
+\input{slides/MG/VankaBlockSmoothers.tex}
+\input{slides/PETSc/DistributiveSmoothing.tex}
+\input{slides/Stokes/CoupledMGOptions.tex}
+
+\section{Performance considerations}
+\begin{frame}{Profiling basics}
+  \begin{itemize}
+  \item Get the math right
+    \begin{itemize}
+    \item Choose an algorithm that gives robust iteration counts and really converges
+    \end{itemize}
+  \item Look at where the time is spent
+    \begin{itemize}
+    \item Run with \texttt{-log\_summary} and look at events
+    \item \texttt{VecNorm,VecDot} measures latency
+    \item \texttt{MatMult} measures neighbor exchange and memory bandwidth
+    \item \texttt{PCSetUp} factorization, aggregation, matrix-matrix products, \ldots
+    \item \texttt{PCApply} V-cycles, triangular solves, \ldots
+    \item \texttt{KSPSolve} linear solve
+    \item \texttt{SNESFunctionEval} residual evaluation (user code)
+    \item \texttt{SNESJacobianEval} matrix assembly (user code)
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\input{slides/Dohp/TensorVsAssembly.tex}
+\input{slides/HardwareArithmeticIntensity.tex}
+\input{slides/SNES/QuasiNewtonRevisited.tex}
+\begin{frame}{Network latency}
+  \begin{block}{\texttt{MPI\_Allreduce} is slow at large scale}
+    \begin{itemize}
+    \item True on many machines, not on Blue Gene ($\sim \SI{100}{\micro\second}$)
+    \item Bottleneck for Krylov methods
+    \item Pipelining allows overlap, uses \texttt{MPI\_Iallreduce} from MPI-3\\
+      \texttt{-ksp\_type pgmres}, \texttt{-ksp\_type pipecg}, \texttt{-ksp\_type pipecr}
+    \end{itemize}
+  \end{block}
+  \begin{block}{Coarse grid solves for multigrid}
+    \begin{itemize}
+    \item Need to restrict active processor set
+    \item Coarse levels have similar cost to finer levels
+    \item Aggressive coarsening more important than tight iteration count
+    \item Additive multigrid possible, but less robust
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item PETSc \url{http://mcs.anl.gov/petsc}
+  \item Trilinos \url{http://trilinos.sandia.gov}
+  \item Think about solution algorithms when designing discretization
+  \item Learn how to evaluate solver quality and experiment
+  \item Expect the best method to change with problem instance and machine
+  \end{itemize}
+  \begin{block}{Contact}
+    \begin{itemize}
+    \item \url{petsc-maint@mcs.anl.gov}
+    \item \url{http://lists.mcs.anl.gov/pipermail/petsc-users/}
+    \item \url{http://scicomp.stackexchange.com}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\end{document}

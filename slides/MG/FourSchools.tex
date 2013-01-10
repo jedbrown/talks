@@ -1,0 +1,34 @@
+\begin{frame}[shrink=5]{Four Schools of Thought for Multilevel Methods}
+  \begin{itemize}
+  \item Multigrid (Brandt, Hackbusch, $\dotsc$)
+    \begin{itemize}
+    \item originally for resolved/asymptotic spatial discretizations
+    \item ``textbook'': reach discretization error in one F-cycle
+    \item matrix-light/free, good for memory bandwidth
+    \item FAS well-developed for nonlinear problems
+    \end{itemize}
+  \item Multilevel Domain Decomposition (Mandel, Dohrmann, Widlund)
+    \begin{itemize}
+    \item leverage direct subdomain solvers, minimize communication
+    \item rapid coarsening $\kappa(P^{-1}A) \sim \big(1 + \log \frac H h \big)^{2(L-1)}$
+    \item often formulated only as two-level methods, domain-conforming coefficients
+    \item lightly developed for nonlinear (e.g. ASPIN [Cai and Keyes])
+    \end{itemize}
+  \item Multiscale Finite Elements (Babuska, Arbogast, $\dotsc$)
+    \begin{itemize}
+    \item local preprocessing to construct linear coarse operator
+    \item popular in porous media and composite materials (robust theory)
+    \end{itemize}
+  \item Equation-based multiscale models (many)
+    \begin{itemize}
+    \item Renormalization multigrid/systematic upscaling (Brandt)
+      \begin{itemize}
+      \item interpolation, equilibriation (compatible relaxation/Monte-Carlo), restriction
+      \end{itemize}
+    \item Heterogeneous multiscale method (E, Engquist)
+      \begin{itemize}
+      \item reconstruction, constrained microscale simulation, data processing/compression
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

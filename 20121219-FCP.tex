@@ -1,0 +1,175 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=100}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\title{Multilevel solvers with adaptive coarse space construction for lithosphere dynamics}
+\author{{\bf Jed Brown}\inst{1}, Mark Adams\inst{2}, Matt Knepley\inst{3}, Barry Smith\inst{1}}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  \inst{1}{Mathematics and Computer Science Division, Argonne National Laboratory} \\
+  \inst{2}{Columbia University} \\
+  \inst{3}{University of Chicago} \\
+}
+
+\date{Frontiers in Computational Physics, 2012-12-19}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\input{slides/MonolithicOrSplit.tex}
+\begin{frame}{Status quo for implicit solves in lithosphere dynamics}
+  \begin{itemize}
+  \item global linearization using Newton or Picard
+  \item assembly of a sparse matrix
+  \item ``block'' factorization preconditioner with approximate Schur complement
+  \item algebraic or geometric multigrid on positive-definite systems
+  \end{itemize}
+  \begin{block}{Why is this bad?}
+    \vspace{-1em}
+    \begin{itemize}
+    \item nonlinearities (e.g., plastic yield) are mostly local
+      \begin{itemize}
+      \item feed back through nearly linear large scales
+      \item frequent visits to fine-scales even in nearly-linear regions
+      \item no way to locally update coarse grid operator
+      \item Newton linearization introduces anisotropy
+      \end{itemize}
+    \item assembled sparse matrices are terrible for performance on modern hardware
+      \begin{itemize}
+      \item memory bandwidth is very expensive compared to flops
+      \item fine-scale assembly costs a lot of memory
+      \item assembled matrices are good for algorithmic experimentation
+      \end{itemize}
+    \item block preconditioners require more parallel communication
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\input{slides/HardwareArithmeticIntensity.tex}
+\input{slides/Dohp/TensorVsAssembly.tex}
+
+\input{slides/MG/TauFAS.tex}
+\input{slides/MG/FMGRecovery.tex}
+\input{slides/MG/FourSchools.tex}
+
+% Coarsening
+\input{slides/MG/CoarseGridComputableConvergenceMeasures.tex}
+\input{slides/MG/CompatibleRelaxation.tex}
+\input{slides/MG/CoarseBasisFunctionsOverview.tex}
+\input{slides/MG/BDDCCoarseBasisFunctions.tex}
+\input{slides/MG/CoarseGridWhyILikeSubdomainProblems.tex}
+\input{slides/MG/SubdomainInterfaces.tex}
+\input{slides/MG/CoarseGridComplicationForSaddlePoint.tex}
+
+% Smoothing
+\input{slides/MG/SmoothingNonlinearProblems.tex}
+\input{slides/MG/SmoothingSaddlePoint.tex}
+\input{slides/MG/VankaBlockSmoothers.tex}
+\input{slides/PETSc/DistributiveSmoothing.tex}
+\input{slides/Stokes/CoupledMGOptions.tex}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item smoothing with point-block Jacobi Chebyshev and scaled diagonal for pressure
+  \item needs only (subdomain ``Neumann'') nonlinear function evaluations and assembly of point-block diagonal matrices
+  \item convergence rates similar to smoothed aggregation, but without fine-grid assembly
+  \item allows local updates of coarse operator, but currently slower due to naive implementation
+  \item Development in progress within PETSc
+    \begin{itemize}
+    \item parallel implementation of dual-support problems without duplicating lots of work
+    \item homogenization-based nonlinear coarsening
+    \item true $\tau$ formulation with adaptive fine-grid visits and partial coarse operator updates
+    \item microstructure-compatible pressure interpolation
+    \item ``spectrally-correct'' nonlinear saddle-point smoothers
+    \item locally-computable spectral estimates for guaranteed-stable additive smoothers
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}

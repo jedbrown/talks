@@ -1,0 +1,112 @@
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand\mgdx{2.1em}
+\newcommand\mgdy{2.2em}
+\newcommand\mgloc[4]{(#1 + #4*\mgdx*#3,#2 + \mgdy*#3)}
+\begin{frame}{Multiscale compression and recovery using $\tau$}
+  \begin{tikzpicture}
+    [scale=0.7,every node/.style={scale=0.7},
+    >=stealth,
+    restrict/.style={thick,double},
+    prolong/.style={thick,double},
+    cprestrict/.style={green!50!black,thick,double,dashed},
+    control/.style={rectangle,red!40!black,draw=red!40!black,thick},
+    mglevel/.style={rounded rectangle,draw=blue!50!black,fill=blue!20,thick,minimum size=6mm},
+    checkpoint/.style={rectangle,draw=green!50!black,fill=green!20,thick,minimum size=6mm},
+    mglevelhide/.style={rounded rectangle,draw=gray!50!black,fill=gray!20,thick,minimum size=6mm},
+    tau/.style={text=red!50!black,draw=red!50!black,fill=red!10,inner sep=1pt},
+    crelax/.style={text=green!50!black,fill=green!10,inner sep=0pt}
+    ]
+    \begin{scope}
+      \node[mglevel] (fine0) at \mgloc{0}{0}{4}{-1} {\mglevelfine};
+      \node[mglevel] (finem1down0) at \mgloc{0}{0}{3}{-1} {};
+      \node[mglevel] (cp1down0) at \mgloc{0}{0}{2}{-1} {$\mglevelcp+1$};
+      \node[mglevel] (cpdown0) at \mgloc{0}{0}{1}{-1} {\mglevelcp};
+      \node[mglevel] (coarser0) at \mgloc{0}{0}{0}{0} {\ldots};
+
+      \node[mglevelhide] (cpup0) at \mgloc{0}{0}{1}{1} {};
+      \node (cp1up0) at \mgloc{0}{0}{2}{1} {};
+
+      \node (cpdown1) at \mgloc{4em}{0}{1}{-1} {};
+      \node[mglevelhide] (coarser1) at \mgloc{4em}{0}{0}{1} {\ldots};
+      \node[mglevel] (cpup1) at \mgloc{4em}{0}{1}{1} {\mglevelcp};
+      \node[mglevel] (cp1up1) at \mgloc{4em}{0}{2}{1} {$\mglevelcp+1$};
+      \node[mglevel] (finem1up1) at \mgloc{4em}{0}{3}{1} {};
+      \node[mglevel] (fine1) at \mgloc{4em}{0}{4}{1} {\mglevelfine};
+
+      \draw[->,restrict,dashed] (fine0) -- (finem1down0);
+      \draw[->,restrict] (finem1down0) -- (cp1down0);
+      \draw[->,restrict] (cp1down0) -- (cpdown0);
+      \draw[->,restrict,dashed] (cpdown0) -- (coarser0);
+      \draw[->,prolong,dashed] (coarser0) -- (cpup0);
+      \draw[->,prolong,dashed] (cpup0) -- (cp1up0);
+
+      \draw[->,restrict,dashed] (cpdown1) -- (coarser1);
+      \draw[->,prolong,dashed] (coarser1) -- (cpup1);
+      \draw[->,prolong] (cpup1) -- (cp1up1);
+      \draw[->,prolong] (cp1up1) -- (finem1up1);
+      \draw[->,prolong,dashed] (finem1up1) -- (fine1);
+
+      \node[checkpoint] at (4em + \mgdx*4,\mgdy) (cp) {CP};
+      \draw[>->,cprestrict] (fine1) -- node[below,sloped] {Restrict} (cp);
+
+      \node[left=\mgdx of fine0] (bnanchor) {};
+      \node[control,fill=red!20] at (1.1*\mgdx,3*\mgdy) {Solve $F(u^n;b^n) = 0$};
+      \node[mglevel,right=of fine1] (finedt) {next solve};
+      \draw[->, >=stealth, control] (fine1) to[out=20,in=170] node[above] {$b^{n+1}(u^n,b^n)$} (finedt);
+      \draw[->, >=stealth, control] (bnanchor) to[out=45,in=155] node[above] {$b^n$} (fine0);
+
+      % Recovery process
+      \begin{scope}[xshift=7.5*\mgdx]
+        \node[checkpoint] (rcp) at \mgloc{0}{0}{0}{0} {CP};
+        \node[mglevel] (r0a) at \mgloc{0}{\mgdy}{0}{0} {CR};
+        \node[mglevel] (r1a) at \mgloc{0}{\mgdy}{1}{1} {};
+        \node[mglevel] (r0b) at \mgloc{2*\mgdx}{\mgdy}{0}{0} {CR};
+        \node[mglevel] (r1b) at \mgloc{2*\mgdx}{\mgdy}{1}{1} {};
+        \node[mglevel] (r2b) at \mgloc{2*\mgdx}{\mgdy}{2}{1} {\mglevelfine};
+        \node[mglevel] (r1c) at \mgloc{6*\mgdx}{\mgdy}{1}{-1} {};
+        \node[mglevel] (r0d) at \mgloc{6*\mgdx}{\mgdy}{0}{0} {CR};
+        \node[mglevel] (r1d) at \mgloc{6*\mgdx}{\mgdy}{1}{1} {};
+        \node[mglevel] (r2d) at \mgloc{6*\mgdx}{\mgdy}{2}{1} {\mglevelfine};
+
+        \draw[-,prolong,green!50!black] (rcp) -- (r0a);
+        \draw[->,prolong] (r0a) -- (r1a);
+        \draw[->,restrict] (r1a) -- (r0b);
+        \draw[->,restrict] (r0b) -- (r1b);
+        \draw[->,restrict,dashed] (r1b) -- (r2b);
+        \draw[->,restrict,dashed] (r2b) -- (r1c);
+        \draw[->,restrict] (r1c) -- (r0d);
+        \draw[->,restrict] (r0d) -- (r1d);
+        \draw[->,restrict,dashed] (r1d) -- (r2d);
+
+        \foreach \smooth in {finem1down0, cp1down0, cpdown0, coarser0,
+          cpup1, cp1up1, finem1up1,
+          r0b,r1c,r0d,r1d} {
+          \node[above left=-5pt of \smooth.west,tau] {$\tau$};
+        }
+        \node[rectangle,fill=none,draw=green!50!black,thick,fit=(rcp)(r2d)] (recoverbox) {};
+        \node[rectangle,draw=green!50!black,fill=green!20,thick,minimum size=6mm,above={0cm of recoverbox.south east},anchor=south east] (recover) {FMG Decompression};
+      \end{scope}
+      \node (notation) at (2*\mgdx,5*\mgdy) {
+        \begin{minipage}{18em}\small\sf
+          \begin{itemize}\addtolength{\itemsep}{-5pt}
+          \item checkpoint converged coarse state
+          \item recover using FMG anchored at $\mglevelcp+1$
+          \item needs only $\mglevelcp$ neighbor points
+          \item $\tau$ correction is local
+          \end{itemize}
+        \end{minipage}
+      };
+    \end{scope}
+  \end{tikzpicture}
+  \vspace{-1em}
+  \begin{itemize}
+  \item Fine state $u^{h*}$ recovered \emph{locally} from converged coarse state $u^{H*} = \hat I_h^H u^{h*}$
+  \item Normal multigrid cycles visit all levels moving from $n \to n+1$
+  \item FMG recovery only accesses levels finer than $\ell_{CP}$
+  \item Only need neighborhood of desired region for decompression
+  \item Lightweight checkpointing for transient adjoint computation
+  \item Postprocessing applications, e.g., in-situ visualization at high temporal resolution in part of the domain
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,25 @@
+\begin{frame}{Low energy modes of preconditioned operator $P^{-1}A$}
+  \framesubtitle{$2\times 2$ checkerboard elasticity problem, Neumann condition on right boundary}
+  \vspace{-1em}
+  \begin{itemize}
+  \item {\scriptsize
+    \only<1>{Original operator, stiff blocks don't move}
+    \only<2>{With Jacobi preconditioning, balances stiffness, not $\bigO(\Delta x^2)$ elliptic ill-conditioning}
+    \only<3>{With BoomerAMG preconditioning, does not find all rotations}
+    \only<4>{With geometric MG, Galerkin coarse operators, Chebychev smoother}
+    \only<5>{With geometric MG, Galerkin coarse operators, \alert{unstable} Chebychev smoother}
+  }
+  \end{itemize}
+    \only<1>{\includegraphics[width=0.7\textwidth]{figures/MG/ElastModesNone.pdf}}
+    \only<2>{\includegraphics[width=0.7\textwidth]{figures/MG/ElastModesJacobi.pdf}}
+    \only<3>{\includegraphics[width=0.7\textwidth]{figures/MG/ElastModesHypre.pdf}}
+    \only<4>{\includegraphics[width=0.7\textwidth]{figures/MG/ElastModesGMGGalerkin.pdf}}
+    \only<5>{\includegraphics[width=0.7\textwidth]{figures/MG/ElastModesGMGGalerkinCheb2Unstable.pdf}}
+    \begin{textblock}{0.3}[1,0.5](1,0.5)
+      \only<1>{\includegraphics[width=\textwidth]{figures/MG/ElastEigsNone.pdf}}
+      \only<2>{\includegraphics[width=\textwidth]{figures/MG/ElastEigsJacobi.pdf}}
+      \only<3>{\includegraphics[width=\textwidth]{figures/MG/ElastEigsHypre.pdf}}
+      \only<4>{\includegraphics[width=\textwidth]{figures/MG/ElastEigsGMGGalerkin.pdf}}
+      \only<5>{\includegraphics[width=\textwidth]{figures/MG/ElastEigsGMGGalerkinCheb2Unstable.pdf}}
+    \end{textblock}
+\end{frame}
