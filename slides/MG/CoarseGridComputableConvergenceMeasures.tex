@@ -1,15 +1,21 @@
-\begin{frame}{Computable Convergence Measures}
+\begin{frame}{Computable Convergence Measures (Linear correction notation)}
 \newcommand\Vcoarse{V_{\text{coarse}}}
 \newcommand\Vfine{V_{\text{fine}}}
   \begin{itemize}
   \item Prolongation $P: \Vcoarse \to \Vfine$
   \item Restriction $R: \Vfine \to \Vcoarse$
+  \item Smoother $S^{-1} : \Vfine \to \Vfine$ should remove high-frequency component of error
   \item $I - PR: \Vfine \to \Vfine$ removes part of vector visible in coarse space
-  \item Error iteration matrix $I - M^{-1}A$, worst-case convergence factor is $\lambda_{\max}$
+  \item Error iteration $I - M^{-1}A$, worst-case convergence factor is $\lambda_{\max}$
   \item ``Interpolation must be able to approximate an eigenvector with error bound proportional to the size of the associated eigenvalue.''
     \begin{itemize}
-    \item $\max_x \norm{x}_{(I-PR)S(I-PR)}/{\norm{x}_A}$
+    \item Upper bound for convergence rate: $\max_x \norm{x}_{(I-PR)S(I-PR)}/{\norm{x}_A}$
     \end{itemize}
-  \item What can we do before we have prolongation $P$?
+  \item Distinct challenges to constructing coarse space and operator
+    \begin{itemize}
+    \item Is the coarse space large enough to distinguish all low-energy modes?
+    \item Are those modes accurately represented? (Is $P$ accurate enough?)
+    \item Is the coarse operator accurate? (Automatic with Galerkin-type $RAP$ for nice problems.)
+    \end{itemize}
   \end{itemize}
 \end{frame}

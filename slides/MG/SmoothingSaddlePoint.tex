@@ -1,15 +1,24 @@
 \begin{frame}{Smoothing for saddle point systems}
-  \[ \begin{pmatrix}
+  \begin{equation*}
+  \begin{pmatrix}
     A & B^T \\ B & 0
-  \end{pmatrix} \]
+  \end{pmatrix}
+  \begin{pmatrix}
+    u \\ p
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    b \\ 0
+  \end{pmatrix}
+\end{equation*}
   \begin{itemize}
   \item pressure has no self-coupling
   \item pressure error modes not spectrally separated
   \item approaches
     \begin{itemize}
     \item block smoothers (Vanka)
+    \item amplify fine-grid modes (distributive relaxation)
     \item splitting with approximate Schur complement
-    \item amplify fine-grid modes
     \end{itemize}
   \end{itemize}
 \end{frame}

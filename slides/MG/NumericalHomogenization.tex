@@ -5,20 +5,20 @@
     \item integrate against microscale coefficients
     \item robust theory for linear elliptic equations
     \item popular in porous media and composite materials
-    \item practically computable using multigrid ideas, partition of unity method
+    \item practically computable using multigrid ideas, local subproblems, partition of unity
     \item no support for stochastic microscale
     \end{itemize}
   \item Coefficient/equation upscaling
     \begin{itemize}
-    \item a good method reproduces statistics
-    \item cannot recover fine grid solution
+    \item a good method reproduces large-scale statistics
+    \item no direct method to recover fine grid solution
     \item suitable for nonlinear coarse problems
     \item can derive coarse Hamiltonian
     \end{itemize}
   \end{enumerate}
   \begin{itemize}
-  \item can exploit repetitive structure in fine grid
+  \item both can exploit repetitive structure in fine grid
   \item coarse space is \emph{sufficient} if compatible relaxation/Monte-Carlo converges fast
-  \item procedure can be global or local
+  \item homogenization procedure can be global or local
   \end{itemize}
 \end{frame}

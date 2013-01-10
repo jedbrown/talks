@@ -162,8 +162,8 @@
             Blue Gene/Q node    & 43        & 205         & 4.8                 \\
             % GeForce 9400M       & 21        & 54          & 2.6                 \\
             % GTX 285             & 159       & 1062        & 6.8                 \\
-            Tesla M2050         & 144       & 515        & 3.6                 \\
-            Kepler K20          & 250       & 1310       & 5.2 \\
+            Tesla M2090         & 120  & 665  & 5.5 \\
+            Kepler K20Xm        & 160 & 1310 & 8.2 \\ % http://www.elekslabs.com/2012/11/nvidia-tesla-k20-benchmark-facts.html
             \bottomrule
           \end{tabular}
           \caption{Balanced arithmetic intensity (flops/byte) for several architectures.}\label{tab:BalancedAI}
@@ -213,7 +213,7 @@
       \vspace{-2.4em}
       \begin{block}{Low-communication cycling}
             \begin{wrapfigure}{r}{0.45\textwidth}
-              \includegraphics[width=0.4\textwidth]{taudeps-crop.pdf}
+              \includegraphics[width=0.4\textwidth]{figures/MG/TauDeps.pdf}
             \end{wrapfigure}
             The $\tau$ formulation removes communication from all levels except the coarsest.
             Instead of starting and ending on the fine grid, a cycle starts and ends on the coarse grid.
