@@ -1,0 +1,18 @@
+\begin{frame}{Low communication MG}
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+      \item {\color{red} red arrows} can be removed by $\tau$-FAS with overlap
+      \item {\color{blue} blue arrows} can also be removed, but then
+        algebraic convergence stalls when discretization error is
+        reached
+      \item no simple way to check that discretization error is obtained
+      \item if fine grid state is not stored, use compatible relaxation to complete prolongation $P$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \vspace{-2em}
+      \includegraphics[width=\textwidth]{figures/MG/LowCommunication}
+    \end{column}
+  \end{columns}
+\end{frame}

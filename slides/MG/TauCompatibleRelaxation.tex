@@ -1,0 +1,25 @@
+\begin{frame}{Compatible Relaxation (CR) for $\tau$-FAS}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/LivneHabituatedCR} \\
+      {\small [Livne 2004]}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item Reconstructs smooth fine-scale using only coarse solution and forcing term
+      \item Apply smoother subject to constraint $\hat I_h^H x = x^H$
+        \begin{enumerate}
+        \item $x_0 = I_H^h x^H$
+        \item $\tilde x_n = x_{n-1} + S_A^{-1}\big(r(x_{n-1}) \big)$
+        \item $x_n = \tilde x_n + S_R^{-1}\big(\hat I_h^H \tilde x_n - x^H) \big)$
+        \end{enumerate}
+      \item Compare to:
+        \begin{enumerate}
+        \item $x_0 = x_{\text{old}} + I_H^h (x^H - \hat I_h^H x_{\text{old}})$
+        %\item  $x_n = x_{n-1} + S_A^{-1}\big( r(\tilde x_{n-1}) \big)$
+        \end{enumerate}
+      \item Local Fourier Analysis shows slightly slower smoothing for CR
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
