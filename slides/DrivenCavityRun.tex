@@ -2,7 +2,7 @@
 \begin{frame}[fragile]{Running the driven cavity}
 \footnotesize
   \begin{itemize}
-  \item \code{./ex50 -lidvelocity 100 -grashof \alert{1e2} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2}
+  \item \code{./ex19 -lidvelocity 100 -grashof \alert{1e2} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2}
 \only<2>{{\scriptsize \color{green!30!black} \tt \\
 lid velocity = 100, prandtl \# = 1, grashof \# = 1000 \\
   0 SNES Function norm 7.682893957872e+02 \\
@@ -15,7 +15,7 @@ lid velocity = 100, prandtl \# = 1, grashof \# = 1000 \\
   7 SNES Function norm 1.191107243692e-07 \\
 Number of SNES iterations = 7
 }}
-  \item \code{./ex50 -lidvelocity 100 -grashof \alert{1e4} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2}
+  \item \code{./ex19 -lidvelocity 100 -grashof \alert{1e4} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2}
 \only<3>{{\scriptsize \color{green!30!black} \tt \\
 lid velocity = 100, prandtl \# = 1, grashof \# = 10000 \\
   0 SNES Function norm 7.854040793765e+02 \\
@@ -28,7 +28,7 @@ lid velocity = 100, prandtl \# = 1, grashof \# = 10000 \\
   7 SNES Function norm 4.417003604737e-08 \\
 Number of SNES iterations = 7
 }}
-  \item \code{./ex50 -lidvelocity 100 -grashof \alert{1e5} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2 -pc\_type lu}
+  \item \code{./ex19 -lidvelocity 100 -grashof \alert{1e5} -da\_grid\_x 16 -da\_grid\_y 16 -snes\_monitor -snes\_view -da\_refine 2 -pc\_type lu}
 \only<4>{{\scriptsize \color{green!30!black} \tt \\
 lid velocity = 100, prandtl \# = 1, grashof \# = 100000 \\
   0 SNES Function norm 1.809960438828e+03 \\
@@ -111,7 +111,7 @@ CONVERGED\_TIME at time 6.80079e+14 after 30 steps
 \footnotesize
   \begin{itemize}
   \item V-cycle structure, but use nonlinear relaxation and skip the matrices
-  \item \code{./ex50 -da\_refine 4 -snes\_monitor -snes\_type \alert{nrichardson} -npc\_snes\_type fas -npc\_fas\_snes\_type gs -npc\_snes\_max\_it 1 -npc\_fas\_snes\_max\_it 6 -lidvelocity 100 -grashof 4e4}
+  \item \code{./ex19 -da\_refine 4 -snes\_monitor -snes\_type \alert{nrichardson} -npc\_fas\_levels\_snes\_type gs -npc\_fas\_levels\_snes\_gs\_sweeps 3 -npc\_snes\_type fas -npc\_fas\_levels\_snes\_type gs -npc\_snes\_max\_it 1 -npc\_snes\_fas\_smoothup 6 -npc\_snes\_fas\_smoothdown 6 -lidvelocity 100 -grashof 4e4}
 \only<2>{{\tiny \color{green!30!black} \tt \\
 lid velocity = 100, prandtl \# = 1, grashof \# = 40000 \\
   0 SNES Function norm 1.065744184802e+03 \\
@@ -133,24 +133,21 @@ lid velocity = 100, prandtl \# = 1, grashof \# = 40000 \\
  16 SNES Function norm 3.478180386598e-06 \\
 Number of SNES iterations = 16
 }}
-\item \code{./ex50 -da\_refine 4 -snes\_monitor -snes\_type \alert{ngmres} -npc\_snes\_type fas -npc\_fas\_snes\_type gs -npc\_snes\_max\_it 1 -npc\_fas\_snes\_max\_it 6 -lidvelocity 100 -grashof 4e4}
+\item \code{./ex19 -da\_refine 4 -snes\_monitor -snes\_type \alert{ngmres} -npc\_fas\_levels\_snes\_type gs -npc\_fas\_levels\_snes\_gs\_sweeps 3 -npc\_snes\_type fas -npc\_fas\_levels\_snes\_type gs -npc\_snes\_max\_it 1 -npc\_snes\_fas\_smoothup 6 -npc\_snes\_fas\_smoothdown 6 -lidvelocity 100 -grashof 4e4}
 \only<3>{{\tiny \color{green!30!black} \tt \\
 lid velocity = 100, prandtl \# = 1, grashof \# = 40000 \\
   0 SNES Function norm 1.065744184802e+03 \\
-  1 SNES Function norm 9.413049447497e+01 \\
-  2 SNES Function norm 2.224880766452e+01 \\
-  3 SNES Function norm 9.189326874763e+00 \\
-  4 SNES Function norm 1.393259858466e+00 \\
-  5 SNES Function norm 8.181096927684e-01 \\
-  6 SNES Function norm 1.032746339507e-01 \\
-  7 SNES Function norm 2.180399296949e-02 \\
-  8 SNES Function norm 3.666037217003e-03 \\
-  9 SNES Function norm 6.303345712094e-04 \\
- 10 SNES Function norm 1.336313106893e-04 \\
- 11 SNES Function norm 2.804102467169e-05 \\
- 12 SNES Function norm 1.265512744399e-05 \\
- 13 SNES Function norm 3.217267233936e-06 \\
-Number of SNES iterations = 13
-}}
+  1 SNES Function norm 9.413549877567e+01 \\
+  2 SNES Function norm 2.117533223215e+01 \\
+  3 SNES Function norm 5.858983768704e+00 \\
+  4 SNES Function norm 7.303010571089e-01 \\
+  5 SNES Function norm 1.585498982242e-01 \\
+  6 SNES Function norm 2.963278257962e-02 \\
+  7 SNES Function norm 1.152790487670e-02 \\
+  8 SNES Function norm 2.092161787185e-03 \\
+  9 SNES Function norm 3.129419807458e-04 \\
+ 10 SNES Function norm 3.503421154426e-05 \\
+ 11 SNES Function norm 2.898344063176e-06 \\
+Number of SNES iterations = 11}}
   \end{itemize}
 \end{frame}

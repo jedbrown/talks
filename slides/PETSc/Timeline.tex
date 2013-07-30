@@ -1,6 +1,6 @@
 \newcommand\ganttline[4]{% line, tag, start end
-   \node at (0,#1/2+.1) [anchor=base east] {#2};
-   \fill[blue] (#3/\xtick-1991/\xtick,#1/2-.1) rectangle (#4/\xtick-1991/\xtick,#1/2+.1);}
+   \node at (0,#1*0.4+.1) [anchor=base east] {#2};
+   \fill[blue] (#3/\xtick-1991/\xtick,#1*0.4-.1) rectangle (#4/\xtick-1991/\xtick,#1*0.4+.1);}
 \newcommand\ganttlabel[6]{% year, label, color, yloc, anchor
   \node[#3] at (#1/\xtick+#6/\xtick-1991/\xtick,#4) [anchor=#5] {#2};
   \fill[#3] (#1/\xtick-1991/\xtick,1/2-.1) rectangle (#1/\xtick-1991/\xtick+0.04,12/2+.1);}
@@ -8,7 +8,7 @@
 %\begin{frame}{Timeline}
 \frame{
 \begin{figure}[htbp]
-\def\present{2012.2}
+\def\present{2013.5}
 \def\xtick{2.2}
 \begin{tikzpicture}[y=-1cm]
    %\draw[help lines] (0.5,5) grid (8,0.5);

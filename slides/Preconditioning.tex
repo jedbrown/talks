@@ -85,12 +85,13 @@
     \item Overlap $\delta$: $\textit{its} \in \big( \frac L {\sqrt{H\delta}} \big)$
     \end{itemize}
   \end{block}
+  \vspace{-1ex}
   \begin{block}{Neumann-Neumann}
     \begin{itemize}
     \item Solve Neumann problems on non-overlapping subdomains
     \item $\textit{its} \in \bigO\big( \frac{L}{H}(1+\log\frac H h) \big)$
     \item Tricky null space issues (floating subdomains)
-    \item Need subdomain matrices, net globally assembled matrix.
+    \item Need subdomain matrices, not globally assembled matrix.
     \end{itemize}
   \end{block}
   \begin{itemize}

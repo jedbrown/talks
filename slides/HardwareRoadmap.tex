@@ -12,7 +12,8 @@
     \begin{itemize}
     \item High order methods good: better accuracy per storage
     \item High order methods bad: work unit gets larger
-    \item GPU threads have very little memory, must keep work unit small
+    \item Need to share cache between cores, keep work unit small
+    %\item GPU threads have very little memory, must keep work unit small
     \item Need library composability, keep user contribution embarrassingly parallel
     \end{itemize}
   \end{block}

@@ -2,20 +2,18 @@
 \begin{frame}{Downloading}
 \begin{itemize}
   \item \url{http://mcs.anl.gov/petsc}, download tarball
-  \item We will use Mecurial in this tutorial:
+  \item We will use Git in this tutorial:
   \begin{itemize}
-    \item \url{http://mercurial.selenic.com}
-    \item Debian/Ubuntu: \shell{aptitude install mercurial}
-    \item Fedora: \shell{yum install mercurial}
+    \item \url{http://git-scm.com}
+    \item Debian/Ubuntu: \shell{aptitude install git}
+    \item Fedora: \shell{yum install git}
   \end{itemize}
-  \item Get the PETSc release
+  \item Get the PETSc maintenance branch
   \begin{itemize}\footnotesize
-    \item \shell{\small hg clone \mtab\bslash \\
-     \scriptsize http://petsc.cs.iit.edu/petsc/releases/petsc-3.2}
-    \item \shell{cd petsc-3.2}
-    \item \shell{\scriptsize hg clone http://petsc.cs.iit.edu/petsc/releases/BuildSystem-3.2 \mtab\bslash \\
-        \qquad config/BuildSystem}
-    \item Get the latest bug fixes with \shell{hg pull -{}-update}
+    \item \shell{\small git clone https://bitbucket.org/petsc/petsc}
+    \item \shell{cd petsc}
+    \item \shell{git checkout maint}
+    \item Get the latest bug fixes with \shell{git pull}
   \end{itemize}
 \end{itemize}
 \end{frame}
@@ -23,25 +21,24 @@
 \begin{frame}[fragile]{Configuration}
 \begin{block}{Basic configuration}
 \begin{itemize}\footnotesize
-  \item \shell{export PETSC\_DIR=\$PWD PETSC\_ARCH=mpich-gcc-dbg}
-  \item \shell{./configure -{}-with-shared-libraries \mtab \bslash \\
-  	\qquad\qquad -{}-with-blas-lapack-dir=/usr \mtab\bslash \\
-  	\qquad\qquad -{}-download-\{mpich,ml,hypre\}}
+  \item \shell{export PETSC\_DIR=\$PWD PETSC\_ARCH=intel-dbg}
+  \item \shell{./configure -{}-with-mpi-dir=/opt/intel/mpi/impi/intel64/ \mtab \bslash \\
+      \qquad\qquad -{}-download-f-blas-lapack \mtab \bslash \\
+  	\qquad\qquad -{}-download-\{ml,hypre\}}
   \item \shell{make all test}
 \end{itemize}
 \end{block}
 \begin{itemize}
 \item Other common options
   \begin{itemize}\footnotesize
-  \item \code{-{}-with-mpi-dir=/path/to/mpi}
   \item \code{-{}-with-scalar-type=$<$real or complex$>$}
   \item %\code{-{}-with-precision=$<$single,double,__float128$>$}
     \verb|--with-precision=<single,double,__float128>|
   \item \code{-{}-with-64-bit-indices}
-  \item \code{-{}-download-\{umfpack,mumps,scalapack,blacs,parmetis\}}
+  \item \code{-{}-download-\{umfpack,mumps,scalapack,parmetis\}}
   \end{itemize}
 \item reconfigure at any time with \\
-  {\footnotesize \shell{mpich-gcc-dbg/conf/reconfigure-mpich-gcc-dbg.py \mtab\bslash\\
+  {\footnotesize \shell{intel-dbg/conf/reconfigure-intel-dbg.py \mtab\bslash\\
       \qquad\qquad -{}-new-options}}
 \end{itemize}
 \end{frame}
@@ -50,9 +47,9 @@
 
 \begin{frame}{An optimized build}
   \begin{itemize}
-  \item \shell{\small mpich-gcc-dbg/conf/reconfigure-mpich-gcc-dbg.py \\
-      PETSC\_ARCH=mpich-gcc-opt \\
-      -{}-with-debugging=0 \&\& make PETSC\_ARCH=mpich-gcc-opt}
+  \item \shell{\small intel-dbg/conf/reconfigure-intel-dbg.py \\
+      PETSC\_ARCH=intel-opt \\
+      -{}-with-debugging=0 \&\& make PETSC\_ARCH=intel-opt}
   \item What does \code{-{}-with-debugging=1} (default) do?
     \begin{itemize}
     \item Keeps debugging symbols (of course)

@@ -29,8 +29,7 @@ mpiexec -n 4 ./ex48
 -da\_refine\_hierarchy\_x 1,8,8 \\
 -da\_refine\_hierarchy\_y 2,1,1
 -da\_refine\_hierarchy\_z 2,1,1 \\
--dmmg\_grid\_sequence 1
--dmmg\_view
+-snes\_grid\_sequence 1
 -log\_summary \\
 -ksp\_converged\_reason
 -ksp\_gmres\_modifiedgramschmidt \\
@@ -51,7 +50,7 @@ mpiexec -n 4 ./ex48
 -thi\_hom x
 -thi\_nlevels 4
 \end{alltt}
-\item What happens if you remove \code{-dmmg\_grid\_sequence}?
+\item What happens if you remove \code{-snes\_grid\_sequence}?
 \item What about solving with block Jacobi, ASM, or algebraic multigrid?
 \end{itemize}
 \end{frame}

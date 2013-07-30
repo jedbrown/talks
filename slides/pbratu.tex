@@ -15,8 +15,8 @@
   \end{itemize}
   \begin{example}[Nonlinear Poisson]
     \begin{align*}
-      F(u)=0 \quad &\sim\quad -\div\big[ (1+u^2) \grad u \big] - f = 0 \\
-      J(u)w \quad &\sim\quad  -\div\big[(1+u^2)\grad w + 2uw\grad u \Big]
+      F(u)=0 \quad &\sim\quad -\div\big[ (1+u^2) \nabla u \big] - f = 0 \\
+      J(u)w \quad &\sim\quad  -\div\big[(1+u^2)\nabla w + 2uw\nabla u \Big]
     \end{align*}
   \end{example}
   % \begin{example}[$\pp$-Bratu]
@@ -44,15 +44,15 @@
     Singular or degenerate when $\nabla u = 0$, turning point at $\lambda_{\text{crit}}$.
   \item Regularized variant
     \begin{gather*}
-      -\div (\eta \grad u) - \lambda e^u - f = 0 \\
-      \eta(\gamma) = (\epsilon^2 + \gamma)^{\frac{\pfrak-2}{2}} \qquad \gamma(u) = \half \abs{\grad u}^2
+      -\div (\eta \nabla u) - \lambda e^u - f = 0 \\
+      \eta(\gamma) = (\epsilon^2 + \gamma)^{\frac{\pfrak-2}{2}} \qquad \gamma(u) = \half \abs{\nabla u}^2
     \end{gather*}
   \item Jacobian
     \begin{gather*}
-      J(u) w \sim -\div \big[ (\eta \bm 1 + \eta' \nabla u \otimes \nabla u) \grad w \big] - \lambda e^u w \\
+      J(u) w \sim -\div \big[ (\eta \bm 1 + \eta' \nabla u \otimes \nabla u) \nabla w \big] - \lambda e^u w \\
       \eta' = \frac{\pfrak-2}{2} \eta / (\epsilon^2 + \gamma)
     \end{gather*}
-    Physical interpretation: conductivity tensor flattened in direction $\grad u$ %($\pfrak < 2$)
+    Physical interpretation: conductivity tensor flattened in direction $\nabla u$ %($\pfrak < 2$)
   \end{itemize}
 \end{frame}
 
@@ -91,36 +91,38 @@
   \begin{itemize}
   \item Start with 2-Laplacian, define only residuals
   \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
-  \item \shell{hg update -r\Rrlap}
+  \item \shell{git checkout 2-laplace}
   \item \shell{./pbratu -da\_refine \alert{1} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
 \only<2>{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 1.752912528326e+00 \\
   Linear solve converged due to CONVERGED\_RTOL iterations 5\\
-  1 SNES Function norm 8.186334097904e-09 \\
-CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 1}}
+  1 SNES Function norm 4.390709829164e-08 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 12 \\
+  2 SNES Function norm 1.746277254848e-13 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 2}}
   \item \shell{./pbratu -da\_refine \alert{2} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
 \only<3>{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 9.078219847428e-01 \\
   Linear solve converged due to CONVERGED\_RTOL iterations 15\\
-  1 SNES Function norm 2.345486877865e-06 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 21\\
-  2 SNES Function norm 2.120611747328e-11 \\
+  1 SNES Function norm 2.406994794145e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 23 \\
+  2 SNES Function norm 2.294103172735e-11 \\
 CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 2}}
   \item \shell{./pbratu -da\_refine \alert{3} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
 \only<4>{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 4.604375080629e-01 \\
   Linear solve converged due to CONVERGED\_RTOL iterations 29\\
-  1 SNES Function norm 4.110014777182e-06 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 45\\
-  2 SNES Function norm 3.864064684640e-11 \\
+  1 SNES Function norm 4.210146822234e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 56\\
+  2 SNES Function norm 3.682570997797e-11 \\
 CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 2}}
   \item \shell{./pbratu -da\_refine \alert{4} -snes\_mf -snes\_monitor -ksp\_converged\_reason}
 \only<5->{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 2.316943448149e-01 \\
   Linear solve converged due to CONVERGED\_RTOL iterations 134\\
-  1 SNES Function norm 2.220182991371e-06 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 218\\
-  2 SNES Function norm 2.203863493979e-11 \\
+  1 SNES Function norm 2.818210729722e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 213\\
+  2 SNES Function norm 2.809642347904e-11 \\
 CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 2
 }}
 \item<6> The number of iterations is growing with grid refinement.
@@ -130,55 +132,53 @@ CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 2
 \frame{
   \begin{itemize}
   \item Add Bratu nonlinearity
-  \item \shell{hg update -r\Rrbratu}
+  \item \shell{git checkout 3-bratu}
   \item \shell{./pbratu -da\_refine 4 -snes\_monitor -ksp\_converged\_reason -snes\_mf -lambda 6.8}
 \only<2>{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 2.523928952419e-02 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 371\\
-  1 SNES Function norm 2.378016101715e-03 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 209\\
-  2 SNES Function norm 4.979483775461e-04 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 1185\\
-  3 SNES Function norm 7.198447805127e-05 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 1299\\
-  4 SNES Function norm 3.019524899772e-06 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 1234\\
-  5 SNES Function norm 6.360412159907e-09 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 2544\\
-  6 SNES Function norm 1.974175133857e-13 \\
-CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 6
-}}
+  Linear solve converged due to CONVERGED\_RTOL iterations 376 \\
+  1 SNES Function norm 2.378001119137e-03 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 235 \\
+  2 SNES Function norm 4.979598152116e-04 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 1169 \\
+  3 SNES Function norm 7.198625209481e-05 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 1691 \\
+  4 SNES Function norm 3.019780114232e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 2350 \\
+  5 SNES Function norm 6.387533058907e-09 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 3863 \\
+CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 5}}
  \item \shell{./pbratu -da\_refine 4 -snes\_monitor -ksp\_converged\_reason -snes\_mf -lambda 6.8 -ksp\_gmres\_restart 300}
 \only<3>{{\tiny \color{green!30!black} \tt \\
-  0 SNES Function norm 2.523928952419e-02 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 75\\
-  1 SNES Function norm 2.377891871718e-03 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 60\\
-  2 SNES Function norm 4.979176174277e-04 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 63\\
-  3 SNES Function norm 7.197415857110e-05 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 77\\
-  4 SNES Function norm 3.018119513163e-06 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 85\\
-  5 SNES Function norm 6.330165324363e-09 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 104\\
-  6 SNES Function norm 1.907493716656e-13 \\
+  0 SNES Function norm 2.523928952419e-02  \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 75 \\
+  1 SNES Function norm 2.377892513142e-03  \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 61 \\
+  2 SNES Function norm 4.979179966582e-04  \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 75 \\
+  3 SNES Function norm 7.197423321801e-05  \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 79 \\
+  4 SNES Function norm 3.018134096869e-06  \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 86 \\
+  5 SNES Function norm 6.350690047935e-09  \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 112 \\
+  6 SNES Function norm 1.122795346518e-12  \\
 CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 6}}
  \item \shell{./pbratu -da\_refine 4 -snes\_monitor -ksp\_converged\_reason -snes\_mf -lambda 6.8 -ksp\_type minres}
 \only<4>{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 2.523928952419e-02 \\
   Linear solve converged due to CONVERGED\_RTOL iterations 75\\
-  1 SNES Function norm 2.377891809517e-03 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 60\\
-  2 SNES Function norm 4.979175037852e-04 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 63\\
-  3 SNES Function norm 7.197415110757e-05 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 77\\
-  4 SNES Function norm 3.018110523948e-06 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 86\\
-  5 SNES Function norm 6.331007767896e-09 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 104\\
-  6 SNES Function norm 1.913567537762e-13\\
+  1 SNES Function norm 2.377892916328e-03 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 61\\
+  2 SNES Function norm 4.979168456182e-04 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 75\\
+  3 SNES Function norm 7.197428275444e-05 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 79\\
+  4 SNES Function norm 3.018060662161e-06 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 90\\
+  5 SNES Function norm 6.360386692512e-09 \\
+  Linear solve converged due to CONVERGED\_RTOL iterations 116\\
+  6 SNES Function norm 1.216988639463e-12 \\
 CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 6}}
 \item<5> Restarts were costing a lot of iterations
 \item<5> This problem is SPD, can use methods that do not need restarts
@@ -188,7 +188,7 @@ CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 6}}
 \begin{frame}{Add $\pfrak$ nonlinearity}
   \begin{itemize}
   \item Matrix-free Jacobians, no preconditioning \code{-snes\_mf}
-  \item \shell{hg update -r\Rrpbratu}
+  \item \shell{git checkout 4-pbratu}
   \item \shell{./pbratu -da\_refine 2 -snes\_monitor -ksp\_converged\_reason -ksp\_type cg -snes\_mf -lambda 1}
 \only<2>{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 7.707838205703e-01 \\
@@ -225,16 +225,32 @@ CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 25
   \end{itemize}
 \end{frame}
 
+\begin{frame}{The problem}
+  \begin{itemize}
+  \item We are solving a second order elliptic problem.
+    \begin{equation*}
+      \kappa(A) \sim \frac{\eta_{\max}}{\eta_{\min}} (\Delta x)^{-2}
+    \end{equation*}
+  \item Recall that Krylov methods for SPD systems require $\sqrt{\kappa}$ iterations
+  \item Lower bound: need to propagate information globally: iteration count proportional to domain diameter
+  \item We need to:
+    \begin{itemize}
+    \item Fix local scaling/heterogeneity (first term)
+    \item Fix elliptic ill-conditioning
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
 \input{slides/Preconditioning.tex}
 
 \input{slides/SNES/FiniteDifferenceJacobian.tex}
 
 \begin{frame}{Finite difference Jacobian by coloring}
   \begin{itemize}
-  \item No new code (\shell{hg update -r\Rrpbratu})
-  \item \shell{./pbratu -da\_refine 1 -mat\_fd\_coloring\_view\_draw -draw\_pause -1}
+  \item No new code (\shell{git checkout 4-pbratu})
+  \item \shell{./pbratu -da\_refine 1 -mat\_fd\_coloring\_view draw -draw\_pause -1}
 \only<2>{\includegraphics[width=0.7\textwidth]{figures/Mat/Coloring}}
-  \item Examples that do not use DM can use \code{-snes\_fd} (finite difference a dense Jacobian)
+  \item Not using DM? Use \code{-snes\_fd} (finite difference a dense Jacobian)
   \item \shell{./pbratu -da\_refine 2 -snes\_monitor -ksp\_converged\_reason -ksp\_type cg -lambda 1 -p 5}
 \only<3>{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 1.337999256479e+01 \\
@@ -257,7 +273,7 @@ CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 25
 CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 8
 }}
   \item \shell{./pbratu -da\_refine 2 -snes\_monitor -ksp\_converged\_reason -ksp\_type cg -lambda 1 -p 1.3}
-\only<3>{{\tiny \color{green!30!black} \tt \\
+\only<4>{{\tiny \color{green!30!black} \tt \\
   0 SNES Function norm 5.372922175703e-01 \\
   Linear solve converged due to CONVERGED\_RTOL iterations 13\\
   1 SNES Function norm 4.960486874742e-01 \\
@@ -266,22 +282,23 @@ CONVERGED\_FNORM\_RELATIVE Number of Newton iterations = 8
   Linear solve converged due to CONVERGED\_RTOL iterations 10\\
   3 SNES Function norm 1.345553700887e-01 \\
   Linear solve converged due to CONVERGED\_RTOL iterations 10\\
-  4 SNES Function norm 1.178005041938e-01 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 10\\
-  5 SNES Function norm 8.533380204312e-02 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 12\\
-  6 SNES Function norm 7.206148357097e-02 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 12\\
-  7 SNES Function norm 6.231065478788e-02 \\
-  Linear solve converged due to CONVERGED\_RTOL iterations 12\\
+  % 4 SNES Function norm 1.178005041938e-01 \\
+  % Linear solve converged due to CONVERGED\_RTOL iterations 10\\
+  % 5 SNES Function norm 8.533380204312e-02 \\
+  % Linear solve converged due to CONVERGED\_RTOL iterations 12\\
+  % 6 SNES Function norm 7.206148357097e-02 \\
+  % Linear solve converged due to CONVERGED\_RTOL iterations 12\\
+  % 7 SNES Function norm 6.231065478788e-02 \\
+  % Linear solve converged due to CONVERGED\_RTOL iterations 12\\
+  \ldots \\
   8 SNES Function norm 5.528442185538e-02 \\
   Linear solve converged due to CONVERGED\_RTOL iterations 11\\
 DIVERGED\_LINE\_SEARCH Number of Newton iterations = 8    
-}}
-  \item Add \code{-snes\_mf\_operator} (use matrix-free differencing to apply)
-  \item Add \code{-mat\_fd\_type ds} (other choice of differencing parameter)
-  \item Try some different preconditioners (\code{jacobi,sor,asm,gamg,hypre,ml})
-  \item Try changing the physical parameters
+}} \only<5>{\alert{DIVERGED}}
+  \item<5> Add \code{-snes\_mf\_operator} (use matrix-free differencing to apply)
+  \item<5> Add \code{-mat\_fd\_type ds} (other choice of differencing parameter)
+  \item<5> Try some different preconditioners (\code{jacobi,sor,asm,gamg,hypre,ml})
+  \item<5> Try changing the physical parameters
   \end{itemize}
 \end{frame}
 
@@ -298,7 +315,8 @@ DIVERGED\_LINE\_SEARCH Number of Newton iterations = 8
   \begin{itemize}
   \item Use \code{DAGetMatrix()} (can skip matrix preallocation details)
   \item Start by just assembling Bratu nonlinearity
-  \item \shell{hg update -r\Rassemblebratu}
+  \item \shell{git checkout 5-picard}
+  \item Use \code{-myJ -jtype 1}
   \item Watch \code{-snes\_converged\_reason}, what happens for $p \ne 2$?
   \item Solve exactly with the preconditioner \code{-pc\_type lu}
   \item Try \code{-snes\_mf\_operator}
@@ -309,10 +327,10 @@ DIVERGED\_LINE\_SEARCH Number of Newton iterations = 8
   \begin{itemize}
   \item We need to assemble the $\pfrak$ part
     \begin{align*}
-      J(u)w \quad &\sim\quad -\div \big[(\eta\bm 1 + \eta' \grad u \otimes \grad u) \grad w\big]
+      J(u)w \quad &\sim\quad -\div \big[(\eta\bm 1 + \eta' \nabla u \otimes \nabla u) \nabla w\big]
     \end{align*}
-  \item Second part is scary, but what about just using $-\div(\eta\grad w)$?
-  \item \shell{hg update -r\Rassemblepicard}
+  \item Second part is scary, but what about just using $-\div(\eta\nabla w)$?
+  \item Same code: \shell{git checkout 5-picard}, run with \code{-myJ -jtype 2}
   \item Solve exactly with the preconditioner \code{-pc\_type lu}
   \item Try \code{-snes\_mf\_operator}
   \item Refine the grid, change $\pfrak$
@@ -328,7 +346,7 @@ DIVERGED\_LINE\_SEARCH Number of Newton iterations = 8
   \item Observation: the Picard linearization uses a ``star'' (5-point)
     stencil while Newton linearization needs a ``box'' (9-point) stencil.
   \item Add support for reduced preallocation with a command-line option
-  \item \shell{hg update -r\Rmyprealloc}
+  \item \shell{git checkout 6-star-alloc}
   \item Compare performance (time, memory, iteration count) of
     \begin{itemize}
     \item 5-point Picard-linearization assembled by hand
@@ -341,7 +359,7 @@ DIVERGED\_LINE\_SEARCH Number of Newton iterations = 8
 \subsection{Debugging}
 \begin{frame}{Maybe it's not worth it, but let's assemble it anyway}
   \begin{itemize}
-  \item \shell{hg update -r\Rnewtoncrash}
+  \item \shell{git checkout 7-newton-crash}
   \item Crash!
   \item You were using the the debug PETSC\_ARCH, right?
   \item Launch the debugger
@@ -366,7 +384,7 @@ DIVERGED\_LINE\_SEARCH Number of Newton iterations = 8
 
 \begin{frame}{Memory error is gone now}
 \begin{itemize}
-  \item \shell{hg update -r\Rnewtonbug}
+  \item \shell{git checkout 8-newton-skew-bug}
   \item Run with {-snes\_mf\_operator -pc\_type lu}
   \item Do you see quadratic convergence?
   \item<2-> Hmm, there must be a bug in that mess, where is it?
@@ -381,7 +399,7 @@ DIVERGED\_LINE\_SEARCH Number of Newton iterations = 8
   \item \code{-snes\_type test -snes\_test\_display}
     \oneitem{Are the entries in the star stencil correct?}
   \item Find which line has the typo
-  \item \shell{hg update -r\Rnewtonfix}
+  \item \shell{git checkout 9-newton-correct}
   \item Check with \code{-snes\_type test} 
   \item and \code{-snes\_mf\_operator -pc\_type lu}
   \end{itemize}
