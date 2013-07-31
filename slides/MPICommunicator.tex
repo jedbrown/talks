@@ -1,0 +1,34 @@
+
+
+\begin{frame}{MPI communicators}
+  \begin{itemize}
+  \item Opaque object, defines process group and synchronization channel
+  \item PETSc objects need an \code{MPI\_Comm} in their constructor
+    \begin{itemize}
+    \item \code{PETSC\_COMM\_SELF} for serial objects
+    \item \code{PETSC\_COMM\_WORLD} common, but \emph{not} required
+    \end{itemize}
+  \item Can split communicators, spawn processes on new communicators, etc
+  \item Operations are one of
+    \begin{itemize}
+    \item Not Collective: \code{VecGetLocalSize(), MatSetValues()}
+    \item Logically Collective: \code{KSPSetType(), PCMGSetCycleType()}
+      \begin{itemize}
+      \item checked when running in debug mode
+      \end{itemize}
+    \item Neighbor-wise Collective: \code{VecScatterBegin(), MatMult()}
+      \begin{itemize}
+      \item Point-to-point communication between two processes
+      \item Neighbor collectives in upcoming MPI-3
+      \end{itemize}
+    \item Collective: \code{VecNorm(), MatAssemblyBegin(), KSPCreate()}
+      \begin{itemize}
+      \item Global communication, synchronous
+      \item Non-blocking collectives in upcoming MPI-3
+      \end{itemize}
+    \end{itemize}
+  \item Deadlock if some process doesn't participate (\eg wrong order)
+  \end{itemize}
+\end{frame}
+
+
