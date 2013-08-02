@@ -61,10 +61,10 @@
       -snes\_view}
   \item \shell{./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \\
       -snes\_monitor -\{ksp,snes\}\_converged\_reason \\
-      -snes\_view -mat\_view\_draw -draw\_pause 0.5}
+      -snes\_view -mat\_view draw -draw\_pause 0.5}
   \item \shell{./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \\
       -snes\_monitor -\{ksp,snes\}\_converged\_reason \\
-      -snes\_view -mat\_view\_draw -draw\_pause 0.5 \\
+      -snes\_view -mat\_view draw -draw\_pause 0.5 \\
       -pc\_type lu -pc\_factor\_mat\_ordering\_type natural}
   \item Use \code{-help} to find other ordering types
 \end{itemize}
