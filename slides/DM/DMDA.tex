@@ -1,0 +1,14 @@
+
+\begin{frame}{Distributed Array}
+  \begin{itemize}
+  \item Interface for topologically structured grids
+  \item Defines (topological part of) a finite-dimensional function space
+    \oneitem{Get an element from this space: \code{DMCreateGlobalVector()}}
+  \item Provides parallel layout
+  \item Refinement and coarsening
+    \oneitem{\code{DMRefineHierarchy()}}
+  \item Ghost value coherence
+    \oneitem{\code{DMGlobalToLocalBegin()}}
+  \item Matrix preallocation: \oneitem{\code{DMCreateMatrix()} (formerly \code{DMGetMatrix()})}
+  \end{itemize}
+\end{frame}
