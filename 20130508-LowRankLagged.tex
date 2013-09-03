@@ -128,52 +128,8 @@
   \titlepage
 \end{frame}
 
-\begin{frame}{What makes a nonlinear algebraic problem difficult?}
-  \begin{itemize}
-  \item Ill-conditioning
-    \begin{itemize}
-    \item For a second order elliptic problem, condition number $\sim \bigO(h^{-2})$.
-    \item Anisotropy, and coefficient structure make the issue worse
-    \item Iterative algorithms with local corrections cannot fix these asymptotics
-    \item Eventual convergence guaranteed for many methods (in exact arithmetic)
-    \item Practical convergence too slow, worse in parallel
-    \end{itemize}
-  \item Nonlinearity (especially non-smoothness)
-    \begin{itemize}
-    \item Plasticity, contact, shocks, phase change, bifurcations
-    \item Usually local (in some sense), but can have long-range effects
-    \item Methods stop converging as parameters change
-    \end{itemize}
-  \item<2> Nonlinearity interacts with ill-conditioning
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{Why global linearization?}
-  \begin{itemize}
-  \item Reuse of algorithms and software
-    \begin{itemize}
-    \item Sparse matrices help decouple software
-    \item Many preconditioners can operate directly on 
-    \end{itemize}
-  \item Debugging discretization and singular behavior
-    \begin{itemize}
-    \item Compare to finite difference Jacobian
-    \item Direct solves, singular values
-    \end{itemize}
-  \item Convergence theory
-  \item Amortize setup costs
-    \begin{itemize}
-    \item Evaluate material models once
-    \item Solve linear problem without re-evaluating
-    \end{itemize}
-  \item Algorithms that are not available without linearization
-    \begin{itemize}
-    \item Direct solvers
-    \item Coarsening for algebraic multigrid
-    \end{itemize}
-  \item For irregular problems, convergent nonlinear iterations 
-  \end{itemize}
-\end{frame}
+\input{slides/WhatMakesNonlinearAlgebraicProblemDifficult.tex}
+\input{slides/WhyGlobalLinearization.tex}
 
 \begin{frame}{Inexact Newton methods}
   \begin{textblock}{0.18}[1,0](0.99,0)

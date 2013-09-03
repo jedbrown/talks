@@ -1,0 +1,26 @@
+\begin{frame}{Why global linearization?}
+  \begin{itemize}
+  \item Reuse of algorithms and software
+    \begin{itemize}
+    \item Sparse matrices help decouple software
+    \item Many preconditioners can operate directly on 
+    \end{itemize}
+  \item Debugging discretization and singular behavior
+    \begin{itemize}
+    \item Compare to finite difference Jacobian
+    \item Direct solves, singular values
+    \end{itemize}
+  \item Convergence theory
+  \item Amortize setup costs
+    \begin{itemize}
+    \item Evaluate material models once
+    \item Solve linear problem without re-evaluating
+    \end{itemize}
+  \item Algorithms that are not available without linearization
+    \begin{itemize}
+    \item Direct solvers
+    \item Coarsening for algebraic multigrid
+    \end{itemize}
+  \item For irregular problems, convergent nonlinear iterations 
+  \end{itemize}
+\end{frame}
