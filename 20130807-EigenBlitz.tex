@@ -1,0 +1,103 @@
+\documentclass{beamer}
+
+\usetheme{ANLBlue}
+\setbeamertemplate{navigation symbols}{}
+
+% LCM: Use bold for frametitle
+% But this elimiates subtitles ... How to do bold for frametitle and keep subtitle?
+% \setbeamertemplate{frametitle} {\textbf{\insertframetitle}}
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:  
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection,hideothersubsections]
+  \end{frame}
+}
+
+\AtBeginSubsection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[sectionstyle=show/hide,subsectionstyle=show/shaded/hide]
+  \end{frame}
+}
+
+% \usepackage{tikz}
+% \usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\usepackage{pgfplots}
+
+\usepackage{graphicx}
+
+\usepackage{array}
+% \usepackage{ulem} % uses underlining for emphasis
+\usepackage{fancyvrb}
+% \usepackage[absolute,overlay,showboxes]{textpos}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+% Absolute positioning is done with fractions of a slide
+% \begin{textblock}{BOXWIDTH}[H0,V0](HLOC,VLOC)
+%   content goes here, perhaps \includegraphics
+% \end{textblock}
+% BOXWIDTH : width of text box
+% [H0,V0] : location in text box to use for positioning
+%    [0,1] is the southwest corner, [0.5,0.5] is the center, [1,0.5] is the
+%    east edge, etc
+% (HLOC,VLOC) : location in the frame to place the reference point
+%    [1,0](0,0.5) places the upper left corner of the box at the right
+%    midpoint of the text box.
+
+% Omit label for subfigure
+
+% Text macros
+\newenvironment{changemargin}[2]{%
+  \begin{list}{}{%
+    \setlength{\topsep}{0pt}%
+    \setlength{\leftmargin}{#1}%
+    \setlength{\rightmargin}{#2}%
+    \setlength{\listparindent}{\parindent}%
+    \setlength{\itemindent}{\parindent}%
+    \setlength{\parsep}{\parskip}%
+  }%
+  \item[]}{\end{list}}
+
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command: 
+
+%\beamerdefaultoverlayspecification{<+->}     
+
+\begin{document}
+
+\title{\bf Interactive solver design using eigen-analysis}
+
+\begin{frame}[shrink=5]{Interactive solver design using eigen-analysis}
+  \textbf{\small Jed Brown, Matt Otten, Barry Smith} \\
+  Why isn't my solver converging?
+  \begin{equation*}
+    T = \underbrace{(1 - M^{-1}A)}_{\text{post-smooth} T_s} \underbrace{(1 - P A_c^{-1}R A)}_{\text{coarse-correction} T_c} \underbrace{(1 - M^{-1}A)}_{\text{pre-smooth} T_s}
+  \end{equation*}
+  \vspace{-1.5em}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+      \item PETSc plugin uses SLEPc to compute eigenpairs.
+      \item MG, DD, and field-split solvers are based on subspace correction: fast when complementary work is done in each subspace.
+      \item Idealized smoother $T_s = PR$, idealized coarse correction $T_c = 1 - PR$.
+      \item SAWs: Scientific Application Web server, embedded, JS client, RESTful interface (Matt Otten)
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/gamg-lambda0.png}
+        \caption{$\lambda_0 = 0.0268$. \small Smoothed aggregation w/o rotational modes, hydrostatic ice flow, bumpy, slippery bed.}
+      \end{figure}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}

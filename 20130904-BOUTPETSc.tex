@@ -1,0 +1,294 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{ANLBlue}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{PETSc and BOUT++}
+\author{{\bf Jed Brown} \\
+Peter Brune, Emil Constantinescu, \\
+Debojyoti Ghosh, Lois Curfman McInnes \\
+\texttt{\{jedbrown,brune,emconsta,ghosh,curfman\}@mcs.anl.gov}
+}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  Mathematics and Computer Science Division \\ Argonne National Laboratory
+}
+
+\date{BOUT++ Workshop, 2013-09-04}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Portable {\bf Extensible} Toolkit for Scientific computing}
+\begin{block}{Philosophy: Everything has a plugin architecture}
+\begin{itemize}
+  \item Vectors, Matrices, Coloring/ordering/partitioning algorithms
+  \item Preconditioners, Krylov accelerators
+  \item Nonlinear solvers, Time integrators
+  \item Spatial discretizations/topology$^*$
+\end{itemize}
+\end{block}
+\begin{example}
+	Vendor supplies matrix format and associated preconditioner, distributes
+	compiled shared library.  Application user loads plugin at runtime, no source
+	code in sight.
+\end{example}
+\end{frame}
+
+\begin{frame}{Portable Extensible {\bf Toolkit} for Scientific computing}
+Algorithms, (parallel) debugging aids, low-overhead profiling
+\begin{block}{Composability}
+Try new algorithms by choosing from product space and composing
+existing algorithms (multilevel, domain decomposition, splitting).
+\end{block}
+\begin{block}{Experimentation}
+\begin{itemize}
+  \item It is not possible to pick the solver \emph{a priori}. \\
+  What will deliver best/competitive performance for a given physics, discretization, architecture, and problem size?
+  \item PETSc's response: expose an algebra of composition so new solvers can be created at runtime.
+  \item Important to keep solvers decoupled from physics and discretization because we also experiment with those. 
+\end{itemize}
+\end{block}
+\end{frame}
+
+\section{Time Integration}
+\begin{frame}{Trade-offs in time integration}
+  \begin{itemize}
+  \item Properties
+    \begin{itemize}
+    \item Nonlinear stability (e.g., positivity preservation)
+    \item Stability along imaginary axis
+    \item $L$-stability (damping at infinity)
+    \item Implicitness and reuse
+    \end{itemize}
+  \item What is expensive?
+    \begin{itemize}
+    \item Function evaluation
+    \item Operator assembly/preconditioner setup
+      \begin{itemize}
+      \item How much can be reused for how long?
+      \end{itemize}
+    \item Implicit solves
+      \begin{itemize}
+      \item Can we find better solver algorithm?
+      \item More effort in setup?
+      \end{itemize}
+    \end{itemize}
+  \item What is ``convergence''?
+    \begin{itemize}
+    \item Wave propagation: implicitness useless for convergence \emph{in a norm}
+    \item Non-norm functionals could be robust
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Reusing implicit solver setup}
+  \begin{itemize}
+  \item Linearization
+  \item MG interpolants
+  \item Lagged preconditioner
+  \item Modified Newton
+  \item Quasi-Newton
+  \item IMEX with linear implicit part
+  \item Rosenbrock/W
+  \end{itemize}
+\end{frame}
+
+\input{slides/PETSc/TSARKIMEX.tex}
+% \input{slides/PETSc/TSUsage.tex}
+%\input{slides/TS/}
+
+\begin{frame}[fragile]{Time integration method design}
+  \begin{figure}
+    \centering
+    \includegraphics[width=.8\textwidth]{figures/TS/EmilMethodDesignFeatures.png}
+  \end{figure}
+  \begin{itemize}
+  \item Select order, number of stages, required properties
+  \item Optimize properties like SSP coefficient, accuracy, or linear stability
+  \item \cverb|TSARKIMEXRegister("my-method", ...coefficients...)|
+  \item \cverb|-ts_type arkimex -ts_arkimex_type my-method|
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Example: Additive Runge-Kutta design}
+  \begin{itemize}
+  \item 3-stage, second order, $L$-stable implicit part
+  \item one-parameter family of solutions
+  \end{itemize}
+  \begin{description}
+  \item[ARK2c] Maximize SSP coefficient
+  \item[ARK2E] Minimize leading error coefficient
+  \end{description}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.55\textwidth]{figures/TS/ssp_ark_poster.png}
+    \includegraphics[width=0.49\textwidth]{figures/TS/Stability_ARK2E_ARK2C.pdf}
+  \end{figure}
+\end{frame}
+
+\input{slides/PETSc/TSMethods.tex}
+
+\begin{frame}{Adaptive controllers}
+  \begin{itemize}
+  \item ``Stiff'' waves are not stiff if one wants to converge \emph{in a norm}
+  \item PETSc integrators provide embedded methods to estimate errors
+  \item Automatic controllers optimize local truncation error and nonlinear solve cost
+  \item User can register custom controllers
+  \item Use a priori knowledge of the physics, robust functionals
+  \item Choose from list of methods, choose next step size
+  \end{itemize}
+\end{frame}
+
+\section{Nonlinear solvers}
+\begin{frame}{Which nonlinear solver?}
+  \begin{itemize}
+  \item Global linearization (NewtonLS, NewtonTR)
+    \begin{itemize}
+    \item Preconditioning libraries for assembled matrices
+    \item Low arithmetic intensity
+    \end{itemize}
+  \item Quasi-Newton
+    \begin{itemize}
+    \item Build low-rank updates to Jacobian inverse
+    \item Brown and Brune, ``Low-rank quasi-Newton updates for robust Jacobian lagging in Newton-type methods'', ANS MC13.
+    \end{itemize}
+  \item Nonlinear multigrid and domain decomposition
+    \begin{itemize}
+    \item ASPIN (left-preconditioned nonlinear Schwarz), also right-preconditioned
+    \item Full Approximation Scheme with linear or nonlinear smoothers
+    \item More intrusive, but freakishly efficient for difficult problems
+    \end{itemize}
+  \item Nonlinear GMRES, Anderson mixing, nonlinear CG
+    \begin{itemize}
+    \item Accelerator for nonlinear preconditioning
+    \item Good alternative to matrix-free finite differencing
+    \item More robust line search possible: operates in reduced basis
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/BruneNGMRESFAS2.png}
+\end{frame}
+
+\input{slides/MonolithicOrSplit.tex}
+\input{slides/PETSc/LocalSpaces.tex}
+
+\section{Comments on performance}
+\input{slides/JFNKBottlenecks.tex}
+\input{slides/ScalabilityWarning.tex}
+\input{slides/Dohp/TensorVsAssembly.tex}
+\input{slides/HardwareArithmeticIntensity.tex}
+
+\end{document}

@@ -1,0 +1,418 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{ANLBlue}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{Time integration and solver challenges in tokamak edge plasma simulation}
+\author{{\bf Jed Brown} \\
+Peter Brune, Emil Constantinescu, \\
+Debojyoti Ghosh, Lois Curfman McInnes \\
+\texttt{\{jedbrown,brune,emconsta,ghosh,curfman\}@mcs.anl.gov}
+}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  Mathematics and Computer Science Division \\ Argonne National Laboratory
+}
+
+\date{LANS seminar, 2013-09-10}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{Tokamaks and Edge Localized Modes}
+\begin{frame}{Tokamaks and BOUT++}
+  \begin{columns}
+    \begin{column}{.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/Tokamak/XPointTokamakCartoon.jpg} \\
+      {\scriptsize c/o \url{http://efda.org}}
+    \end{column}
+    \begin{column}{.5\textwidth}
+      \begin{itemize}
+      \item Strong magnetic field in toroidal direction (FFT), weak spiral
+      \item $\beta = \frac p p_{\text{mag}}$, high $\beta$ needed for efficient operation
+      \item Ions and electrons mostly confined within flux surfaces
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \begin{itemize}
+  \item BOUT++ (Dudson, Umansky, and others): finite difference Framework
+  \item non-orthogonal grids with complicated topology
+  \item C++ operator-overloaded interface
+  \item Libraries: FFTW, NetCDF, Sundials, PETSc
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Edge Localized Modes (ELMs)}
+  \begin{figure}
+    \centering
+    \includegraphics[width=.5\textwidth]{figures/Tokamak/LiangHModeLMode.png}
+    \includegraphics[width=.45\textwidth]{figures/Tokamak/LiangPeelingBallooning.png}
+  \end{figure}
+  \begin{itemize}
+  \item ELMs at ITER scale could produce \SI{10}{\mega\joule\per\meter\squared}
+  \item Current materials can only tolerate \SI{.5}{\mega\joule\per\meter\squared}
+  \end{itemize}
+\end{frame}
+
+\section{Preconditioning}
+\begin{frame}{Waves in MHD}
+  \begin{itemize}
+  \item Interested in peeling-ballooning modes with time scale of \SI{100}{\micro\second} to milliseconds
+  \item Shear Alfv\'en waves travel along magnetic field lines: $v_A \approx \SI{1e7}{\metre\per\second}$
+  \item Explicit CFL from $v_A$ would be about \SI{1e-8}{\second}
+  \item Parallel electron heat conduction is similarly fast
+  \item Acoustic wave velocity \SI{1e5}{\metre\per\second}: mildly stiff
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Preconditioning approach (Chac\'on)}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item $\rho$ density
+      \item $T_e$ electron temperature
+      \item $T_i$ ion temperature
+      \end{itemize}       
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item $v_\parallel$  parallel velocity
+      \item $A_\parallel$ parallel vector potential
+      \item $U$ vorticity
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \begin{itemize}
+  \item After dropping slow terms
+    \begin{equation}
+      \widetilde{\bm 1 - \gamma J} = \begin{pmatrix} \text{block} &  & B_{\rho,U} \\
+          & \text{diagonal} & \vdots \\
+         C_{U\rho} & \dotsb & D_{UU}
+       \end{pmatrix}
+    \end{equation}
+  \item Eliminate all but vorticity $U$ and approximate Schur complement using
+    \begin{equation*}
+      \tilde S = \bm 1 - \gamma^2 \frac{B_0^2}{\rho_0} \partial_\parallel \nabla_\perp^2 \partial_\parallel \nabla_\perp^{-2}
+    \end{equation*}
+  \item Approximate commutator
+    \begin{equation*}
+      \partial_\parallel \nabla_\perp^2 \partial_\parallel \nabla_\perp^{-2} \approx \partial_\parallel^2 - \frac{2 \partial_\parallel^2 (RB_\theta)}{RB_\theta}
+    \end{equation*}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{DAE formulation}
+  \begin{itemize}
+  \item 3-field model: pressure $P$, magnetic flux $\psi$, vorticity $U$
+  \item Electrostatic potential $\phi$ eliminated
+  \end{itemize}
+  \begin{equation*}
+    J =
+    \left[ \begin{array}{c|c|c}
+        \color{blue}{-\vvec_E\cdot\nabla} & 0 & \left[\bvec_0\times\nabla\left(P_0 + \color{blue}{P}\right)\cdot\nabla\right]\nabla_\perp^{-2} \\
+        \hline
+        0 & \color{blue}{-\vvec_E\cdot\nabla} & \left(\bvec_0\cdot\nabla\right)\nabla_\perp^{-2}  \\
+        \hline
+        2\bxk  & -\frac{B_0^2}{\mu_0\rho}\left(\bvec_0 \color{blue}{-\bvec_0\times\nabla\psi}\right)\cdot\nabla\delp  & \color{blue}{-\vvec_E\cdot\nabla} \\
+        & + \frac{B_0^2}{\rho}\left[\bvec_0\times\nabla\left(\frac{J_{||0}}{B_0}\right)\right]\cdot\nabla & \\
+        & + \color{blue}{\frac{B_0^2}{\mu_0\rho}\nabla\left(\delp\psi\right)\cdot\left(\bvec_0\times\nabla\right)} &
+      \end{array}\right]
+  \end{equation*}
+  \begin{itemize}
+  \item $\nabla_\perp^{-1}$ consists of separate solves on subcommunicators
+  \item DAE approach: add $\phi$ as additional variable
+  \end{itemize}
+\end{frame}
+
+\section{Time Integration}
+\begin{frame}{Trade-offs in time integration}
+  \begin{itemize}
+  \item Properties
+    \begin{itemize}
+    \item Nonlinear stability (e.g., positivity preservation)
+    \item Stability along imaginary axis
+    \item $L$-stability (damping at infinity)
+    \item Implicitness and reuse
+    \end{itemize}
+  \item What is expensive?
+    \begin{itemize}
+    \item Function evaluation
+    \item Operator assembly/preconditioner setup
+      \begin{itemize}
+      \item How much can be reused for how long?
+      \end{itemize}
+    \item Implicit solves
+      \begin{itemize}
+      \item Can we find better solver algorithm?
+      \item More effort in setup?
+      \end{itemize}
+    \end{itemize}
+  \item What is ``convergence''?
+    \begin{itemize}
+    \item Wave propagation: implicitness useless for convergence \emph{in a norm}
+    \item Non-norm functionals could be robust
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Reusing implicit solver setup}
+  \begin{itemize}
+  \item Linearization
+  \item MG interpolants
+  \item Lagged preconditioner
+  \item Modified Newton
+  \item Quasi-Newton
+  \item IMEX with linear implicit part
+  \item Rosenbrock/W
+  \end{itemize}
+\end{frame}
+
+\input{slides/PETSc/TSARKIMEX.tex}
+
+\begin{frame}[fragile]{Time integration method design}
+  \begin{figure}
+    \centering
+    \includegraphics[width=.8\textwidth]{figures/TS/EmilMethodDesignFeatures.png}
+  \end{figure}
+  \begin{itemize}
+  \item Select order, number of stages, required properties
+  \item Optimize properties like SSP coefficient, accuracy, or linear stability
+  \item \cverb|TSARKIMEXRegister("my-method", ...coefficients...)|
+  \item \cverb|-ts_type arkimex -ts_arkimex_type my-method|
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Example: Additive Runge-Kutta design}
+  \begin{itemize}
+  \item 3-stage, second order, $L$-stable implicit part
+  \item one-parameter family of solutions
+  \end{itemize}
+  \begin{description}
+  \item[ARK2c] Maximize SSP coefficient
+  \item[ARK2E] Minimize leading error coefficient
+  \end{description}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.55\textwidth]{figures/TS/ssp_ark_poster.png}
+    \includegraphics[width=0.49\textwidth]{figures/TS/Stability_ARK2E_ARK2C.pdf}
+  \end{figure}
+\end{frame}
+
+\input{slides/PETSc/TSMethods.tex}
+
+\begin{frame}{Adaptive controllers}
+  \begin{itemize}
+  \item ``Stiff'' waves are not stiff if one wants to converge \emph{in a norm}
+    \begin{itemize}
+    \item MHD has many waves, speeds can be degenerate
+    \end{itemize}
+  \item PETSc integrators provide embedded methods to estimate errors
+  \item Automatic controllers optimize local truncation error and nonlinear solve cost
+  \item User can register custom controllers
+  \item Use a priori knowledge of the physics, robust functionals
+  \item Choose from list of methods, choose next step size
+  \end{itemize}
+\end{frame}
+
+\section{Nonlinear solvers}
+\begin{frame}{Do we need nonlinear solvers?}
+  \begin{itemize}
+  \item Simulations start nearly-linear, strong nonlinearities take time to develop
+  \item AMG setup is currently expensive
+    \begin{itemize}
+    \item Could improve incremental setup cost, but numeric $R A P$ takes most time
+    \item Low-rank quasi-Newton lagging?
+    \end{itemize}
+  \item Nonlinear multigrid and domain decomposition
+    \begin{itemize}
+    \item ASPIN (left-preconditioned nonlinear Schwarz), also right-preconditioned
+    \item Full Approximation Scheme with linear or nonlinear smoothers
+    \item More intrusive, but freakishly efficient for difficult problems
+    \end{itemize}
+  \item Nonlinear GMRES, Anderson mixing, nonlinear CG
+    \begin{itemize}
+    \item Accelerator for nonlinear preconditioning
+    \item Good alternative to matrix-free finite differencing
+    \item More robust line search possible: operates in reduced basis
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+% \begin{frame}{Nonlinear methods}
+%   \begin{itemize}
+%   \item Global linearization (NewtonLS, NewtonTR)
+%     \begin{itemize}
+%     \item Preconditioning libraries for assembled matrices
+%     \item Low arithmetic intensity
+%     \end{itemize}
+%   \item Quasi-Newton
+%     \begin{itemize}
+%     \item Build low-rank updates to Jacobian inverse
+%     \item Brown and Brune, ``Low-rank quasi-Newton updates for robust Jacobian lagging in Newton-type methods'', ANS MC13.
+%     \end{itemize}
+%   \item Nonlinear multigrid and domain decomposition
+%     \begin{itemize}
+%     \item ASPIN (left-preconditioned nonlinear Schwarz), also right-preconditioned
+%     \item Full Approximation Scheme with linear or nonlinear smoothers
+%     \item More intrusive, but freakishly efficient for difficult problems
+%     \end{itemize}
+%   \item Nonlinear GMRES, Anderson mixing, nonlinear CG
+%     \begin{itemize}
+%     \item Accelerator for nonlinear preconditioning
+%     \item Good alternative to matrix-free finite differencing
+%     \item More robust line search possible: operates in reduced basis
+%     \end{itemize}
+%   \end{itemize}
+% \end{frame}
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/BruneNGMRESFAS2.png}
+\end{frame}
+
+\input{slides/MonolithicOrSplit.tex}
+% \input{slides/PETSc/LocalSpaces.tex}
+
+\section{Turbulence and multiscale time integration}
+\begin{frame}{Microturbulence}
+  \begin{itemize}
+  \item Radial transport is dominated by turbulence
+  \item Magnetic field causes band gap in edge
+  \item Patrick Sanan has implemented HMM and FLAVORS integrators
+  \item Perhaps we can step over fast time scale?
+  \end{itemize}
+  \includegraphics[width=0.8\textwidth]{figures/Sanan.png}
+\end{frame}
+
+% \section{Comments on performance}
+% \input{slides/JFNKBottlenecks.tex}
+% \input{slides/ScalabilityWarning.tex}
+% \input{slides/Dohp/TensorVsAssembly.tex}
+% \input{slides/HardwareArithmeticIntensity.tex}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item DAE formulation preferable
+  \item Linearly implicit or nonlinearly implicit with lagging?
+  \item MG setup cost for ``easy'' solves
+  \item Consider full MG in strongly nonlinear regime
+  \item Reconsider value of spectral in toroidal direction (eventual scalability limit)
+  \item Questions about gyrokinetics and full kinetics
+  \item More emphasis on multiscale models
+  \end{itemize}
+\end{frame}
+
+\end{document}

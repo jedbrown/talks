@@ -1,0 +1,311 @@
+\documentclass[final,t]{beamer}
+\mode<presentation>
+{
+  \usetheme{MCSposter}
+  \usecolortheme{default}
+  \usefonttheme[onlymath]{serif}
+}
+\usepackage[orientation=portrait,size=custom,width=75,height=100,scale=1.1]{beamerposter}
+%\usepackage[orientation=landscape,size=a0,scale=1.4]{beamerposter}
+%\usepackage{pgfpages}
+%\pgfpagesuselayout{resize to}[a4paper,landscape,border shrink=5mm]
+%\pgfpagesuselayout{resize to}[a0paper,landscape]
+
+% additional settings
+\setbeamerfont{itemize}{size=\normalsize}
+\setbeamerfont{itemize/enumerate body}{size=\normalsize}
+\setbeamerfont{itemize/enumerate subbody}{size=\normalsize}
+
+% additional packages
+\usepackage{times}
+\usepackage{subcaption}
+\usepackage{textpos}
+\usepackage{wrapfig}
+\usepackage{sidecap}
+%\usepackage{sfmath} 
+\usepackage{amsmath,amsthm,bm,microtype}
+\usepackage{siunitx}
+\DeclareSIUnit\year{a}
+\sisetup{retain-unity-mantissa = false}
+\usepackage{exscale}
+\usepackage{multicol,multirow}
+\usepackage{booktabs}
+%\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\newcommand\todo[1]{{\color{red}\bf [TODO: #1]}}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+\usepackage{fancyvrb}
+\newcommand\cverb[1][]{\SaveVerb[%
+    aftersave={\textnormal{\UseVerb[#1]{vsave}}}]{vsave}}
+\usepackage{minted}
+
+\bibliographystyle{unsrt-shortauthor}
+
+%\def\newblock{\hskip .11em plus .33em minus .07em} % for natbib and beamer IMPORTANT
+\listfiles
+\graphicspath{{/home/jed/talks/figures/}{/home/jed/src/aterrel-presentations/figures/}}
+% Display a grid to help align images
+%\beamertemplategridbackground[1cm]
+
+\newcommand\jedcolor[1]{{}}
+
+\title{\LARGE Interactive solver design using eigen-analysis}
+\author[Jed Brown]{Jed Brown {\texttt{jedbrown@mcs.anl.gov}} \\ Matthew Otten \texttt{motten@iit.edu} \\ Barry Smith \texttt{bsmith@mcs.anl.gov}}
+\institute[MCS]{This poster: \url{http://59A2.org/files/20130807-Eigen.pdf}}
+
+\newcommand{\newt}[1]{\tilde{#1}}
+\newcommand{\btab}{\hspace{\stretch{1}}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Rz}{\mathcal{R}}
+\newcommand{\RR}{{\bar{\mathbb{R}}}}
+\newcommand{\II}{\mathcal{I}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Zp}{\mathbb{Z}_+}
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\LL}{\mathcal{L}}
+\newcommand{\PP}{\mathscr{P}}
+\newcommand{\ff}{\bm f}
+\newcommand{\uu}{\bm u}
+\newcommand{\vv}{\bm v}
+\newcommand{\ww}{\bm w}
+\newcommand{\DD}{D}
+\newcommand{\EE}{\mathcal E}
+\newcommand{\VV}{\bm{\mathcal{V}}}
+\newcommand{\Pspace}{\mathcal{P}}
+\newcommand\pfrak{{\mathfrak p}}
+\newcommand{\di}{\partial}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\bigabs}[1]{\big\lvert #1 \big\rvert}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\dif}{\bigtriangleup}
+\newcommand{\ud}{\,\mathrm{d}}
+\newcommand{\tcolon}{\!:\!}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\card}{card}
+\DeclareMathOperator{\trace}{tr}
+\DeclareMathOperator{\sspan}{span}
+\renewcommand{\bar}{\overline}
+\newcommand{\ed}{\dot{\epsilon}}
+
+% abbreviations
+\usepackage{xspace}
+\makeatletter
+\DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+\def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+\def\eg{{e.g}\onedot} \def\Eg{{E.g}\onedot}
+\def\ie{{i.e}\onedot} \def\Ie{{I.e}\onedot}
+\def\cf{{c.f}\onedot} \def\Cf{{C.f}\onedot}
+\def\etc{{etc}\onedot}
+\def\vs{{vs}\onedot}
+\def\wrt{w.r.t\onedot}
+\def\dof{d.o.f\onedot}
+\def\etal{{et al}\onedot}
+\makeatother
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Need to declare these here because newcommand inside a frame is fragile
+\newcommand\mgdx{1.9em}
+\newcommand\mgdy{2.5em}
+\newcommand\mgloc[4]{(#1 + #4*\mgdx*#3,#2 + \mgdy*#3)}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+\begin{document}
+\begin{frame}[fragile]{}
+  \vspace{-3em}
+  \begin{columns}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Why isn't my solver converging?}
+        Many things can go wrong:
+        \begin{itemize}
+        \item Accidental singularity (boundary conditions, nonlinearity)
+        \item Intentional singularity; improperly specified null space or RHS
+        \item Unstable preconditioner, indefiniteness
+        \item Inadequate smoothing, lack of $h$-ellipticity
+        \item Homogenization for rediscretized coarse operator
+        \item Poor accuracy or scaling on coarse levels
+        \item Boundary conditions and internal discontinuities like faults
+        \end{itemize}
+        Debugging solver convergence requires clever guesswork, experience, and time-consuming experimentation.
+        Our approach: {\bf activate plugin for any linear solve in a PETSc application}.  Parallel, any level of nesting, etc.
+      \end{block}
+
+      \vspace{-2em}
+      \begin{block}{Diagnosis via eigen-analysis}
+        MG, DD, and field-split solvers are based on subspace correction: fast when complementary work is done in each subspace.
+        Example: iteration matrix for V-cycle applied to $A$
+        \begin{equation*}
+          T = T_s T_c T_s = \underbrace{(1 - M^{-1}A)}_{\text{post-smooth}} \underbrace{(1 - P A_c^{-1}R A)}_{\text{coarse-correction}} \underbrace{(1 - M^{-1}A)}_{\text{pre-smooth}}
+        \end{equation*}
+        Large eigenpairs of $T$ are functions that slip through the cracks: poorly corrected by the smoother and poorly represented in the coarse space.
+        \begin{itemize}
+        \item Improve grid transfer: enrichment, adapted basis support, constrained energy minimization
+        \item Improve coarse operator: homogenization, collocation, Galerkin/grid transfer
+        \item Improve smoother: block size, balancing, stages, double discretization
+        \end{itemize}
+        Analysis flavors:
+        \begin{description}
+        \item[Unpreconditioned] Check stability of operator/discretization, preconditioner used for spectral transform
+        \item[Preconditioned] Check deficiencies of overall operator
+        \item[Idealized Smoother] $T_s = PR$ (similar to smoothing a Laplacian)
+        \item[Idealized Coarse Correction] $T_c = 1 - PR$
+        \end{description}
+      \end{block}
+
+      \vspace{-2em}
+      \begin{block}{Solving the eigenvalue problems}
+        Plugin uses SLEPc to solve preconditioned eigenvalue problem
+        \begin{wrapfigure}{r}{0.5\textwidth}
+          \centering
+          \includegraphics[width=0.49\textwidth]{figures/THI/EigenGAMG/EVConvergence.png}
+          \caption{Convergence of smallest 10 eigenvalues for smoothed aggregation-preconditioned ice flow problem using Krylov-Schur with simple shift.  About 15 iterations are needed because the eigenvalues are well separated.}
+        \end{wrapfigure}
+        \begin{equation*}
+          A x = \lambda B x
+        \end{equation*}
+        where $B^{-1}$ is preconditioner used for smoothing; $B$ is usually not available.
+        Convert to standard form, $B^{-1} A x = \lambda x$ with $K = B^{-1} A$ applied matrix-free.
+        Small eigenpairs are usually interesting, but we have no preconditioner for $K$.
+        \begin{itemize}
+        \item Use Krylov-Schur method with large basis and standard shift (usually fastest, but least robust)
+        \item Harmonic extraction in case of imaginary or indefinite problems (negative eigenvalues)
+        \item Shift-and-invert: solve with $K$ using unpreconditioned Krylov (expensive, but robust)
+        \end{itemize}
+      \end{block}
+
+      \vspace{-2em}
+      \begin{block}{SAWs: Scientific Application Web server}
+        \begin{itemize}
+        \item Summer project by Matthew Otten (IIT undergrad, Cornell Physics)
+        \item Mongoose embedded web server: \url{http://code.google.com/p/mongoose}
+        \item Portable C application, JavaScript UI in web browser
+        \item Run-time options for configuring PETSc solvers
+        \item RESTful client interface, JSON
+          \texttt{http://host/SAWs/app/solve/}
+        \item Arrays of basic types, strings, alternatives
+        \item Simple interface for users to expose interactivity
+        \end{itemize}
+\begin{minted}{c}
+SAWs_Add_Directory(app,"solve",&solve);
+SAWs_Add_Variable(solve,"singular-values",&gmres->sings,
+                  n,SAWs_READ,SAWs_DOUBLE);
+SAWs_Add_Variable(solve,"mg-cycle-index",&mg->cycle_index,
+                  1,SAWs_WRITE,SAWs_INT);
+\end{minted}
+      \end{block}
+    \end{column}
+
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Example: Hydrostatic ice flow}
+        3D momentum balance with shallowness: neglect horizontal derivatives of vertical velocity, integrate to eliminate pressure and vertical velocity.
+        \begin{align}\label{eq:momentum}
+          - \nabla \left[ \eta
+            \begin{pmatrix}
+              4 u_x + 2 v_y & u_y + v_x & u_z \\
+              u_y + v_x & 2 u_x + 4 v_y & v_z
+            \end{pmatrix} \right] + \rho g \nabla s & = 0,
+        \end{align}
+        with nonlinear, variable-coefficient slip conditions at bed.
+        \begin{itemize}
+        \item Many solvers converge easily with no-slip/frozen bed, more difficult for slippery bed (ISMIP HOM test C)
+        \item Geometric multigrid is good for this problem: $\lambda \in [0.805, 1]$~\cite{brown2013tmeice}
+        \end{itemize}
+        % GAMG: ./ex48 -M 10 -P 8 -da_refine 1 -thi_mat_type aij -thi_hom C -dll_append ~/petsc-eig/mpich-opt/lib/libpetsc-eig.so -ksp_plugin eig -eig_type preconditioned -eig_eps_nev 10 -eig_eps_smallest_real -eig_view_vectors_vtk -eig_st_ksp_type gmres -eig_st_ksp_rtol 1e-9 -eig_eps_monitor_lg_all -eig_eps_view -pc_type gamg
+        % Eigenvalue  0 (error): 0.0268052+0i (2.34383e-09)
+        % Eigenvalue  1 (error): 0.0408511+0i (9.28564e-10)
+        % Eigenvalue  2 (error): 0.0431757+0i (7.35697e-10)
+        % Eigenvalue  3 (error): 0.0447336+0i (6.78016e-09)
+        % Eigenvalue  4 (error): 0.0490315+0i (8.74661e-09)
+        % Eigenvalue  5 (error): 0.0539488+0i (9.67847e-10)
+        % Eigenvalue  6 (error): 0.055815+0i (1.7793e-09)
+        % Eigenvalue  7 (error): 0.0598606+0i (1.92014e-09)
+        % Eigenvalue  8 (error): 0.06518+0i (3.2315e-09)
+        % Eigenvalue  9 (error): 0.0669961+0i (2.8736e-09)
+        \begin{figure}
+          \centering
+          \begin{subfigure}{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/visit0000.png}
+            \caption{$\lambda_0 = 0.0268$}
+          \end{subfigure}
+          \begin{subfigure}{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/visit0001.png}
+            \caption{$\lambda_1 = 0.0409$}
+          \end{subfigure}
+          \caption{Smallest two eigenpairs for smoothed aggregation with only translational modes (but no rotational modes).}
+        \end{figure}
+
+        \begin{figure}
+          %   Eigenvalue  0 (error): 0.00433677+0i (3.47238e-10)
+          %   Eigenvalue  1 (error): 0.0057207+0i (2.86626e-10)
+          %   Eigenvalue  2 (error): 0.225107+0i (5.90342e-09)
+          %   Eigenvalue  3 (error): 0.239406+0i (9.64124e-09)
+          \centering
+          \begin{subfigure}{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/visit0004.png}
+            \caption{$\lambda_0 = 0.00434$}
+          \end{subfigure}
+          \begin{subfigure}{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/visit0005.png}
+            \caption{$\lambda_1 = 0.0057$}
+          \end{subfigure}
+          \begin{subfigure}{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/visit0006.png}
+            \caption{$\lambda_2 = 0.225$}
+          \end{subfigure}
+          \begin{subfigure}{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/visit0007.png}
+            \caption{$\lambda_3 = 0.239$}
+          \end{subfigure}
+          \caption{Smallest eigenpairs for Additive Schwarz with 4 subdomains.}
+        \end{figure}
+      \end{block}
+
+      \vspace{-2em}
+      \begin{block}{Ongoing development}
+        \begin{itemize}
+        \item Improve interactive interface and plot quality
+        \item In-situ visualization via VisIt's \texttt{libsim} (to avoid files)
+        \item Pseudospectra, nonlinear methods (FAS multigrid, nonlinear DD)
+        \end{itemize}
+      \end{block}
+
+      \vspace{-2em}
+      \begin{block}{References}
+        \scriptsize
+        \nocite{diskin2005quantitative}
+        \nocite{slepc-users-manual}
+        \nocite{petsc-web-page}
+        \begin{minipage}{\textwidth}
+          \begin{multicols}{2}
+            \bibliography{$HOME/jedbib/jedbib,$PETSC_DIR/src/docs/tex/petsc,$PETSC_DIR/src/docs/tex/petscapp}
+          \end{multicols}
+        \end{minipage}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-PDF-mode: t
+%%% End: 
+
+

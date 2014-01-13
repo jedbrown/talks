@@ -1,0 +1,421 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{ANLBlue}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{Fast solvers for implicit Runge-Kutta systems}
+\author{{\bf Jed Brown} \texttt{jedbrown@mcs.anl.gov} \\
+  Debojyoti Ghosh \texttt{ghosh@mcs.anl.gov}
+}
+\begin{comment}
+  As simulation packages mature, they tend to grow ad-hoc interfaces to
+  support diverse types of analysis and coupling to other packages.
+  These interfaces often involve manufactured impediments such as
+  build-time configuration, use of the file system to exchange data, and
+  excessive synchronization, which severely impede the algorithms that
+  can be used for analysis or coupling.  Meanwhile, hardware is driving
+  algorithmic innovation in exposing more parallelism in analysis and
+  coupling methods.  We present several such algorithmic trends,
+  including recent work within the solvers package PETSc, and
+  demonstrate how exposing library-like interfaces is the most
+  maintainable and high-performance way for applications to take
+  advantage of such methods.
+\end{comment}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute
+{
+  Mathematics and Computer Science Division \\ Argonne National Laboratory
+}
+
+\date{JointLab, UIUC, 2013-11-26}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{The memory bandwidth problem}
+\input{slides/HardwareArithmeticIntensity.tex}
+\input{slides/OptimizingSpMV.tex}
+\begin{frame}{This is a dead end}
+  \begin{itemize}
+  \item Arithmetic intensity $< 1/4$
+  \item Idea: multiple right hand sides
+    \begin{equation*}
+      \frac{(2 k \text{ flops})(\text{bandwidth})}{\texttt{sizeof(Scalar)} + \texttt{sizeof(Int)}}, \quad k \ll \text{avg. nz/row}
+    \end{equation*}
+  \item Problem: popular algorithms have nested data dependencies
+    \begin{itemize}
+    \item Time step \\
+      \qquad Nonlinear solve \\
+      \qquad \qquad Krylov solve \\
+      \qquad \qquad \qquad Preconditioner/sparse matrix
+    \end{itemize}
+  \item Cannot parallelize/vectorize these nested loops
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Attempt: $s$-step methods in 3D}
+  \includegraphics[width=1.1\textwidth]{figures/SStepEfficiency.pdf}
+  \begin{itemize}
+  \item Amortizing message latency is most important for strong-scaling
+  \item $s$-step methods have high overhead for small subdomains
+  \item Limited choice of preconditioners (none optimal)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Attempt: space-time methods (multilevel SDC/Parareal)}
+  \includegraphics[width=0.9\textwidth]{figures/EmmettMinionPFASSTCost.png}
+  \begin{itemize}
+  \item PFASST algorithm (Emmett and Minion, 2013)
+  \item Zero-latency messages (cf. performance model of $s$-step)
+  \item Spectral Deferred Correction: iterative, converges to IRK (Gauss, Radau, \ldots)
+  \item Stiff problems use implicit basic integrator (synchronizing on spatial communicator)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Problems with SDC and time-parallel}
+  \includegraphics[width=\textwidth]{figures/TS/SDCScalingEmmett.png} \\
+  c/o Matthew Emmett, parallel compared to sequential SDC
+  \begin{itemize}
+  \item Number of iterations is not uniform, efficiency starts low
+  \item Arithmetic intensity unchanged
+  \item Parabolic space-time (Greenwald and Brandt/Horton and Vandewalle)
+  \end{itemize}
+\end{frame}
+
+\section{Implicit Runge-Kutta}
+\begin{frame}{Runge-Kutta methods}
+  \begin{gather*}
+    \dot u = F(u) \\
+    \underbrace{
+    \begin{pmatrix}
+      y_1 \\
+      \vdots \\
+      y_s
+    \end{pmatrix}}_Y =
+    u^{n} + h
+    \underbrace{
+    \begin{bmatrix}
+      a_{11} & \dotsb & a_{1s} \\
+      \vdots & \ddots & \vdots \\
+      a_{s1} & \dotsb & a_{ss}
+    \end{bmatrix}}_A
+    F
+    \begin{pmatrix}
+      y_1 \\
+      \vdots \\
+      y_s
+    \end{pmatrix} \\
+    u^{n+1} = b^T Y
+  \end{gather*}
+  \begin{itemize}
+  \item General framework for one-step methods
+  \item Diagonally implicit: $A$ lower triangular, stage order $\le 2$
+  \item Singly diagonally implicit: all $A_{ii}$ equal, reuse solver setup, stage order $\le 1$
+  \item If $A$ is a general full matrix, all stages are coupled, ``implicit RK''
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Implicit Runge-Kutta}
+  \begin{center}
+    \begin{tabular}{>{$}c<{$} | >{$}c<{$} >{$}c<{$} >{$}c<{$}}
+      \frac 1 2 - \frac{\sqrt{15}}{10} & \frac{5}{36} & \frac 2 9 - \frac{\sqrt{15}}{15} & \frac{5}{36} - \frac{\sqrt{15}}{30} \\
+      \frac 1 2 & \frac{5}{36} + \frac{\sqrt{15}}{24} & \frac 2 9 & \frac{5}{36} - \frac{\sqrt{15}}{24} \\
+      \frac 1 2 - \frac{\sqrt{15}}{10} & \frac{5}{36} + \frac{\sqrt{15}}{30} & \frac 2 9 + \frac{\sqrt{15}}{15} & \frac{5}{36} \\[4pt]
+      \hline
+      \vspace{4pt}
+      & \frac{5}{18} & \frac 4 9 & \frac{5}{18}
+    \end{tabular}
+  \end{center}
+  \begin{itemize}
+  \item Implicit Runge-Kutta methods have excellent accuracy and stability properties
+  \item Gauss methods with $s$ stages
+    \begin{itemize}
+    \item order $2s$, $(s,s)$ Pad\'e approximation to the exponential
+    \item $A$-stable, symplectic
+    \end{itemize}
+  \item Radau (IIA) methods with $s$ stages
+    \begin{itemize}
+    \item order $2s-1$, $A$-stable, $L$-stable
+    \end{itemize}
+  \item Lobatto (IIIC) methods with $s$ stages
+    \begin{itemize}
+    \item order $2s-2$, $A$-stable, $L$-stable, self-adjoint
+    \end{itemize}
+  \item Stage order $s$ or $s+1$    
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Method of Butcher (1976) and Bickart (1977)}
+  \begin{itemize}
+  \item Newton linearize Runge-Kutta system
+    \begin{equation*}
+      Y = u^{n} + h A F(Y)
+    \end{equation*}
+  \item Solve linear system with tensor product operator
+    \begin{equation*}
+      S \otimes I_n + I_s \otimes J
+    \end{equation*}
+    where $S = (hA)^{-1}$ is $s\times s$ dense, $J = -\partial F(u)/\partial u$ sparse
+  \item SDC (2000) is Gauss-Seidel with low-order corrector
+  \item Butcher/Bickart method: diagonalize $S = X \Lambda X^{-1}$
+    \begin{itemize}
+    \item $\Lambda \otimes I_n + I_s \otimes J$
+    \end{itemize}
+  \item $s$ decoupled solves
+  \item Problem: $X$ is exponentially ill-conditioned wrt. $s$
+  \end{itemize}
+\end{frame}
+
+\section{Tensor product algebra}
+\begin{frame}{MatTAIJ: ``sparse'' tensor product matrices}
+  \begin{gather*}
+    G = I_n \otimes S + J \otimes T
+  \end{gather*}
+  \begin{itemize}
+  \item More general than multiple RHS (multivectors)
+  \item Compare to multiple right hand sides in row-major
+  \item Runge-Kutta systems have $T = I_s$ (permuted from Butcher method)
+  \item Stream $J$ through cache once, same efficiency as multiple RHS
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  128 nodes, 16 procs/node, \emph{small} diffusion problem
+  \begin{tabular}{lrrr}
+    \toprule
+    Method & order & nsteps & time \\
+    \midrule
+    Gauss 4 & 8 & 10 & 3.4345e-01 \\
+    Gauss 2 & 4 & 20 & 7.6320e-01 \\
+    Gauss 1 & 2 & 40 & 1.1052e+00 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Calibration and accuracy}
+  \begin{itemize}
+  \item Splitting errors plague multi-physics simulation
+  \item Verlet (leapfrog) integration is popular: symplectic and \textbf{cheap}
+    \begin{itemize}
+    \item Stability problems: damping and even/odd decoupling
+    \end{itemize}
+  \item Models calibrated to compensate
+    \begin{itemize}
+    \item Force parametrizations in molecular dynamics
+    \item Atmospheric column physics
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/TS/CaldwellTimeStepConvergence.png} \\
+  %
+  c/o Peter Caldwell (LLNL)
+  \begin{itemize}
+  \item Models calibrated for ``efficient'' time step
+  \item Not longer solving the PDEs we write down
+  \item Many FTE-years to recalibrate when discretization changes
+  \item Calibration eats up a big chunk of the IPCC policy timeline
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Implicit Runge-Kutta for advection}
+  \begin{table}
+    \centering
+    \caption{Total number of iterations (communications or accesses of $J$) to solve linear advection to $t=1$ on a $1024$-point grid using point-block Jacobi preconditioning of implicit Runge-Kutta matrix.
+      The relative algebraic solver tolerance is $10^{-8}$.}\label{tab:irk-advection}
+    \begin{tabular}{lrrr}
+      \toprule
+      Family & Stages & Order & Iterations \\
+      \midrule
+      Crank-Nicolson/Gauss & 1 & 2 & 3627 \\
+      Gauss & 2 & 4 & 2560 \\
+      Gauss & 4 & 8 & 1735 \\
+      Gauss & 8 & 16 & 1442 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \begin{itemize}
+  \item Naive centered-difference discretization
+  \end{itemize}
+\end{frame}
+
+% \input{slides/PETSc/TSARKIMEX.tex}
+
+% \begin{frame}[fragile]{Time integration method design}
+%   \begin{figure}
+%     \centering
+%     \includegraphics[width=.8\textwidth]{figures/TS/EmilMethodDesignFeatures.png}
+%   \end{figure}
+%   \begin{itemize}
+%   \item Select order, number of stages, required properties
+%   \item Optimize properties like SSP coefficient, accuracy, or linear stability
+%   \item \cverb|TSARKIMEXRegister("my-method", ...coefficients...)|
+%   \item \cverb|-ts_type arkimex -ts_arkimex_type my-method|
+%   \end{itemize}
+% \end{frame}
+
+% \begin{frame}\LARGE
+%   \begin{itemize}
+%   \item Maximize science per Watt
+%   \item Huge scope remains at problem formulation
+%   \item Raise level of abstraction at which a problem is formally specified
+%   \item Algorithmic optimality is crucial
+%   \end{itemize}
+% \end{frame}
+
+\begin{frame}{Trade-offs in time integration}
+  \begin{itemize}
+  \item Properties
+    \begin{itemize}
+    \item Nonlinear stability (e.g., positivity preservation)
+    \item Stability along imaginary axis
+    \item $L$-stability (damping at infinity)
+    \item Implicitness and reuse
+    \end{itemize}
+  \item What is expensive?
+    \begin{itemize}
+    \item Function evaluation
+    \item Operator assembly/preconditioner setup
+      \begin{itemize}
+      \item How much can be reused for how long?
+      \end{itemize}
+    \item Implicit solves
+      \begin{itemize}
+      \item Can we find better solver algorithm?
+      \item More effort in setup?
+      \end{itemize}
+    \end{itemize}
+  \item What is ``convergence''?
+    \begin{itemize}
+    \item Wave propagation: implicitness useless for convergence \emph{in a norm}
+    \item Non-norm functionals could be robust
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Next up: Algebraic multigrid for tensor product operators
+  \item Technicalities: imaginary rotation in coarse operators (cf. MG for Helmholtz)
+  \item Stochastic Galerkin have some structure
+  \item Is it possible to design methods with well-conditioned $S = X \Lambda X^{-1}$
+  \end{itemize}
+\end{frame}
+
+\end{document}
