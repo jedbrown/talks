@@ -1,0 +1,1 @@
+/home/jed/texmf/bibtex/unsrt-shortauthor.bst
