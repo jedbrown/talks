@@ -2,14 +2,14 @@
   \begin{itemize}
   \item Systematic Upscaling/Renormalization Multigrid (Brandt, Ron)
     \begin{description}
-    \item[interpolation] initialize microscale variables to be (at least statistically) compatible with macro variables
+    \item[interpolation] initialize microscale variables to be (statistically) compatible with macro variables
     \item[equilibriation] local processing to evolve microscale variables toward a local equilibrium
     \item[restriction] sample microscale solution and residual to correct macro model
     \end{description}
   \item Heterogeneous Multiscale Method (E and Engquist, 2003)
     \begin{description}
     \item[reconstruction] initialize micro model
-    \item[constrained micro model] evolve micro model, constrained by compatibility with macro model
+    \item[constrained micro model] evolve with and without constraints
     \item[compression] statistical data estimator
     \end{description}
   \item Sequential vs concurrent scale coupling

@@ -1,11 +1,11 @@
 \begin{frame}{Optimizing Sparse Mat-Vec}
   \begin{itemize}
-  \item Order unknows so that vector reuses cache (Reverse Cuthill-McKee)
+  \item Order unknowns so vector reuses cache (Cuthill-McKee)
     \begin{itemize}
     \item Optimal: $\frac{(2 \text{ flops})(\text{bandwidth})}{\texttt{sizeof(Scalar)} + \texttt{sizeof(Int)}}$
     \item Usually improves strength of ILU and SOR
     \end{itemize}
-  \item Coalesce indices for adjacent rows with same nonzero pattern (Inodes)
+  \item Coalesce indices for adjacent rows (Inodes)
     \begin{itemize}
     \item Optimal: $\frac{(2 \text{ flops})(\text{bandwidth})}{\texttt{sizeof(Scalar)} + \texttt{sizeof(Int)}/i}$
     \item Can do block SOR (much stronger than scalar SOR)

@@ -1,10 +1,11 @@
-\begin{frame}[shrink=5]{IMEX time integration in PETSc}
+\begin{frame}{IMEX time integration in PETSc}
   \begin{itemize}
   \item Additive Runge-Kutta IMEX methods
     \begin{gather*}
       G(t,x,\dot x) = F(t,x) \\
       J_\alpha = \alpha G_{\dot x} + G_x
     \end{gather*}
+    \vspace{-1em}
     \begin{itemize}
     \item User provides:
       \begin{itemize}
@@ -12,8 +13,7 @@
       \item \texttt{FormIFunction(ts,$t$,$x$,$\dot x$,$G$,void *ctx);}
       \item \texttt{FormIJacobian(ts,$t$,$x$,$\dot x$,$\alpha$,$J$,$J_{p}$,mstr,void *ctx);}
       \end{itemize}
-    \item L-stable DIRK for stiff part $G$
-    \item Choice of explicit method, \eg SSP
+    \item Can have $L$-stable DIRK for stiff part $G$, SSP explicit part, etc.
     \item Orders 2 through 5, embedded error estimates
     \item Dense output, hot starts for Newton
     \item More accurate methods if $G$ is linear, also Rosenbrock-W
@@ -22,7 +22,7 @@
     \item Extensible adaptive controllers, can change order within a family
     \item Easy to register new methods: \code{TSARKIMEXRegister()}
     \end{itemize}
-  \item Eliminated many interface quirks in PETSc 3.3
   \item Single step interface so user can have own time loop
+  \item Same interface for Extrapolation IMEX, LMS IMEX (in development)
   \end{itemize}
 \end{frame}
