@@ -4,16 +4,20 @@
   \item nonlinearity often more efficiently resolved locally
   \item nonlinear additive or multiplicative Schwarz
   \item nonlinear/matrix-free is good if
-    \[ C = \frac{(\text{cost to evaluate residual at one point}) \cdot N}{(\text{cost of global residual})} \sim 1 \]
+    \[ C = \frac{(\text{cost to evaluate residual at one ``point''}) \cdot N}{(\text{cost of global residual})} \sim 1 \]
     \begin{itemize}
     \item finite difference: $C < 2$
     \item finite volume: $C \sim 2$, depends on reconstruction
     \item finite element: $C \sim \text{number of vertices per cell}$
     \end{itemize}
   \item larger block smoothers help reduce $C$
-  \item additive correction like Jacobi reduces $C$, \\
-    but need to assemble corrector/scaling
+  \item additive correction (Jacobi/Chebyshev/multi-stage)
+    \begin{itemize}
+    \item global evaluation, as good as $C=1$
+    \item but, need to assemble corrector/scaling
+    \item need spectral estimates or wave speeds
+    \end{itemize}
   \end{itemize}
-  \vspace{-4.5em}
+  \vspace{-4em}
   \hfill \includegraphics[width=0.3\textwidth]{figures/NodeStencil}
 \end{frame}
