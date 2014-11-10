@@ -3,7 +3,7 @@
 \begin{itemize}
   \item Architecture
     \begin{itemize}
-    \item tightly coupled (e.g. XT5, BG/P, Earth Simulator)
+    \item tightly coupled (e.g. Cray, Blue Gene)
     \item loosely coupled such as network of workstations
     \item GPU clusters (many vector and sparse matrix kernels)
     \end{itemize}
@@ -11,9 +11,8 @@
   \item Any compiler
   \item Real/complex, single/double/quad precision, 32/64-bit int
   \item Usable from C, C++, Fortran 77/90, Python, and MATLAB
-  \item Free to everyone (BSD-style license), open development
-  \item 500B unknowns, 75\% weak scalability on Jaguar (225k cores) \\
-    and Jugene (295k cores)
+  \item Free to everyone (2-clause BSD license), open development
+  \item $10^{12}$ unknowns, full-machine scalability on Top-10 systems \\
   \item Same code runs performantly on a laptop
   \item<2> \alert{\tikz[baseline] \node [cross out,draw=black,line width=1,anchor=text] {No}; iPhone support}
 \end{itemize}
@@ -55,7 +54,7 @@ existing algorithms (multilevel, domain decomposition, splitting).
   \begin{itemize}
   \item Computational Scientists
     \begin{itemize}
-    \item PyLith (CIG), Underworld (Monash), Magma Dynamics (LDEO, Columbia), PFLOTRAN (DOE), SHARP/UNIC (DOE)
+    \item PyLith (CIG), Underworld (Monash), Climate (ICL/UK Met), PFLOTRAN (DOE), MOOSE (DOE), Proteus (ERDC)
     \end{itemize}
   \item Algorithm Developers (iterative methods and preconditioning)
   \item Package Developers

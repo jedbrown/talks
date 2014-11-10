@@ -14,7 +14,7 @@
 
   \begin{tabular}{lrrr}
     \toprule
-    Processor & STREAM Triad (GB/s) & Peak (GF/s) & Balance (F/B) \\
+    Processor & \textsc{stream} Triad (GB/s) & Peak (GF/s) & Balance (F/B) \\
     \midrule
     E5-2680 8-core      & 38   & 173  & 4.5 \\ % http://www.cs.virginia.edu/stream/stream_mail/2013/0001.html
     E5-2695v2 12-core & 45 & 230 & 5.2 \\ % Edison 460 GF and 89 GB/s Triad
@@ -26,7 +26,8 @@
     Xeon Phi SE10P      & 161 & 1060 & 6.6 \\ % http://www.cs.virginia.edu/stream/stream_mail/2013/0002.html
     % http://blogs.utexas.edu/jdm4372/tag/xeon-phi/
     \midrule
-    KNL (estimate) & 100 (DRAM) & 3000 & 30 \\
+    KNL (DRAM) & 100 & 3000 & 30 \\
+    KNL (MCDRAM) & 500 & 3000 & 6 \\
     \bottomrule
   \end{tabular}
 \end{frame}
