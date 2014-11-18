@@ -1,0 +1,474 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+\mode<presentation>
+{
+  \usetheme{ANLBlue}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+%\usepackage{media9}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{\textbf{pTatin3d}: High-performance Methods for Long-Term Lithospheric Dynamics}
+\author{Dave May, ETH Z\"urich\\
+{\bf Jed Brown}, ANL \& CU Boulder\\
+Laetitia Le Pourhiet, UPMC}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+% \institute
+% {
+%   Mathematics and Computer Science Division \\ Argonne National Laboratory
+% }
+
+\date{SC14, 2014-11-18 \\[1em]
+This talk: \url{http://59A2.org/files/20141118-SC14pTatin.pdf} \\
+\includegraphics[width=0.2\textwidth]{figures/logos/ETHZ.png} \quad
+\includegraphics[width=0.2\textwidth]{figures/logos/AnlLogo2t.png} \quad
+\includegraphics[width=0.3\textwidth]{figures/logos/CUBoulder.png} \quad
+\includegraphics[width=0.2\textwidth]{figures/logos/UMPC.png}
+}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+% \AtBeginSection[]
+% {
+%   \begin{frame}<beamer>
+%     \frametitle{Outline}
+%     \tableofcontents[currentsection]
+%   \end{frame}
+% }
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Computational geodynamics}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/davemay/MayGeodynamicsTimeline.png}
+  \end{center}
+  \vspace{-1ex}
+  {\scriptsize Figure adapted from Taras Gerya}
+\end{frame}
+
+\begin{frame}{Regional scale geodynamic processes}
+  \begin{center}
+    \includegraphics[width=.85\textwidth]{figures/davemay/WPRegionalGeodynamicsProcesses.png}
+  \end{center}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item Buoyancy and topography drive flow
+      \item Large variation in length scales
+      \item Small scales influence large scales
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item Complex rheology (research)
+      \item Material failure (faults)
+      \item Post-failure deformation
+      \item Thermomechanically coupled
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Geology is complicated}
+  \begin{columns}
+    \begin{column}{0.65\textwidth}
+      Zagros Mountains \\
+      \includegraphics[width=\textwidth]{figures/davemay/MayZagrosMountains.png} \\
+      \vspace{-1ex} {\scriptsize [Yamato et al (2011)]}
+% @article{yamato2011dynamic,
+%  title={Dynamic constraints on the crustal-scale rheology of the Zagros fold belt, Iran},
+%  author={Yamato, Philippe and Kaus, Boris JP and Mouthereau, Fr{\'e}d{\'e}ric and Castelltort, S{\'e}bastien},
+%  journal={Geology},
+%  volume={39},
+%  number={9},
+%  pages={815--818},
+%  year={2011},
+%  publisher={Geological Society of America}
+% }
+    \end{column}
+    \begin{column}{0.35\textwidth}
+      European Alps \\
+      \includegraphics[width=\textwidth]{figures/davemay/Schmidt2004EuropeanAlps.png}
+    \end{column}
+  \end{columns}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+      \item Ductile folding
+      \item Discontinuous material properties
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{itemize}
+      \item Inherently 3D
+      \item Faulting
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Continental rifting}
+  %\movie[width=\textwidth,height=0.66\textwidth,autostart,poster,showcontrols=false,loop]{Oblique Rifting Video}{dstrong2_truc.mov}
+  \movie[width=\textwidth,height=0.66\textwidth,autostart,poster,showcontrols=false,loop]{Rifting Video}{LaetiSC14Rifting.mp4}
+\end{frame}
+
+\begin{frame}{Continuum modeling}
+  %Solve for velocity $\bm u$, pressure $p$, temperature $T$, materials
+  %$\rho_i$
+  \begin{itemize}
+  \item Something we trust: \textbf{Conservation}
+    \begin{align*}
+      -\nabla\cdot \big[ \eta D \bm u - p \bm I \big] &= \rho \bm g & \text{momentum} \\
+      \nabla \cdot \bm u &= 0 & \text{mass} \\
+      \frac{D T}{D t} - \nabla\cdot (\kappa \nabla T) &= Q & \text{energy} \\
+      \frac{D \Phi_i}{D t} &= 0 & \text{composition}
+    \end{align*}
+    \begin{itemize}
+    \item $D \bm u = \frac 1 2 \big[ \nabla \bm u + (\nabla \bm u)^T \big]$
+    \item Non-Newtonian Stokes, high-contrast coefficients $10^{10}$
+    \item Boussinesq approximation, high Rayleigh number, zero Reynolds
+    \item Free surface, near hydrostatic balance
+    \end{itemize}
+  \item Something we don't: \textbf{Constitutive models}
+    \begin{itemize}
+    \item $\eta(D\bm u,p,T,\Phi_i)$ shear viscosity---viscoplastic, non-smooth
+      \begin{itemize}
+      \item von Mises, Drucker-Prager
+      \end{itemize}
+    \item $\rho(p,T,\Phi_i)$ density
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Spatial discretization}
+  \begin{textblock}{0.27}[1,1](1,0.95)
+    \includegraphics[width=\textwidth]{figures/davemay/MayMaterialPointMethod.png} \\
+    \includegraphics[width=\textwidth]{figures/davemay/MayMaterialPointMethodL2Proj.png}
+  \end{textblock}
+  \begin{itemize}
+  \item Requirements
+    \begin{itemize}
+    \item Stable for resolved and under-resolved features
+    \item Accurate for resolved scales
+    \end{itemize}
+  \item $Q_2-P_1^{\text{disc}}$ finite elements
+    \begin{itemize}
+    \item Linear pressure to represent hydrostatic mode
+    \item Local mass conservation
+    \item Stable (not ``stabilized'') velocity space
+    \item ALE for moving free surface
+    \item $3^3$ point Gauss quadrature
+    \item Weakness: not uniformly stable wrt. aspect ratio
+    \end{itemize}
+  \item Material Point Method
+    \begin{itemize}
+    \item Lagrangian marker particles
+    \item Nonlinearities evaluated at markers
+    \item Local $L^2$ projection of coefficients in $Q_1$
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Solution procedure}
+  \begin{itemize}
+  \item Newton linearization
+    \begin{itemize}
+    \item Picard convergence very slow/stagnates
+    \item Implicit or explicit (``drunken seaman'' time step restriction) geometry
+    \end{itemize}
+  \item Stokes sub-problem
+    \begin{equation*}
+      \underbrace{\begin{bmatrix} J_{uu} & J_{up} \\ J_{pu} & 0 \end{bmatrix}}_{J} \underbrace{\begin{bmatrix} \bm u \\ p \end{bmatrix}}_{\delta x} = \underbrace{\begin{bmatrix} \bm f_u \\ f_p \end{bmatrix}}_F
+    \end{equation*}
+  \item Block preconditioning
+    \begin{equation*}
+      P = \begin{bmatrix} J_{uu} & 0 \\ J_{pu} & S \end{bmatrix}
+    \end{equation*}
+    \begin{itemize}
+    \item $S = -J_{pu} J_{uu}^{-1} J_{up}$ is dense --- not formed
+      \begin{itemize}
+      \item Approximate by mass matrix weighted by inverse viscosity
+        \begin{equation*}
+          q^T \tilde S p \sim \int_\Omega \eta^{-1} q p
+        \end{equation*}
+        Elman, Silvester, Wathen, and others; Grinevich \& Olshanskii (2009); Burstedde (2009); Geenen et al (2009)
+      \end{itemize}
+    \item \alert{Bottleneck: precondition $J_{uu}$ using multigrid}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Multigrid for viscous block}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+    \item Chebyshev/Jacobi smoothing
+      \begin{itemize}
+      \item vs. Gauss-Seidel, cf. Adams et al (2003)
+      \item Matrix-free implementation
+      \item Incomplete factorization viable for anisotropy
+      \end{itemize}
+    \item Geometric coarsening/rediscretization on finest levels
+      \begin{itemize}
+      \item Low memory, low setup cost
+      \item Switch to Galerkin and AMG on coarser levels
+      \end{itemize}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \includegraphics[width=\textwidth]{figures/davemay/MayHybridCoarsening.png} \\
+  \end{column}
+  \end{columns}
+  \begin{itemize}
+  \item Assembled matrices are memory hogs
+    \begin{itemize}
+    \item $64\times 64\times 64$ $Q_2$ is $> 12$ GB assembled
+    \end{itemize}
+  \item Matrix-free operator application
+    \begin{itemize}
+    \item FE action of $-\nabla\cdot (\kappa \nabla \mathbf u)$
+      \begin{gather}\label{eq:mf-scalar}
+        A \mathbf u = \sum_{e \, \in \, N_\text{el}}  \mathcal E_e^T \mathcal D_{\mathbf x}^T \Lambda(\omega \kappa) \mathcal D_{\mathbf x} \mathcal E_e \mathbf u,
+      \end{gather}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\input{slides/HardwareArithmeticIntensity.tex}
+
+\begin{frame}{$Q_2$ tensor product optimization}
+  \begin{itemize}
+  \item Reference gradient $\mathcal D_{\mathbf \xi} = [ \hat D \otimes \hat B \otimes \hat B, \hat B \otimes \hat D \otimes \hat B, \hat B \otimes \hat B \otimes \hat D]$
+  \item $\nabla_{\mathbf\xi} \mathbf x = (\mathcal D_{\mathbf\xi}\otimes I_3) (\mathcal E_e\otimes I_3) \mathbf x$, invert $3\times 3$ at quad. points: $\nabla_{\mathbf x} \mathbf \xi$
+  \item Viscous operator
+    \begin{equation*}
+      A \mathbf u = \sum_{e \, \in \, N_\text{el}} \mathcal E_e^T \mathcal D_{\mathbf \xi}^T \Lambda\Big((\nabla_{\mathbf x}\mathbf\xi)^T (\omega \eta) (\nabla_{\mathbf x}\mathbf\xi) \Big) \mathcal D_{\mathbf \xi} \mathcal E_e \mathbf u .
+    \end{equation*}
+  \item Pack 4 elements at a time in vector-friendly ordering
+  \item Intrinsics, $30\%$ of peak AVX (SNB) and FMA (Haswell)
+  \item Similar structure in HPGMG-FE (BoF Wed 12:15-13:15 room 294)
+  \item 8 nodes (192 cores) of Edison (NERSC XC-30, E5-2695v2):
+  \end{itemize}
+  \vspace{-1em}
+  \begin{center}
+    \begin{tabular}{lrrrrrrr}
+      \toprule
+      Operator & Flops & \multicolumn{2}{c}{Pessimal Cache} & \multicolumn{2}{c}{Perfect Cache} & Time & GF/s \\
+               & & Bytes & F/B & Bytes & F/B & (ms) & \\
+      \midrule
+      Assembled & 9216 & --- & --- &  37248 & 0.247 & 42 & 113 \\
+      Matrix-free & 53622 & 2376 & 22.5 & 1008 & 53 & 22 & 651 \\
+      Tensor & 15228 & 2376 & 6.4 & 1008 & 15 & \textbf {4.2} & 1072 \\
+      Tensor C & 14214 & 5832 & 2.4 & 4920 & 2.9 & --- & --- \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Sedimentation}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+      \item Randomly-located, dense high-viscosity spheres
+      \item Free surface (it matters)
+      \item Complicated non-local flow
+      \item $n$-sinker much harder than 1-sinker
+        \begin{itemize}
+        \item not rescued by Krylov
+        \end{itemize}
+      \item Hierarchy: (AMG), Galerkin, Assembled (Asmb), Matrix-free (MF)
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \includegraphics[width=\textwidth]{figures/davemay/inclusionsNc75_tubes_spheres.pdf}
+    \end{column}
+  \end{columns}
+  \begin{tabular}{l r r rr rrr}
+    % -----------------------
+    \toprule
+    Grid  &Cores  &Its.  &\multicolumn{2}{l}{Coarse solve}   &\multicolumn{3}{l}{Stokes solve (s)}  \\
+          &            &      &Setup (s) &Apply (s)                      &Asmb   &MF    &Tens   \\
+          % -----------------------
+    \midrule
+    $64^3$	&192 &112	&0.5  &1.2		&40.1 &26.9 &14.8 \\
+    $96^3$	&192 &110	&1.3  &4.0		&- &90.6 &50.6 \\
+    $96^3$	&1536 &95	&1.5  &1.1		&- &12.1 &8.2 \\
+    $192^3$	&1536 &141	&2.7  &5.8		&- &120.0 &45.1 \\
+    $192^3$	&12288 &170	&4.1  &6.1		&- &30.1 &17.1 \\
+    % -----------------------
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Robustness of block preconditioners}
+  \vspace{-1ex}
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{figures/davemay/conv-contrast-v.png}
+  \end{center}
+  \vspace{-1em}
+  \begin{itemize}
+  \item Non-normality, cf. Schur Complement Reduction
+    \begin{equation*}
+    \begin{bmatrix} J_{uu} & 0 \\ J_{pu} & S \end{bmatrix}^{-1} \begin{bmatrix} J_{uu} & J_{up} \\ J_{pu} & 0 \end{bmatrix} =
+    \begin{bmatrix} I & J_{uu}^{-1} J_{up} \\ 0 & I \end{bmatrix}
+  \end{equation*}
+  \item Ultimately limited by machine precision
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Efficiency: per timestep}
+  \begin{itemize}
+  \item Global FoM: Elements/second
+  \item Efficiency FoM: Elements/core/second
+  \end{itemize}
+    \begin{tabular}{lr r cr crrr}
+    \toprule
+    SpMV    &Grid  &Cores    &&{MG res}  &&\multicolumn{3}{l}{{Stokes solve}}      \\
+    type         &($E$)    &($C$)        &&TF/s       & &$E$/$C$/s    &GF/$C$/s     &GF/s   \\
+    \midrule
+    Asmb    &$64^3$  &192     &&0.1       &&46 &0.9 &173          \\
+    MF        &$64^3$  &192    &&0.7        &&69 &2.6 &502           \\
+    Tens      &$64^3$  &192    &&1.1    &&{\bf 128} &2.4 &464          \\
+    \midrule
+    MF         &$96^3$   &192     &&0.8      &&58 &2.6 &499           \\
+    Tens       &$96^3$  &192     &&1.0     &&{\bf 103} &2.6 &447  \\
+    \midrule
+    MF           &$96^3$   &1536      &&5.0    &&47 &2.2 &3198    \\
+    Tens         &$96^3$   &1536     &&6.6   &&{\bf 72} &2.2 &2378   \\
+    \midrule
+    MF         &$192^3$   &1536    &&5.3   &&46 &2.5 &3839         \\
+    Tens       &$192^3$  &1536     &&7.8   &&{\bf 79} &2.2 &3303   \\
+    \midrule
+    MF           &$192^3$  &12288  &&36.1   &&19  &1.5 &18499  \\
+    Tens        &$192^3$  &12288  &&35.3   &&{\bf 26} &1.1 &12891  \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item pTatin3d: built on PETSc, upcoming public release
+  \item Keep science objectives firmly in the drivers' seat
+  \item Do not compromise discretization quality
+    \begin{itemize}
+    \item ``Refine the grid to remove artifacts'' is mathematician code for ``it doesn't work'' or ``I don't know what I'm doing''
+    \end{itemize}
+  \item Optimize convergence first, then implementation efficiency
+  \item Users want performance versatility
+    \begin{itemize}
+    \item fast solution on supercomputer
+    \item high-resolution on small workstation/cluster
+    \end{itemize}
+  \item Robustness is always a challenge
+  \item Tensor product matrix-free a big win for $Q_2$ elements
+    \begin{itemize}
+    \item Assembled matrices useful to explore algorithms/robustness
+    \end{itemize}
+  \item Blue Gene/Q performance limited by cache \& integer unit
+  \item Thanks to NERSC ``Edison''; Philippe de Clarens and Caroline Baldassari at TOTAL ``Rostand''
+  \end{itemize}
+\end{frame}
+
+
+\end{document}

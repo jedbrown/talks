@@ -1,0 +1,424 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{ANLBlue}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{Efficient Implicitness}
+\subtitle{Latency-Throughput and Cache-Vectorization Tradeoffs}
+\author{{\bf Jed Brown} \texttt{jedbrown@mcs.anl.gov} (ANL and CU Boulder)
+}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+% \institute
+% {
+%   Mathematics and Computer Science Division \\ Argonne National Laboratory
+% }
+
+\date{Heterogeneous Multi-Core workshop, NCAR, 2014-09-17 \\[1em]
+{\small This talk: \url{http://59A2.org/files/20140917-EfficientImplicitness.pdf}}}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+% \AtBeginSection[]
+% {
+%   \begin{frame}<beamer>
+%     \frametitle{Outline}
+%     \tableofcontents[currentsection]
+%   \end{frame}
+% }
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Intro}
+  \begin{itemize}
+  \item I work on PETSc, a popular linear and nonlinear solvers library
+  \item Some users need fastest time to solution at strong-scaling limit
+  \item Others fill memory with a problem for PETSc
+  \item Sparse matrices are a dead end for memory bandwidth reasons
+    \begin{itemize}
+    \item but heavily embraced by legacy code and enable algebraic multigrid
+    \end{itemize}
+  \item We need to restructure algorithms, but how?
+  \item What are the fundamental long-term bottlenecks?
+  \item<2> Worrisome trends
+    \begin{enumerate}
+    \item Fine-grained parallelism without commensurate increase in caches
+    \item Emphasizing vectorization over cache reuse
+    \item High instruction latency to be covered by hardware threads
+    \end{enumerate}
+  \end{itemize}
+\end{frame}
+
+\input{slides/HardwareArithmeticIntensity.tex}
+
+\begin{frame}{How much parallelism out of how much cache?}
+  \begin{tabular}{l rrrr rr}
+    \toprule
+    Processor & v width & threads & F/inst & latency & L1D & L1D/\#par \\
+    \midrule
+    Nehalem & 2 & 1 & 2 & 5 & 32 KiB & 1638 B \\
+    Sandy Bridge & 4 & 2 & 2 & 5 & 32 KiB & 819 B \\
+    Haswell & 4 & 2 & 4 & 5 & 32 KiB & 410 B \\
+    BG/P & 2 & 1 & 2 & 6 & 32 KiB & 1365 B \\
+    BG/Q & 4 & 4 & 2 & 6 & 32 KiB & 682 B \\
+    KNC & 8 & 4 & 4 & 5 & 32 KiB & 205 B \\
+    Tesla K20 & 32 & * & 2 & 10 & 64 KiB & 102 B \\
+    \bottomrule
+  \end{tabular}
+  \begin{itemize}
+  \item Most ``fast'' algorithms do about $O(n)$ flops on $n$ data
+  \item DGEMM and friends do $O(n^{3/2})$ flops on $n$ data
+  \item Exploitable parallelism limited by cache and register load/store
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Story time: 27pt stencils instruction-limited for BG/P}
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{figures/hardware/Malas2012-27pt.png}
+  \end{center}
+  \begin{itemize}
+  \item rolling 2-step kernel extended to 27-point stencil
+  \item $2\times 3$ unroll-and-jam used exactly 32 registers
+  \item jam width limited by number of registers, barely covers ILP
+  \item 200-entry jammed stream fits in L1
+    \begin{itemize}
+    \item reuse in two directions for most problem sizes
+    \end{itemize}
+  \item Malas, Ahmadia, Brown, Gunnels, Keyes (IJHPCA 2012)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Fine-grained parallelism in SpMM}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/MG/SACUSPExpand}
+  \end{figure}
+  \begin{itemize}
+  \item Enumerate all scalar products contributing to row of product, $\hat C$
+  \item Implemented using \texttt{scan} and \texttt{gather}
+  \item Radix sort contributions to each row (two calls to \texttt{sort})
+  \item Contract row: \texttt{reduce\_by\_key}
+  \item c/o Steve Dalton (2013 Givens Fellow, now at NVidia)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{CUSP Performance summary}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/MG/SACUSPSpeedupAP}
+  \end{figure}  
+  \begin{itemize}
+  \item New CUSP SpMM is faster than CUSPARSE for all test matrices.
+  \item Sorting optimization faster except for very irregular graph.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Memory overhead from expansion}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.48\textwidth]{figures/MG/SACUSPExpansionFactor} \quad
+    \includegraphics[width=0.48\textwidth]{figures/MG/SACUSPContractionFactor}
+    \caption{Scalar Poisson: Expansion factor $nnz(\hat C)/nnz(A)$, contraction $nnz(\hat C)/nnz(C)$}
+  \end{figure}
+  \vspace{-2em}
+  \begin{itemize}
+  \item 3D has much higher variability by row
+  \item For elasticity, expansion factor is larger by 3x (for 3D)
+  \item Implementation could batch to limit total memory usage
+    \begin{itemize}
+    \item more kernel launches
+    \end{itemize}
+  \end{itemize}  
+\end{frame}
+
+\begin{frame}{Finite element: assembled versus unassembled}
+  \vspace{1ex}
+  \includegraphics[width=0.9\textwidth]{figures/TensorVsAssembly} \\
+  \begin{itemize}
+  \item Arithmetic intensity for $\Qk p$ elements
+    \begin{itemize}
+    \item $< \frac 1 4$ (assembled), $\approx 10$ (unassembled), $\approx 4$ to $8$ (hardware)
+    \end{itemize}
+  \item store Jacobian information at Quass quadrature points
+  \item 70\% of peak for $Q_3$ on Nehalem - vectorization within an element
+  \item 30\% of peak for $Q_2$ on Sandy Bridge and Haswell - vectorization across elements
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{pTatin3d: Lithospheric Dynamics}
+  \begin{itemize}
+  \item Heterogeneous, visco-plastic Stokes with particles for material composition/chemistry, geometric MG with coarse AMG
+  \item May, Brown, Le Pourhiet (SC14)
+  \item Viscous operator application for $Q_2$-$P_1^{\text{disc}}$
+  \item ``Tensor'': matrix-free implementation using tensor product structure on the reference element
+  \item ``Tensor C'' absorbs metric term into stored tensor-valued coefficient
+  \item Performance on 8 nodes of Edison (3686 GF/s peak)
+  \end{itemize}
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    Operator & flops & \multicolumn{2}{c}{Pessimal cache} & \multicolumn{2}{c}{Perfect cache} & Time & GF/s \\
+    & & bytes & F/B & bytes & F/B & (ms) & \\
+    \midrule
+    Assembled & 9216 & --- & --- &  37248 & 0.247 & 42 & 113 \\
+    Matrix-free & 53622 & 2376 & 22.5 & 1008 & 53 & 22 & 651 \\
+    Tensor & 15228 & 2376 & 6.4 & 1008 & 15 & {\bf 4.2} & 1072 \\
+    Tensor C & 14214 & 5832 & 2.4 & 4920 & 2.9 & --- & --- \\
+    \bottomrule
+  \end{tabular}
+  % edison-8sinker-64-asm-00192.log:MGResid Level 2      247 1.0 1.0271e+01 1.1 6.50e+09 1.2 8.2e+05 8.3e+03 0.0e+00 10  8  3  7  0  13 14  4 11  0 112942
+  % edison-8sinker-64-avx-00192.log:MGResid Level 2      247 1.0 1.0430e+00 1.0 6.01e+09 1.1 1.6e+06 5.5e+03 0.0e+00  3  7  5  9  0   6 14  6 12  0 1072558
+  % edison-8sinker-64-ref-00192.log:MGResid Level 2      247 1.0 5.4271e+00 1.0 1.90e+10 1.1 1.6e+06 5.5e+03 0.0e+00  8 12  5  9  0  12 15  6 12  0 651324
+\end{frame}
+
+\begin{frame}{Cache versus vectorization}
+  \begin{itemize}
+  \item Fundamental trade-off
+  \item Hardware gives us less cache per vector lane
+  \item Intra-element vectorization is complicated and \"uber-custom
+  \item Coordinate transformation is $27\cdot 9\cdot \texttt{sizeof(double)} = 1944$ bytes/element.
+  \item Vectorize over 4 or 8 elements, perhaps hardware threads
+  \item L1 cache is not this big: repeated spills in tensor contraction
+  \item This is a \emph{very} simple problem
+  \end{itemize}
+\end{frame}
+
+% \begin{frame}{Matrix-free operator application}
+%   Discretize $-\nabla \Big(\kappa \nabla\cdot u\Big)$, yielding
+%   \begin{equation*}\label{eq:mf-scalar}
+%     A \mathbf u = \sum_{e \in \text{Elements}} \mathcal E_e^T \mathcal D_{\mathbf x}^T \Lambda(\omega \kappa) \mathcal D_{\mathbf x} \mathcal E_e \mathbf u
+%   \end{equation*}
+%   Physical gradient matrix
+%   $$\mathcal D_{\mathbf x} = \{\mathcal D_i | i \in \{x,y,z\} \} \in \mathbb R^{81\times 27} \quad \text{$Q_2$ elements in 3D; Gauss quadrature}$$
+%   \begin{itemize}
+%   \item Common method: precompute reference gradient matrix $\mathcal D_{\mathbf \xi}$, map to physical $\mathcal D_{\mathbf x} = \Lambda(\nabla_{\mathbf x}\mathbf\xi) \mathcal D_{\mathbf \xi}$
+%   \item Better: rearrange
+%   \begin{equation*}\label{eq:tensor}
+%     A \mathbf u = \sum_{e \in \text{Elements}} \mathcal E_e^T \mathcal D_{\mathbf \xi}^T \Lambda\Big((\nabla_{\mathbf x}\mathbf\xi)^T (\omega \kappa) (\nabla_{\mathbf x}\mathbf\xi) \Big) \mathcal D_{\mathbf \xi} \mathcal E_e \mathbf u .
+%   \end{equation*}
+%   where $\nabla_{\mathbf x}\mathbf\xi = (\nabla_{\mathbf\xi}\mathbf x)^{-1}$ is computed at quadrature points from the coordinate gradients.
+%   \begin{equation*}
+%     D_{\mathbf\xi} = \{\hat D \otimes \hat B \otimes \hat B, \hat B \otimes \hat D \otimes \hat B, \hat B \otimes \hat B \otimes \hat D \}
+%   \end{equation*}
+%   \end{itemize}
+% \end{frame}
+
+% \begin{frame}{Assembly-free preconditioning}
+%   \begin{itemize}
+%   \item ``Optimization'' is pessimization if it compromises convergence
+%   \item pTatin3D: long-term lithosphere/tectonics package
+%     \begin{itemize}
+%     \item Dave May (ETH Z\"urich) and Laetitia Le Pourhiet (UPMC Paris)
+%     \item visco-plastic rheology, post-failure deformation, thermodynamics, free-surface
+%     \item multi-material transport using particles; $10^{10}$ jumps in coefficients
+%     \end{itemize}
+%   \item Block preconditioning with MG solve in viscous block
+%   \item Matrix-free fine grid, start coarsening geometrically
+%   \item Switch to Galerkin, smoothed aggregation (GAMG or ML)
+%   \end{itemize}
+%   \begin{tabular}{l rrr rr r}
+%     \toprule
+%     Operator    & Cores & Grid   & El/core & \multicolumn{2}{c}{Solve/core} & Op/core           \\
+%     &       &        &         & El/s                    & GF/s & kEl/s \\
+%     \midrule
+%     Assembled   & 192 & $64^3$ & 1265 & 46  & 0.9 & 33         \\
+%     Matrix-free & 192 & $64^3$ & 1265 & 69  & 2.6 & 62         \\
+%     Tensor      & 192 & $64^3$ & 1265 & 128 & 2.4 & 323        \\
+    
+%     Matrix-free & 1536 & $96^3$ & 576  & 47  & 2.2 & 60  \\
+%     Tensor      & 1536 & $96^3$ & 576  & 72  & 2.2 & 252 \\
+    
+%     Tensor      & 12288 & $192^3$ & 576  & 26 & 1.1 & 166 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{frame}
+
+\begin{frame}{HPGMG: a new benchmarking proposal}
+  \begin{itemize}
+  \item \url{https://hpgmg.org}, hpgmg-forum@hpgmg.org mailing list
+  \item SC14 BoF: Wednesday, Nov 19, 12:15pm to 1:15pm
+  \item Mark Adams, Sam Williams (finite-volume), myself (finite-element), John Shalf, Brian Van Straalen, Erich Strohmeier, Rich Vuduc
+  \item Implementations
+    \begin{description}
+    \item[Finite Volume] memory bandwidth intensive, simple data dependencies
+    \item[Finite Element] compute- and cache-intensive, vectorizes
+    \end{description}
+  \item Full multigrid, well-defined, scale-free problem
+  \item Goal: necessary and sufficient
+    \begin{itemize}
+    \item Every feature stressed by benchmark should be necessary for an important application
+    \item Good performance on the benchmark should be sufficient for good performance on most applications
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Kiviat diagrams}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/hpgmg-kiviat-20140606.png}
+  \end{center}
+  \begin{itemize}
+  \item c/o Ian Karlin and Bert Still (LLNL)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{HPGMG distinguishes networks}
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{figures/hpgmg-fv-20140515-dof.png}
+  \end{center}
+  \begin{itemize}
+  \item About 1M dof/socket
+  \item Peregrine and Edison have identical node architecture
+  \item Peregrine has 5:1 tapered IB
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Dynamic Range}
+  \begin{center}
+    \includegraphics[width=0.65\textwidth]{figures/hpgmgfe-edison-vesta.png}
+  \end{center}
+  \begin{itemize}
+  \item BG/Q vectorization overloads cache, load/store: 88\% FXU, 12\% FPU
+  \item Users like predictable performance across a range of problem sizes
+  \item Half of all PETSc users care about strong scaling more
+  \item Transient problems do not weak scale even if each step does
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Where we are now: $QR$ factorization with MKL on MIC}
+  \begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figures/hardware/MKL-dgeqrf-MIC}
+  \end{figure}
+  \begin{itemize}
+  \item Figure compares two CPU sockets (230W TDP) to one MIC (300W TDP plus host)
+  \item Performance/Watt only breaks even at largest problem sizes
+  \item $10^4 \times 10^4$ matrix takes 667 GFlops: about 2 seconds
+  \item This is an $O(n^{3/2})$ operation on $n$ data
+  \item MIC cannot strong scale, no more energy efficient/cost effective
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Memory bandwidth is a major limitation
+  \item Can change algorithms to increase intensity
+    \begin{itemize}
+    \item Usually increases stress on cache
+    \end{itemize}
+  \item Optimizing for vectorization can incur large bandwidth overhead
+  \item I think data motion is a more fundamental long-term concern
+  \item Latency is at least as important as throughput for many applications
+  \item ``hard to program'' versus ``architecture ill-suited for problem''?
+  \item Performance varies with configuration
+    \begin{itemize}
+    \item number of tracers, number of levels, desired steps/second
+    \item do not need optimality in all cases, but should degrade gracefully
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}

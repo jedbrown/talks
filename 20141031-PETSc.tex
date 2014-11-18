@@ -1,0 +1,296 @@
+%\documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+%\usetheme{Singapore}
+%\usetheme{Warsaw}
+\usetheme{Malmoe}
+\useinnertheme{circles}
+\useoutertheme{infolines}
+% \useinnertheme{rounded}
+
+\setbeamercovered{transparent}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{bm,textpos,alltt,listings,multirow,ulem,minted}
+\usepackage{JedMacros}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+\usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary[shapes.arrows,arrows,shapes.misc,chains]
+
+
+\makeatletter
+\def\sectionintoc{}
+\def\beamer@sectionintoc#1#2#3#4#5{%
+\ifnum\c@tocdepth>0%
+\ifnum#4=\beamer@showpartnumber%
+{
+  \beamer@saveanother%
+  \gdef\beamer@todo{}%
+  \beamer@slideinframe=#1\relax%
+  \expandafter\only\beamer@tocsections{\gdef\beamer@todo{%
+      \beamer@tempcount=#5\relax%
+      \advance\beamer@tempcount by\beamer@sectionadjust%
+      \edef\inserttocsectionnumber{\the\beamer@tempcount}%
+      \def\inserttocsection{\hyperlink{Navigation#3}{#2}}%
+      \beamer@tocifnothide{\ifnum\c@section=#1\beamer@toc@cs\else\beamer@toc@os\fi}%
+      {
+        \ifbeamer@pausesections\pause\fi%
+        \ifx\beamer@toc@ooss\beamer@hidetext
+          \vskip.2em
+        \else
+          \vskip.2em
+        \fi
+        {%
+          \hbox{\vbox{%
+              \def\beamer@breakhere{\\}%
+              \beamer@tocact{\ifnum\c@section=#1\beamer@toc@cs\else\beamer@toc@os\fi}    {section in toc}}}%
+         \par%
+        }%
+      }%
+    }
+  }%
+  \beamer@restoreanother%
+  }
+  \beamer@todo%
+  \fi\fi%
+}
+\makeatother
+
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[letterpaper,landscape,border shrink=5mm]
+
+% Macros for the p-Bratu revision numbers
+\def\Rbasic{0}
+\def\Rrlap{1}
+\def\Rrbratu{2}
+\def\Rrpbratu{3}
+\def\Rassemblebratu{4}
+\def\Rassemblepicard{5}
+\def\Rmyprealloc{6}
+\def\Rnewtoncrash{7}
+\def\Rnewtonbug{8}
+\def\Rnewtonfix{9}
+
+\title[PETSc]{Intro to Parallel Algebraic Solvers using PETSc}
+
+\author{Jed Brown}
+
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+\institute[ANL]{Argonne National Laboratory \& CU Boulder}
+
+\date{UC Merced 2014-10-31}
+
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+\AtBeginSubsection[]
+{
+ \begin{frame}<beamer>
+ \frametitle{Outline}
+ \tableofcontents[currentsection,currentsubsection]
+ \end{frame}
+}
+
+\AtBeginSection[]{
+\begin{frame}<beamer>
+  \frametitle{Outline}
+  \tableofcontents[currentsection]
+\end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+%\beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents
+% You might wish to add the option [pausesections]
+\end{frame}
+\input{slides/PETSc/RequestsNotSpecific.tex}
+
+\section{Introduction}
+\input{slides/PETSc/Timeline.tex}
+\input{slides/PETSc/About.tex}
+\input{slides/PETSc/RoleOfPETSc.tex}
+\input{slides/PETSc/BetterthanPETSc.tex}
+\input{slides/BillGroppAdvice.tex}
+
+\input{slides/PETSc/Composition.tex}
+
+\section{Objects - Building Blocks of the Code}
+\input{slides/MPICommunicator.tex}
+\input{slides/PETSc/OptionsDatabase.tex}
+
+\section[Core/Algorithms]{Core PETSc Components and Algorithms Primer}
+\subsection{Time integration}
+\input{slides/PETSc/TSARKIMEX.tex}
+\input{slides/SNES/FlowControl.tex}
+\input{slides/PETSc/TSMethods.tex}
+\input{slides/PETSc/TSUsage.tex}
+
+\subsection{Nonlinear solvers: SNES}
+\input{slides/SNES/SNESNewton.tex}
+\input{slides/SNES/Callbacks.tex}
+\input{slides/SNES/Function.tex}
+\input{slides/SNES/Jacobian.tex}
+
+
+\subsection{Linear Algebra background/theory}
+\input{slides/MatrixDefinition.tex}
+\input{slides/MatricesImportant.tex}
+\input{slides/MatrixNoEntries.tex}
+\input{slides/GMRES.tex}
+
+\subsection{Structured grid distribution: DMDA}
+\input{slides/DM/DMDA.tex}
+\input{slides/DA/GhostValues.tex}
+\input{slides/DA/GlobalNumberings.tex}
+\input{slides/DA/LocalNumbering.tex}
+\input{slides/DA/Vectors.tex}
+\input{slides/DA/UpdatingGhosts.tex}
+\input{slides/DA/Stencils.tex}
+\input{slides/DA/CreatingDA2d.tex}
+\input{slides/DA/WorkingWithLocal.tex}
+\input{slides/DA/LocalFunction.tex}
+\input{slides/DA/BratuResidual.tex}
+\input{slides/DM/OtherDMs.tex}
+
+\subsection{Profiling}
+\input{slides/PETSc/Integration/Profiling.tex}
+\input{slides/ReadingLogSummary.tex}
+\input{slides/CommunicationCosts.tex}
+\input{slides/MG/HPGMGFE.tex}
+
+\subsection{Matrix Redux}
+\input{slides/PETSc/Integration/MatrixRedux.tex}
+\input{slides/PETSc/Integration/MatrixCreation.tex}
+\input{slides/PETSc/Integration/MatrixPolymorphism.tex}
+\input{slides/PETSc/Integration/MatrixAssembly.tex}
+\input{slides/PETSc/Integration/EfficientMatrixAssembly.tex}
+\input{slides/PETSc/Integration/WhyArePETScMatricesThatWay.tex}
+
+\section*{Preliminary Conclusions}
+\begin{frame}{Preliminary Conclusions}
+  \begin{block}{PETSc can help you}
+    \begin{itemize}
+    \item solve algebraic and DAE problems in your application area
+    \item rapidly develop efficient parallel code, can start from examples
+    \item develop new solution methods and data structures
+    \item debug and analyze performance
+    \item advice on software design, solution algorithms, and performance
+      \begin{itemize}
+        \item Public questions: \url{petsc-users@mcs.anl.gov}, archived
+        \item Private questions: \url{petsc-maint@mcs.anl.gov}, not archived
+      \end{itemize}
+    \end{itemize}
+  \end{block}
+  \begin{block}{You can help PETSc}
+    \begin{itemize}
+    \item report bugs and inconsistencies, or if you think there is a better way
+    \item tell us if the documentation is inconsistent or unclear
+    \item consider developing new algebraic methods as plugins, contribute if your idea works
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+
+\part{Integration and Efficiency}
+\section{Application Integration}
+\input{slides/PETSc/Integration/ApplicationIntegration.tex}
+\input{slides/ApplicationIntegration.tex}
+\input{slides/PETSc/Integration/Stages.tex}
+\input{slides/PETSc/Integration/Initialization.tex}
+\input{slides/PETSc/MatrixMemoryPreallocation.tex}
+\input{slides/PETSc/Integration/LinearSolvers.tex}
+\input{slides/PETSc/Integration/NonlinearSolvers.tex}
+
+\section{Performance and Scalability}
+\input{slides/JFNKBottlenecks.tex}
+\input{slides/ScalabilityDefinition.tex}
+\input{slides/ScalabilityWarning.tex}
+\subsection{Memory hierarchy}
+\input{slides/SpMVPerformanceModel.tex}
+\input{slides/StreamTriad-XT5-BGP.tex}
+\input{slides/OptimizingSpMV.tex}
+\input{slides/ACaseForUnassembledMatrices.tex}
+\input{slides/OptimizingSpMVUnassembled.tex}
+\input{slides/HardwareArithmeticIntensity.tex}
+
+%\input{slides/MultigridAdvice.tex}
+
+
+% \part{Special topics}
+% \section{Representative examples and algorithms}
+% \subsection{Hydrostatic Ice}
+% \input{slides/ToyHydrostaticIce.tex}
+% \subsection{Driven cavity}
+% \input{slides/SNES/DrivenCavity.tex}
+% \input{slides/DrivenCavityRun.tex}
+
+% \section{Hard problems}
+% \input{slides/FieldSplit.tex}
+% \input{slides/CoupledMultiphysics.tex}
+% %\input{slides/Anisotropy.tex}
+% \input{slides/SIPreconditioning.tex}
+
+% \section{Recent developments in PETSc}
+% \subsection{Improved multiphysics support}
+% \input{slides/MultiphysicsExamples.tex}
+% \input{slides/MonolithicOrSplit.tex}
+% \input{slides/PETSc/Coupling.tex}
+% \input{slides/PETSc/LocalSpaces.tex}
+% \input{slides/SNES/MultiphysicsAssemblyResiduals.tex}
+% \input{slides/SNES/MultiphysicsAssemblyJacobians.tex}
+% \input{slides/PETSc/MatGetLocalSubMatrix.tex}
+% \subsection{Variational inequalities}
+% \input{slides/PETSc/SNESVI.tex}
+
+\begin{frame}{References}
+  \begin{itemize}
+  \item Knoll and Keyes, \emph{Jacobian-free Newton-Krylov methods: a survey of approaches and applications}, JCP, 2004.
+  \item Elman et. al., \emph{A Taxonomy and Comparison of Parallel Block Multi-Level Preconditioners for the Incompressible Navier-Stokes Equations}, JCP, 2008.
+  \item Wan, Chan, and Smith, \emph{An Energy-minimizing Interpolation for Robust Multigrid Methods}, SIAM J. Sci. Comp, 2000.
+  \item Gropp, Kaushik, Keyes, Smith, \emph{Performance Modeling and Tuning of an Unstructured Mesh CFD Application}, Supercomputing, 2000.
+  \item Gropp, \emph{Exploiting Existing Software in Libraries: Successes, Failures, and Reasons Why}, OO methods for interoperable scientific and engineering computing, 1999.
+  \item ICiS Multiphysics workshop report:  IJHPCA 27(1), Feb 2013, http://dx.doi.org/10.1177/1094342012468181 
+  \end{itemize}
+\end{frame}
+
+\end{document}
