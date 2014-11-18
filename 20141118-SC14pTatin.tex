@@ -305,7 +305,7 @@ This talk: \url{http://59A2.org/files/20141118-SC14pTatin.pdf} \\
       \begin{itemize}
     \item Chebyshev/Jacobi smoothing
       \begin{itemize}
-      \item vs. Gauss-Seidel, cf. Adams et al (2003)
+      \item vs. Gauss-Seidel, see Adams et al (2003)
       \item Matrix-free implementation
       \item Incomplete factorization viable for anisotropy
       \end{itemize}
@@ -325,13 +325,6 @@ This talk: \url{http://59A2.org/files/20141118-SC14pTatin.pdf} \\
     \begin{itemize}
     \item $64\times 64\times 64$ $Q_2$ is $> 12$ GB assembled
     \end{itemize}
-  \item Matrix-free operator application
-    \begin{itemize}
-    \item FE action of $-\nabla\cdot (\kappa \nabla \mathbf u)$
-      \begin{gather}\label{eq:mf-scalar}
-        A \mathbf u = \sum_{e \, \in \, N_\text{el}}  \mathcal E_e^T \mathcal D_{\mathbf x}^T \Lambda(\omega \kappa) \mathcal D_{\mathbf x} \mathcal E_e \mathbf u,
-      \end{gather}
-    \end{itemize}
   \end{itemize}
 \end{frame}
 
@@ -340,17 +333,21 @@ This talk: \url{http://59A2.org/files/20141118-SC14pTatin.pdf} \\
 \begin{frame}{$Q_2$ tensor product optimization}
   \begin{itemize}
   \item Reference gradient $\mathcal D_{\mathbf \xi} = [ \hat D \otimes \hat B \otimes \hat B, \hat B \otimes \hat D \otimes \hat B, \hat B \otimes \hat B \otimes \hat D]$
-  \item $\nabla_{\mathbf\xi} \mathbf x = (\mathcal D_{\mathbf\xi}\otimes I_3) (\mathcal E_e\otimes I_3) \mathbf x$, invert $3\times 3$ at quad. points: $\nabla_{\mathbf x} \mathbf \xi$
-  \item Viscous operator
+  \item $\nabla_{\mathbf\xi} \mathbf x = (\mathcal D_{\mathbf\xi}\otimes I_3) (\mathcal E_e\otimes I_3) \mathbf x$ \alert{(29\%)}
+  \item Invert $3\times 3$ at quad. points: $\nabla_{\mathbf x} \mathbf \xi$ \alert{(7\%)}
     \begin{equation*}
-      A \mathbf u = \sum_{e \, \in \, N_\text{el}} \mathcal E_e^T \mathcal D_{\mathbf \xi}^T \Lambda\Big((\nabla_{\mathbf x}\mathbf\xi)^T (\omega \eta) (\nabla_{\mathbf x}\mathbf\xi) \Big) \mathcal D_{\mathbf \xi} \mathcal E_e \mathbf u .
+      A \mathbf u = \sum_{e \, \in \, N_\text{el}} 
+      \underbrace{\mathcal E_e^T}_{\text{scatter accum}}
+      \overbrace{\mathcal D_{\mathbf \xi}^T}^{\text{tensor \alert{29\%}}}
+      \underbrace{\Lambda\Big((\nabla_{\mathbf x}\mathbf\xi)^T (\omega \eta) (\nabla_{\mathbf x}\mathbf\xi) \Big)}_{\text{independent at quadrature points \alert{6\%}}}
+      \overbrace{\mathcal D_{\mathbf \xi}}^{\text{tensor \alert{29\%}}}
+      \underbrace{\mathcal E_e}_{\text{gather}} \mathbf u
     \end{equation*}
   \item Pack 4 elements at a time in vector-friendly ordering
   \item Intrinsics, $30\%$ of peak AVX (SNB) and FMA (Haswell)
   \item Similar structure in HPGMG-FE (BoF Wed 12:15-13:15 room 294)
-  \item 8 nodes (192 cores) of Edison (NERSC XC-30, E5-2695v2):
   \end{itemize}
-  \vspace{-1em}
+  \vspace{-1.5em}
   \begin{center}
     \begin{tabular}{lrrrrrrr}
       \toprule
@@ -391,11 +388,11 @@ This talk: \url{http://59A2.org/files/20141118-SC14pTatin.pdf} \\
           &            &      &Setup (s) &Apply (s)                      &Asmb   &MF    &Tens   \\
           % -----------------------
     \midrule
-    $64^3$	&192 &112	&0.5  &1.2		&40.1 &26.9 &14.8 \\
-    $96^3$	&192 &110	&1.3  &4.0		&- &90.6 &50.6 \\
-    $96^3$	&1536 &95	&1.5  &1.1		&- &12.1 &8.2 \\
-    $192^3$	&1536 &141	&2.7  &5.8		&- &120.0 &45.1 \\
-    $192^3$	&12288 &170	&4.1  &6.1		&- &30.1 &17.1 \\
+    $64^3$	&192 &112	&0.5  &1.2		&40.1 &26.9 &{\bf 14.8} \\
+    $96^3$	&192 &110	&1.3  &4.0		&- &90.6 &{\bf 50.6} \\
+    $96^3$	&1536 &95	&1.5  &1.1		&- &12.1 &{\bf 8.2} \\
+    $192^3$	&1536 &141	&2.7  &5.8		&- &120.0 &{\bf 45.1} \\
+    $192^3$	&12288 &170	&4.1  &6.1		&- &30.1 &{\bf 17.1} \\
     % -----------------------
     \bottomrule
   \end{tabular}
@@ -420,7 +417,7 @@ This talk: \url{http://59A2.org/files/20141118-SC14pTatin.pdf} \\
 \begin{frame}{Efficiency: per timestep}
   \begin{itemize}
   \item Global FoM: Elements/second
-  \item Efficiency FoM: Elements/core/second
+  \item Efficiency FoM: Elements/Core/second
   \end{itemize}
     \begin{tabular}{lr r cr crrr}
     \toprule
