@@ -1,0 +1,40 @@
+\begin{frame}{Eigen-analysis plugin for solver design}
+  Hydrostatic ice flow (nonlinear rheology and slip conditions)
+  \begin{align}\label{eq:momentum}
+    - \nabla \left[ \eta
+      \begin{pmatrix}
+        4 u_x + 2 v_y & u_y + v_x & u_z \\
+        u_y + v_x & 2 u_x + 4 v_y & v_z
+      \end{pmatrix} \right] + \rho g \nabla s & = 0,
+  \end{align}
+  \begin{itemize}
+  \item Many solvers converge easily with no-slip/frozen bed, more difficult for slippery bed (ISMIP HOM test C)
+  \item Geometric MG is good: $\lambda \in [0.805, 1]$ (SISC 2013)
+  \end{itemize}
+  % GAMG: ./ex48 -M 10 -P 8 -da_refine 1 -thi_mat_type aij -thi_hom C -dll_append ~/petsc-eig/mpich-opt/lib/libpetsc-eig.so -ksp_plugin eig -eig_type preconditioned -eig_eps_nev 10 -eig_eps_smallest_real -eig_view_vectors_vtk -eig_st_ksp_type gmres -eig_st_ksp_rtol 1e-9 -eig_eps_monitor_lg_all -eig_eps_view -pc_type gamg
+  % Eigenvalue  0 (error): 0.0268052+0i (2.34383e-09)
+  % Eigenvalue  1 (error): 0.0408511+0i (9.28564e-10)
+  % Eigenvalue  2 (error): 0.0431757+0i (7.35697e-10)
+  % Eigenvalue  3 (error): 0.0447336+0i (6.78016e-09)
+  % Eigenvalue  4 (error): 0.0490315+0i (8.74661e-09)
+  % Eigenvalue  5 (error): 0.0539488+0i (9.67847e-10)
+  % Eigenvalue  6 (error): 0.055815+0i (1.7793e-09)
+  % Eigenvalue  7 (error): 0.0598606+0i (1.92014e-09)
+  % Eigenvalue  8 (error): 0.06518+0i (3.2315e-09)
+  % Eigenvalue  9 (error): 0.0669961+0i (2.8736e-09)
+  \vspace{-1ex}
+  \begin{figure}
+    \centering
+    \begin{subfigure}{0.4\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/visit0000.png}
+      \caption{$\lambda_0 = 0.0268$}
+    \end{subfigure}
+    \begin{subfigure}{0.4\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{figures/THI/EigenGAMG/visit0001.png}
+      \caption{$\lambda_1 = 0.0409$}
+    \end{subfigure}
+    % \caption{Smallest two eigenpairs for smoothed aggregation with only translational modes (but no rotational modes).}
+  \end{figure}
+\end{frame}

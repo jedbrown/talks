@@ -1,0 +1,386 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{ANLBlue}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=05}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{Numerical Libraries and Frameworks (PETSc)}
+
+\author{{\bf Jed Brown} \texttt{jedbrown@mcs.anl.gov} \\
+  Argonne National Lab and CU Boulder
+}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+% \institute
+% {
+%   Mathematics and Computer Science Division \\ Argonne National Laboratory
+% }
+
+\date{ENES Workshop on Exascale Technologies, 2014-03-18}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{What can libraries offer?}
+  \begin{itemize}
+  \item Code reuse
+    \begin{itemize}
+    \item Porting/optimization to new architectures
+    \item \ldots but only the part of the problem solved by the library
+    \end{itemize}
+  \item Easy experimentation with different methods
+    \begin{itemize}
+    \item via run-time options (PETSc)
+    \item ``black box'' solvers are not sustainable
+    \item preconditioners, linear and nonlinear accelerators, time integrators
+    \end{itemize}
+  \item Diagnostic and debugging support
+    \begin{itemize}
+    \item Convergence monitors, error estimators, adaptive controllers
+    \item Compatibility checks
+    \item Eigen-analysis
+    \end{itemize}
+  \item Communication with algorithm developers
+    \begin{itemize}
+    \item Precise language to describe methods
+    \item Performance diagnostics
+    \end{itemize}
+  \item Flexible coupling algorithms: beyond ``first-order'' splitting
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Library or Framework?}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Library}
+        \begin{itemize}
+        \item Libraries provide a toolbox
+        \item No assumptions about usage
+        \item Any selection of libraries should be usable in combination
+        \item \textit{Extensible} libraries enable user to implement/extend
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Framework}
+        \begin{itemize}
+        \item Rapid development within a problem class
+        \item End-to-end solution provides guidance and auxiliary tools
+        \item Opinionated
+        \item Hard to use in combination with other Frameworks1
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \begin{center}
+    \uncover<2>{\alert{\Huge PETSc is a Library}}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Portable {\bf Extensible} Toolkit for Scientific computing}
+  \begin{block}{Portable}
+    \begin{itemize}
+    \item Runs \emph{performantly} from laptop and iPhone to BG/Q and Titan
+    \item Any compiler, any OS
+    \item C, C++, Fortran 77 \& 90+, Python, MATLAB
+    \item Free to everyone: BSD-style license, open development
+    \end{itemize}
+  \end{block}
+  \begin{block}{Philosophy: Everything has a plugin architecture}
+    \begin{itemize}
+    \item Vectors, Matrices, Coloring/ordering/partitioning algorithms
+    \item Preconditioners, Krylov accelerators, Nonlinear solvers, Time integrators
+    \item Spatial discretizations/topology$^*$
+    \item Example: Third party supplies matrix format and associated preconditioner, distributes
+      compiled shared library.  Application user loads plugin at runtime, no source
+      code in sight.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Portable Extensible Toolkit for {\bf Scientific computing}}
+  \begin{itemize}
+  \item Computational Scientists and Engineers
+    \begin{itemize}
+    \item Structural mechanics, CFD, Geodynamics, Subsurface flow, Reactor engineering, Fusion
+    \item Research (many countries, many agencies) and industry (oil and gas, aerospace, ABAQUS)
+    \end{itemize}
+  \item Algorithm Developers (iterative methods and preconditioning)
+    \begin{itemize}
+    \item Example: Ghysels' pipelined Krylov methods
+    \end{itemize}
+  \item Package Developers
+    \begin{itemize}
+    \item SLEPc, TAO, Libmesh, MOOSE, FEniCS, Deal.II, etc
+    \end{itemize}
+  \item Funding
+    \begin{itemize}
+    \item Department of Energy (SciDAC, ASCR, collaborations)
+    \item National Science Foundation (CIG and others)
+    \end{itemize}
+  \item Active development team with long-term commitment
+  \item Hundreds of tutorial-style examples
+  \item Hyperlinked manual, examples, and manual pages for all routines
+  \item Lists: \url{petsc-users@mcs.anl.gov}, \url{petsc-dev@mcs.anl.gov}
+  \item Support from \url{petsc-maint@mcs.anl.gov}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Solvers in climate}
+  \begin{itemize}
+  \item ``Pressure'' solves for semi-implicit methods
+    \begin{itemize}
+    \item Depends on separation between fastest wave and dynamics
+    \end{itemize}
+  \item Time integration for atmospheric column physics
+    \begin{itemize}
+    \item Currently swamped with splitting error
+    \item Stiff, positivity constraints, non-smoothness (freezing)
+    \end{itemize}
+  \item Sea ice
+    \begin{itemize}
+    \item Fast elastic wave speed ($v_p \approx \SI{3}{\kilo\metre\per\second}$)
+    \item Damped EVP model not converged at 120 subcycles, nor at 1200 (Lemieux at al 2012)
+    \end{itemize}
+  \item Land ice (Stokes and hydrostatic models with slippery bed)
+    \begin{itemize}
+    \item PETSc: PISM (UAF, PIK), BISICLES (LBL, Chombo), ISSM (NASA)
+    \end{itemize}
+  \item Improved stability for symplectic integration
+  \item Accelerated spin-up (e.g., deep ocean)
+    \begin{itemize}
+    \item Need to model unresolved-in-time processes
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \includegraphics[width=\textwidth]{figures/TS/CaldwellTimeStepConvergence.png} \\
+  %
+  c/o Peter Caldwell (LLNL)
+  \begin{itemize}
+  \item Models calibrated for ``efficient'' time step
+  \item No longer solving the PDEs we write down
+  \item Expensive to recalibrate when discretization changes
+  \item Calibration eats up a big chunk of the IPCC policy timeline
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Sea Ice}
+  \begin{columns}
+    \begin{column}{0.75\textwidth}
+      {\scriptsize
+        \begin{gather*}
+          (\rho h \bm u)_t + \underbrace{\rho h f \bm k \times \bm u}_{\text{Coriolis}} - \underbrace{\bm \tau}_{\text{water/air}} + \underbrace{\rho g h \nabla H_d}_{\text{surface gradient}} - \nabla\cdot(\underbrace{\rho h \bm u \otimes \bm u}_{\text{convection}} - \underbrace{\sigma}_{\text{viscoplastic}}) = 0 \\
+          \sigma = 2 \eta \dot\epsilon + \big[(\zeta - \eta) \trace\dot\epsilon - P/2 \big] \bm 1
+        \end{gather*}}
+    \end{column}
+    \begin{column}{0.25\textwidth}
+      \includegraphics[width=\textwidth]{figures/SeaIce/VorticesIceStrainRate}      
+    \end{column}
+  \end{columns}
+  \begin{itemize}
+  \item mildly nonsymmetric due to Coriolis (quasi-diagonal) and convection (small compared to viscous stresses)
+  \item Nonlinear multigrid is less synchronous
+    {\small
+    \begin{tabular}{llll}
+      \toprule
+      Method & Nonlinear its/stage & Linear its/stage & V-cycles \\
+      \midrule
+      Newton-Krylov MG & 6 & 30.44 & 30.44 \\
+      FAS Newton/BJacobi/SOR & 18.33 & --- & 18.33 \\
+      \bottomrule
+    \end{tabular}}
+  \item Additive Runge-Kutta IMEX, error-based adaptivity, solver rtol $10^{-8}$
+  \item Preliminary tests to 4096 cores of BG/Q and 64 fine-grid elements/process, less than 0.1 seconds/time step.
+  \end{itemize}
+\end{frame}
+
+\input{slides/PETSc/TSARKIMEX.tex}
+\input{slides/MonolithicOrSplit.tex}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/FieldSplit.tex}
+\input{slides/HydrostaticEigen.tex}
+
+\begin{frame}{Implicit Runge-Kutta for advection}
+  \begin{table}
+    \centering
+    \caption{Total number of iterations (communications or accesses of $J$) to solve linear advection to $t=1$ on a $1024$-point grid using point-block Jacobi preconditioning of implicit Runge-Kutta matrix.
+      The relative algebraic solver tolerance is $10^{-8}$.}\label{tab:irk-advection}
+    \begin{tabular}{lrrr}
+      \toprule
+      Family & Stages & Order & Iterations \\
+      \midrule
+      Crank-Nicolson/Gauss & 1 & 2 & 3627 \\
+      Gauss & 2 & 4 & 2560 \\
+      Gauss & 4 & 8 & 1735 \\
+      Gauss & 8 & 16 & 1442 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \begin{itemize}
+  \item Naive centered-difference discretization
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{A case for run-time configuration}
+  \begin{itemize}
+  \item Simple build process
+  \item Complete test suite without recompilation
+  \item Cleaner provenance
+    \begin{itemize}
+    \item Only need run-time configuration
+    \item No recompiles, only one binary to keep track of
+    \item Consistency checks in one place
+    \end{itemize}
+  \item Simplified analysis/uncertainty quantification
+    \begin{itemize}
+    \item More algorithms accessible
+    \end{itemize}
+  \item More automated calibration
+  \item Interface granularity is key to performance
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item PETSc: flexible, extensible, unintrusive
+    \begin{itemize}
+    \item \url{http://mcs.anl.gov/petsc}
+    \end{itemize}
+  \item Verification (converging the equations) encourages mathematicians
+  \item Climate model components \emph{should} become more library-like
+    \begin{itemize}
+    \item Remove assumptions about environment
+    \item Improved modularity
+    \item Interfaces for configuration/calibration
+    \item Remove global variables (Fortran module variables)
+    \end{itemize}
+  \item Tools need to make hard problems possible
+    \begin{itemize}
+    \item Already many tools to make easy problems elegant
+    \item Ease of extending (versus DSLs/compilers)
+    \end{itemize}
+  \item Strong-scaling necessity: ruthlessly shorten critical path
+    \begin{itemize}
+    \item $2\times$ increase in resolution requires at least $2\times$ more steps
+    \item At fixed turn-around time, need twice as many steps/second
+    \item Algorithmic optimality is crucial
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}

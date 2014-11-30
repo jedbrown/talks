@@ -1,0 +1,98 @@
+\begin{frame}[shrink=20]{Interactions among composable linear, nonlinear, and timestepping solvers}
+  \begin{tikzpicture}
+    [obj/.style={rectangle,draw=blue!50!black,fill=blue!20,thick,minimum size=6mm},
+    impl/.style={rounded rectangle,draw=green!50!black,fill=green!20,thick,font=\scriptsize},
+    objbox/.style={rectangle,fill=none,draw=blue!50!black,thick}
+    ]
+    \begin{scope} [start chain,every node/.style={on chain,impl},node distance=1em]
+      \node (arkimex) {ARK IMEX};
+      \node (rosw)    {Rosenbrock-W};
+      \node (ssp)     {SSP RK};
+      \node (pseudo)  {Pseudo};
+    \end{scope}
+    \node[objbox,fit=(arkimex)(pseudo)] (tsbox) {};
+    \node[obj,above={0cm of tsbox.north west},anchor=base] (ts) {TS};
+
+    \begin{scope} [start chain,every node/.style={on chain,impl},node distance=1em]
+      \node[below={3em of tsbox.south west},anchor=north west] (ls) {Newton line search};
+      \node (viss) {VISS};
+      \node (virs) {VIRS};
+      \node (ms)  {Multi-stage};
+      \node[below=of ls.south west,anchor=west] (ngmres) {NGMRES};
+      \node (nrichardson)  {NRichardson};
+      \node (fas)  {FAS};
+      \node (qn)    {Quasi-Newton};
+      \node (shell)  {Shell};
+    \end{scope}
+    \node[objbox,fit=(ls)(shell)] (snesbox) {};
+    \node[obj,above={0cm of snesbox.north west},anchor=base] (snes) {SNES};
+
+    \begin{scope} [start chain,every node/.style={on chain,impl},node distance=1em]
+      \node[below={3em of ngmres},anchor=north west] (gmres) {GMRES};
+      \node (fgmres) {FGMRES};
+      \node (ibcgstab) {IBiCGStab};
+      \node (cg) {CG};
+      \node (preonly) {Pre only};
+    \end{scope}
+    \node[objbox,fit=(gmres)(preonly)] (kspbox) {};
+    \node[obj,above={0cm of kspbox.north west},anchor=base] (ksp) {KSP};
+
+    \begin{scope} [start chain,every node/.style={on chain,impl},node distance=1em]
+      \node[below={3em of kspbox.south west},anchor=north east] (asm) {ASM};
+      \node (fieldsplit) {FieldSplit};
+      \node (mg) {MG};
+      \node (pcksp) {KSP};
+      \node (sor) {SOR};
+      \node (ilu) {ILU};
+      \node (lu) {LU};
+      \node (pcshell) {Shell};
+    \end{scope}
+    \node[objbox,fit=(asm)(pcshell)] (pcbox) {};
+    \node[obj,above={0cm of pcbox.north west},anchor=base] (pc) {PC};
+
+    \begin{scope} [start chain,every node/.style={on chain,impl},node distance=1em]
+      \node[below={3em of asm.south west},anchor=north east] (aij) {AIJ};
+      \node (baij) {BAIJ};
+      \node (sbaij) {SBAIJ};
+      \node (nest) {Nest};
+      %\node (is) {IS};
+      \node (cusp) {CUSP};
+    \end{scope}
+    \node[objbox,fit=(aij)(cusp)] (matbox) {};
+    \node[obj,above={0cm of matbox.north west},anchor=base] (mat) {Mat};
+
+    \begin{scope} [start chain,every node/.style={on chain,impl},node distance=1em]
+      \node[right={2em of cusp.east},anchor=west] (vecmpi) {MPI};
+      \node (vecghost) {Ghost};
+      \node (veccuda) {CUDA};
+    \end{scope}
+    \node[objbox,fit=(vecmpi)(veccuda)] (vecbox) {};
+    \node[obj,above={0cm of vecbox.north west},anchor=base] (vec) {Vec};
+
+    \begin{scope}
+      [thick,draw=black!50,>=stealth,
+      uses/.style={red!50!black,fill=red!20,font=\scriptsize}]
+      \draw[>->] (arkimex) -- (snes) node[midway,uses] {$g(x,z+\alpha x,t) = 0$};
+      \draw[>->] (rosw) to[out=-120,in=10] node[midway,uses] {$J_\alpha^{-1}$} (snes);
+      \draw[>->] (pseudo) to[out=-150,in=0] node[midway,uses] {$J_\alpha^{-1}$} (snes);
+
+      \draw[>->] (ngmres) to[out=180,in=-100] node[midway,uses] {npc} (snes.south west);
+      \draw[>->] (nrichardson.south west) to[out=-150,in=-120] node[midway,uses] {npc} (snes.south west);
+
+      \draw[>->] (ls.south west) to[out=-140,in=180] node[near end,uses] {$J^{-1}$} (ksp);
+      \draw[>->] (virs.south west) to[out=-110,in=20] node[midway,uses] {$J_{\text{reduced}}^{-1}$} (ksp);
+      \draw[>->] (qn) to[out=-150,in=0] node[near start,uses] {$H_0^{-1}$} (ksp);
+
+      \draw[>->] (asm.west) to[out=170,in=-180] node[midway,uses] {sub} (ksp);
+      \draw[>->] (fieldsplit.north west) to[out=150,in=-120] node[midway,uses] {split} (ksp.south west);
+      \draw[>->] (mg.north west) to[out=150,in=-90] node[midway,uses] {levels} (ksp);
+      \draw[>->] (pcksp) to[out=110,in=-90] node[midway,uses] {inner} (ksp);
+
+      \draw[>->] (asm) to node[midway,uses] {overlap} (mat);
+      \draw[>->] (sor) to[out=-165,in=10] node[near start,uses] {relax} (mat);
+      \draw[>->] (lu) to[out=-160,in=0] (mat);
+      \draw[>->] (ilu) to[out=-160,in=0] node[midway,uses] {factor} (mat);
+      \draw[>->] (fieldsplit) to[out=-120,in=25] node[midway,uses] {sub} (mat);
+    \end{scope}
+  \end{tikzpicture}
+\end{frame}

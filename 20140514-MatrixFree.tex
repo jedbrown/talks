@@ -1,0 +1,285 @@
+\documentclass[final,t]{beamer}
+\mode<presentation>
+{
+  \usetheme{MCSposter}
+  \usecolortheme{default}
+  \usefonttheme[onlymath]{serif}
+}
+\usepackage[orientation=portrait,size=custom,width=76.2,height=101.6]{beamerposter}
+%\usepackage[orientation=landscape,size=a0,scale=1.4]{beamerposter}
+\usepackage{pgfpages}
+%\pgfpagesuselayout{resize to}[a4paper,landscape,border shrink=5mm]
+%\pgfpagesuselayout{resize to}[a0paper,landscape]
+
+% additional settings
+\setbeamerfont{itemize}{size=\normalsize}
+\setbeamerfont{itemize/enumerate body}{size=\normalsize}
+\setbeamerfont{itemize/enumerate subbody}{size=\normalsize}
+\setbeamertemplate{caption}[numbered]
+
+% additional packages
+\usepackage{times}
+\usepackage{textpos}
+\usepackage{wrapfig}
+\usepackage{sidecap}
+%\usepackage{sfmath} 
+\usepackage{amsmath,amsthm,bm,microtype}
+\usepackage{siunitx}
+\DeclareSIUnit\year{a}
+\sisetup{retain-unity-mantissa = false}
+\usepackage{exscale}
+\usepackage{multicol,multirow}
+\usepackage{booktabs}
+%\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\newcommand\todo[1]{{\color{red}\bf [TODO: #1]}}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+\usepackage{fancyvrb}
+\newcommand\cverb[1][]{\SaveVerb[%
+    aftersave={\textnormal{\UseVerb[#1]{vsave}}}]{vsave}}
+
+\bibliographystyle{unsrt-shortauthor}
+
+%\def\newblock{\hskip .11em plus .33em minus .07em} % for natbib and beamer IMPORTANT
+\listfiles
+\graphicspath{{/home/jed/talks/figures/}{/home/jed/src/aterrel-presentations/figures/}}
+% Display a grid to help align images
+%\beamertemplategridbackground[1cm]
+
+\newcommand\jedcolor[1]{{}}
+
+\title{\huge High-performance matrix-free \\ operator application and preconditioning}
+\author[Jed Brown]{Jed Brown (ANL and CU) {\texttt{jedbrown@mcs.anl.gov}}\\
+Dave May (ETH Z\"urich) {\texttt{dave.may@erdw.ethz.ch}}\\
+Matt Knepley (UChicago) {\texttt{knepley@ci.uchicago.edu}}}
+\institute[MCS]{Download this poster from \url{http://59A2.org/files/201405-MatrixFree.pdf}}
+
+\newcommand{\newt}[1]{\tilde{#1}}
+\newcommand{\btab}{\hspace{\stretch{1}}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Rz}{\mathcal{R}}
+\newcommand{\RR}{{\bar{\mathbb{R}}}}
+\newcommand{\II}{\mathcal{I}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Zp}{\mathbb{Z}_+}
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\LL}{\mathcal{L}}
+\newcommand{\PP}{\mathscr{P}}
+\newcommand{\ff}{\bm f}
+\newcommand{\uu}{\bm u}
+\newcommand{\vv}{\bm v}
+\newcommand{\ww}{\bm w}
+\newcommand{\DD}{D}
+\newcommand{\EE}{\mathcal E}
+\newcommand{\VV}{\bm{\mathcal{V}}}
+\newcommand{\Pspace}{\mathcal{P}}
+\newcommand\pfrak{{\mathfrak p}}
+\newcommand{\di}{\partial}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\bigabs}[1]{\big\lvert #1 \big\rvert}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\dif}{\bigtriangleup}
+\newcommand{\ud}{\,\mathrm{d}}
+\newcommand{\tcolon}{\!:\!}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\card}{card}
+\DeclareMathOperator{\trace}{tr}
+\DeclareMathOperator{\sspan}{span}
+\renewcommand{\bar}{\overline}
+\newcommand{\ed}{\dot{\epsilon}}
+\newcommand\citet[1]{\cite{#1}}
+\newcommand\citep[1]{\cite{#1}}
+
+% abbreviations
+\usepackage{xspace}
+\makeatletter
+\DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+\def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+\def\eg{{e.g}\onedot} \def\Eg{{E.g}\onedot}
+\def\ie{{i.e}\onedot} \def\Ie{{I.e}\onedot}
+\def\cf{{c.f}\onedot} \def\Cf{{C.f}\onedot}
+\def\etc{{etc}\onedot}
+\def\vs{{vs}\onedot}
+\def\wrt{w.r.t\onedot}
+\def\dof{d.o.f\onedot}
+\def\etal{{et al}\onedot}
+\makeatother
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\begin{frame}{} 
+  \vspace{-3em}
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Don't assemble}
+        The purpose of a solver is to solve equations.
+        Assembly is a necessary evil only for those legacy algorithms that depend on assembled sparse matrices.
+        The comfortable abstraction from a bygone era is now a performance bottleneck with teeth on both ends.
+        Ignoring the time and memory cost to assemble a matrix, it can take longer to compute a residual using an assembled operator than to solve up to discretization error with a fast matrix-free method.
+      \end{block}
+      \vspace{-2.2em}
+      \begin{block}{Sparse matrices are bad for hardware}
+        Once assembled, matrices suffer from low arithmetic intensity, performing less than 1/4 flop for each byte of memory loaded into cache.
+        \begin{table}
+          \caption{Bandwidth and compute balance for modern hardware.}
+          \begin{tabular}{lrrr}
+            \toprule
+            Processor & STREAM (GB/s) & Peak (GF/s) & Balance (F/B) \\
+            \midrule
+            % E5-2680 8-core      & 38   & 173  & 4.5 \\ % http://www.cs.virginia.edu/stream/stream_mail/2013/0001.html
+            E5-2695v2 12-core   & 45   & 230  & 5.2 \\ % Edison 460 GF and 89 GB/s
+            % Magny Cours 16-core & 49   & 281  & 5.7 \\
+            BG/Q 16-core    & 26   & 205  & 7.9 \\
+            % Tesla M2090         & 120  & 665  & 5.5 \\
+            Kepler K20Xm        & 160 & 1310 & 8.2 \\ % http://www.elekslabs.com/2012/11/nvidia-tesla-k20-benchmark-facts.html
+            Xeon Phi SE10P      & 161 & 1060 & 6.6 \\ % http://www.cs.virginia.edu/stream/stream_mail/2013/0002.html
+            % http://blogs.utexas.edu/jdm4372/tag/xeon-phi/
+            \bottomrule
+          \end{tabular}
+        \end{table}
+        A lower-memory representation using more flops would use hardware more efficiently.
+        \begin{figure}
+          \centering
+          \includegraphics[width=.7\textwidth]{figures/TensorVsAssembly}
+          \caption{Cost per dof to apply an assembled matrix vs matrix-free tensor product for $Q_k$ discretization in 3D.
+            The operator defined as Newton linearization of nonlinear material model, stored at quadrature points.
+            Unassembled uses hardware more efficiently and is asymptotically better for high polynomial order and for large block size $b$.}\label{fig:tensorvsassembly}
+        \end{figure}
+        Coefficients often have structure imparted by a material model.
+        For example, a scalar nonlinear diffusion operator $-\nabla\cdot\Big[\kappa\big(\frac 1 2 \abs{\nabla u}^2\big),\nabla u\Big]$ has Newton linearization $-\nabla\cdot\Big[(\kappa\bm 1 + \kappa' \nabla u \otimes \nabla u) \nabla w\Big]$ so it is sufficient to store the 4 values $\{\kappa, \sqrt{\pm \kappa'}\nabla u\}$ so long as $\kappa'$ does not change sign~\cite{brown2010ens}.
+      \end{block}
+      \vspace{-2.2em}
+      \begin{block}{$10\times$ speedup for $Q_2$ elements (Stokes or elasticity)}
+        We know analytically (Figure \ref{fig:tensorvsassembly}) that unassembled wins for sufficiently high order, but what are the constants for a practical implementation?
+        We consider operator application for a variable-viscosity Stokes problem on $Q_2$-isoparametrically mapped grids.
+        \begin{table}
+          \centering\caption{Memory and compute demands per element for different operator application methods.
+            Arithmetic intensity is reported as flops/byte, counting adds, multiplies, and division (rare) all as 1 flop.
+            ``Tensor'' is a matrix-free implementation that uses the tensor product structure present on the reference element.
+            ``Tensor C'' absorbs the metric terms into a tensor-valued coefficient.
+            Average time (milliseconds) and GF/s is reported for (parallel) operator application on 8 nodes of Edison (3686 GF/s peak).
+          }\label{tab:intensity}
+          \begin{tabular}{lrrrrrrr}
+            \toprule
+            Operator & flops & \multicolumn{2}{c}{Pessimal cache} & \multicolumn{2}{c}{Perfect cache} & Time & GF/s \\
+            & & bytes & F/B & bytes & F/B & (ms) & \\
+            \midrule
+            Assembled & 9216 & --- & --- &  37248 & 0.247 & 42 & 113 \\
+            Matrix-free & 53622 & 2376 & 22.5 & 1008 & 53 & 22 & 651 \\
+            Tensor & 15228 & 2376 & 6.4 & 1008 & 15 & 4.2 & 1072 \\
+            Tensor C & 14214 & 5832 & 2.4 & 4920 & 2.9 & --- & --- \\
+            \bottomrule
+          \end{tabular}
+          % edison-8sinker-64-asm-00192.log:MGResid Level 2      247 1.0 1.0271e+01 1.1 6.50e+09 1.2 8.2e+05 8.3e+03 0.0e+00 10  8  3  7  0  13 14  4 11  0 112942
+          % edison-8sinker-64-avx-00192.log:MGResid Level 2      247 1.0 1.0430e+00 1.0 6.01e+09 1.1 1.6e+06 5.5e+03 0.0e+00  3  7  5  9  0   6 14  6 12  0 1072558
+          % edison-8sinker-64-ref-00192.log:MGResid Level 2      247 1.0 5.4271e+00 1.0 1.90e+10 1.1 1.6e+06 5.5e+03 0.0e+00  8 12  5  9  0  12 15  6 12  0 651324
+        \end{table}
+        % To model the memory requirements, we have considered two cache models:
+        \begin{description}
+        \item[pessimal cache] Each $Q_2$ element must be retrieved independently from DRAM.
+          % Accurate for random element ordering or the limit of small cache sizes.
+        \item[perfect cache] Each dof must be brought into cache only once.
+          % all shared vertices are cache hits after the first time.
+          % Accurate for cache size at least as large as ``matrix bandwidth''.
+        \end{description}
+      \end{block}
+      \vspace{-2.2em}
+      \begin{block}{Cache versus vectorization}
+        Performance is limited by memory bandwidth (often with many memory streams), cache reuse, and vectorization.
+        Vectorization across elements does not require cross-lane operations, but increases working set size relative to intra-element vectorization.
+        Intra-element vectorization performs well at high order (usually $Q_3$ and higher), but the optimizations are more sensitive to polynomial order and number of fields.
+        Current trends of longer vector registers and more hardware threads per core (e.g., Xeon Phi, BG/Q, GPUs) effectively reduce the amount of cache available per vector lane.
+        To realize high performance on such architectures, we either need rich cross-lane vector instructions (and compilers capable of using them) or cache sizes commensurate with the number of vector lanes made available.
+
+        Cache and prefetch streams can be shared between hardware threads by interleaving thread responsibility, but a work-partition in FEM is not a dof-partition, so this technique causes overlapping writes.
+        Writes can be managed by coloring, partitioning with duplication of interface points (to be summed later), or atomics/locking.
+        Coloring has poor memory locality and the ``cache-friendly'' interleaved ordering is a pessimal partition (causing memory bloat for duplication and frequent conflicted writes for atomics/locking).
+      \end{block}
+    \end{column}
+    %
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Matrix-free operator application}
+        Discretize $-\nabla \Big(\kappa \nabla\cdot u\Big)$, yielding
+        \begin{gather}\label{eq:mf-scalar}
+          A \mathbf u = \sum_{e \in \text{Elements}} \mathcal E_e^T \mathcal D_{\mathbf x}^T \Lambda(\omega \kappa) \mathcal D_{\mathbf x} \mathcal E_e \mathbf u
+        \end{gather}
+        The physical gradient matrix $\mathcal D_{\mathbf x} = \{\mathcal D_i | i \in \{x,y,z\} \}$ is an $81\times 27$ matrix for $Q_2$ elements in 3D using $3^3$-point Gauss quadrature.
+        In most finite-element implementations, the precomputed reference gradient matrix $\mathcal D_{\mathbf \xi}$ is mapped to physical space via the block-diagonal operation $\mathcal D_{\mathbf x} = \Lambda(\nabla_{\mathbf x}\mathbf\xi) \mathcal D_{\mathbf \xi}$.
+        This is wasteful; it is less expensive to rearrange as
+        \begin{equation}\label{eq:tensor}
+          A \mathbf u = \sum_{e \in \text{Elements}} \mathcal E_e^T \mathcal D_{\mathbf \xi}^T \Lambda\Big((\nabla_{\mathbf x}\mathbf\xi)^T (\omega \kappa) (\nabla_{\mathbf x}\mathbf\xi) \Big) \mathcal D_{\mathbf \xi} \mathcal E_e \mathbf u .
+        \end{equation}
+        where $\nabla_{\mathbf x}\mathbf\xi = (\nabla_{\mathbf\xi}\mathbf x)^{-1}$ is computed at quadrature points from the coordinate gradients.
+        In Table \ref{tab:intensity}, ``Matrix-free'' implements Equation \ref{eq:mf-scalar} in the traditional way, ``Tensor'' implements Equation \ref{eq:tensor} using
+        \begin{equation}
+          D_{\mathbf\xi} = \{\hat D \otimes \hat B \otimes \hat B, \hat B \otimes \hat D \otimes \hat B, \hat B \otimes \hat B \otimes \hat D \}
+        \end{equation}
+        where $\hat D$ and $\hat B$ are the $3\times 3$ differentiation and basis evaluation matrices for one dimension,
+        and ``Tensor C'' stores the tensor $(\nabla_{\mathbf x}\mathbf\xi)^T (\omega \kappa) (\nabla_{\mathbf x}\mathbf\xi)$ at quadrature points, trading storage for explicit handling of metric terms.
+        Tensor representations are standard for spectral element methods with collocated quadrature, but are rare for low-order FE with accurate quadrature.
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{Assembly-free preconditioning}
+        Fast operator application is nearly useless without effective preconditioning.
+        Fortunately~\cite{Adams-02}, multigrid methods with polynomial smoothing are effective for many elliptic problems.
+        The end-to-end performance and memory benefit of matrix-free operator application is mostly realized on the finest level.
+        For most applications, there is little penalty to using existing matrix-based methods on coarse grids, even when not carefully optimized.
+        pTatin3D is a lithosphere dynamics package that simulates thermodynamics and other processes in visco-plastic quasi-incompressible materials using a material-point method to track post-failure composition.
+        A $P_1^{\text{disc}}$ pressure space is necessary for local conservation and to accurately represent the hydrostatic mode in the free-surface flows, thus a $Q_2$ velocity space is used to maintain uniform inf-sup stability.
+        Solving the Newton step for the nonlinear Stokes problem is the dominant cost, and is achieved using either block-triangular preconditioners (Table~\ref{tab:scalability}) or Schur-complement reduction.
+        \begin{table}
+          \centering\caption{pTatin3D efficiency for different problem and partition sizes on Edison.}\label{tab:scalability}
+          \begin{tabular}{l rrr rr r}
+            \toprule
+            Operator    & Cores & Grid   & El/core & \multicolumn{2}{c}{Solve/core} & Op/core           \\
+            &       &        &         & El/s                    & GF/s & kEl/s \\
+            \midrule
+            Assembled   & 192 & $64^3$ & 1265 & 46  & 0.9 & 33         \\
+            Matrix-free & 192 & $64^3$ & 1265 & 69  & 2.6 & 62         \\
+            Tensor      & 192 & $64^3$ & 1265 & 128 & 2.4 & 323        \\
+            
+            Matrix-free & 1536 & $96^3$ & 576  & 47  & 2.2 & 60  \\
+            Tensor      & 1536 & $96^3$ & 576  & 72  & 2.2 & 252 \\
+            
+            Tensor      & 12288 & $192^3$ & 576  & 26 & 1.1 & 166 \\
+            \bottomrule
+          \end{tabular}
+        \end{table}
+        For smooth problems, full multigrid is the method of choice.
+        HPGMG-FE (\url{https://hpgmg.org}) solves an elliptic problem using $Q_2$ elements on deformed meshes, reaching discretization error with one F-cycle using 3,1 Chebyshev smoothing.
+        Convergence thus requires 5 fine-grid operator applications, for a total of about 6 work units.
+        With the efficiency in Table~\ref{tab:intensity}, we see that the entire solve can be less expensive than a single residual evaluation using a pre-assembled matrix.
+        \begin{figure}
+          \centering
+          \includegraphics[width=0.6\textwidth]{figures/MG/hpgmgfe-edison-vesta.png}
+          \caption{HPGMG-FE FMG performance as a function of per-node problem size on 128 nodes of Edison (Cray XC-30; up to 23\% of peak) versus 512 nodes of Vesta (Blue Gene/Q; up to 6\% of peak).}\label{fig:hpgmg}
+        \end{figure}
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{Outlook}
+        Cache versus vectorization is fundamental: tradeoffs vary with element order and numbers of degrees of freedom.
+        Research in robust matrix-free multigrid techniques are needed.
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{References}
+        \scriptsize
+        % \nocite{brandt1994multigrid,bkmms2012}
+        \begin{minipage}{\textwidth}
+          \begin{multicols}{2}
+            \bibliography{$HOME/jedbib/jedbib,$PETSC_DIR/src/docs/tex/petsc,$PETSC_DIR/src/docs/tex/petscapp,$HOME/proposals/navy-sea-ice/seaice}
+          \end{multicols}
+        \end{minipage}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+\end{document}

@@ -1,0 +1,285 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{ANLBlue}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{High-performance matrix-free operator application and preconditioning}
+\author{{\bf Jed Brown} \texttt{jedbrown@mcs.anl.gov} (ANL and CU Boulder) \\
+  \quad Dave May (ETH Z\"urich), Matt Knepley (UChicago)
+}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+% \institute
+% {
+%   Mathematics and Computer Science Division \\ Argonne National Laboratory
+% }
+
+\date{Sandia, 2014-05-14}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+% \AtBeginSection[]
+% {
+%   \begin{frame}<beamer>
+%     \frametitle{Outline}
+%     \tableofcontents[currentsection]
+%   \end{frame}
+% }
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Don't assemble}
+  \begin{itemize}
+  \item The purpose of a solver is to solve equations
+  \item Matrix assembly doesn't solve equations
+  \item Matrix assembly is only needed if the solver algorithm requires it
+  \item Hardware is changing
+    \begin{itemize}
+    \item Longer to assemble a matrix than to solve using unassembled method
+    \item Longer to compute residual with pre-assembled matrix than to solve
+    \end{itemize}
+  \item Characterize performance using arithmetic intensity
+    \begin{itemize}
+    \item depends on cache reuse model
+    \end{itemize}
+  \item I will look at finite-element methods in 3D
+    \begin{itemize}
+    \item mostly with $Q_2$ elements: $3\times 3\times 3$ points for each element
+    \item tensor contraction kernels across these elements
+    \item isoparametrically mapped elements
+    \item other discretizations have similar structure, different constants
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\input{slides/HardwareArithmeticIntensity.tex}
+
+\begin{frame}[shrink=5]{Performance of assembled versus unassembled}
+  \vspace{1ex}
+  \includegraphics[width=\textwidth]{figures/TensorVsAssembly} \\
+  \begin{itemize}
+  \item Arithmetic intensity for $\Qk p$ elements
+    \begin{itemize}
+    \item $< \frac 1 4$ (assembled), $\approx 10$ (unassembled), $\approx 4$ to $8$ (hardware)
+    \end{itemize}
+  \item store Jacobian information at Quass quadrature points, can use AD
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{But what are the constants?}
+  \begin{itemize}
+  \item Viscous operator application for heterogeneous Stokes $Q_2$-$P_1^{\text{disc}}$
+  \item ``Tensor'': matrix-free implementation using tensor product structure on the reference element
+  \item ``Tensor C'' absorbs metric term into stored tensor-valued coefficient
+  \item Performance on 8 nodes of Edison (3686 GF/s peak)
+  \end{itemize}
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    Operator & flops & \multicolumn{2}{c}{Pessimal cache} & \multicolumn{2}{c}{Perfect cache} & Time & GF/s \\
+    & & bytes & F/B & bytes & F/B & (ms) & \\
+    \midrule
+    Assembled & 9216 & --- & --- &  37248 & 0.247 & 42 & 113 \\
+    Matrix-free & 53622 & 2376 & 22.5 & 1008 & 53 & 22 & 651 \\
+    Tensor & 15228 & 2376 & 6.4 & 1008 & 15 & {\bf 4.2} & 1072 \\
+    Tensor C & 14214 & 5832 & 2.4 & 4920 & 2.9 & --- & --- \\
+    \bottomrule
+  \end{tabular}
+  % edison-8sinker-64-asm-00192.log:MGResid Level 2      247 1.0 1.0271e+01 1.1 6.50e+09 1.2 8.2e+05 8.3e+03 0.0e+00 10  8  3  7  0  13 14  4 11  0 112942
+  % edison-8sinker-64-avx-00192.log:MGResid Level 2      247 1.0 1.0430e+00 1.0 6.01e+09 1.1 1.6e+06 5.5e+03 0.0e+00  3  7  5  9  0   6 14  6 12  0 1072558
+  % edison-8sinker-64-ref-00192.log:MGResid Level 2      247 1.0 5.4271e+00 1.0 1.90e+10 1.1 1.6e+06 5.5e+03 0.0e+00  8 12  5  9  0  12 15  6 12  0 651324
+\end{frame}
+
+\begin{frame}{Cache versus vectorization}
+  \begin{itemize}
+  \item Fundamental trade-off
+  \item Hardware gives us less cache per vector lane
+  \item Intra-element vectorization is complicated and \"uber-custom
+  \item Coordinate transformation is $27\cdot 9\cdot \texttt{sizeof(double)} = 1944$ bytes/element.
+  \item Vectorize over 4 or 8 elements, perhaps hardware threads
+  \item L1 cache is not this big: repeated spills in tensor contraction
+  \item This is a \emph{very} simple problem
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Matrix-free operator application}
+  Discretize $-\nabla \Big(\kappa \nabla\cdot u\Big)$, yielding
+  \begin{equation*}\label{eq:mf-scalar}
+    A \mathbf u = \sum_{e \in \text{Elements}} \mathcal E_e^T \mathcal D_{\mathbf x}^T \Lambda(\omega \kappa) \mathcal D_{\mathbf x} \mathcal E_e \mathbf u
+  \end{equation*}
+  Physical gradient matrix
+  $$\mathcal D_{\mathbf x} = \{\mathcal D_i | i \in \{x,y,z\} \} \in \mathbb R^{81\times 27} \quad \text{$Q_2$ elements in 3D; Gauss quadrature}$$
+  \begin{itemize}
+  \item Common method: precompute reference gradient matrix $\mathcal D_{\mathbf \xi}$, map to physical $\mathcal D_{\mathbf x} = \Lambda(\nabla_{\mathbf x}\mathbf\xi) \mathcal D_{\mathbf \xi}$
+  \item Better: rearrange
+  \begin{equation*}\label{eq:tensor}
+    A \mathbf u = \sum_{e \in \text{Elements}} \mathcal E_e^T \mathcal D_{\mathbf \xi}^T \Lambda\Big((\nabla_{\mathbf x}\mathbf\xi)^T (\omega \kappa) (\nabla_{\mathbf x}\mathbf\xi) \Big) \mathcal D_{\mathbf \xi} \mathcal E_e \mathbf u .
+  \end{equation*}
+  where $\nabla_{\mathbf x}\mathbf\xi = (\nabla_{\mathbf\xi}\mathbf x)^{-1}$ is computed at quadrature points from the coordinate gradients.
+  \begin{equation*}
+    D_{\mathbf\xi} = \{\hat D \otimes \hat B \otimes \hat B, \hat B \otimes \hat D \otimes \hat B, \hat B \otimes \hat B \otimes \hat D \}
+  \end{equation*}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Assembly-free preconditioning}
+  \begin{itemize}
+  \item ``Optimization'' is pessimization if it compromises convergence
+  \item pTatin3D: long-term lithosphere/tectonics package
+    \begin{itemize}
+    \item Dave May (ETH Z\"urich) and Laetitia Le Pourhiet (UPMC Paris)
+    \item visco-plastic rheology, post-failure deformation, thermodynamics, free-surface
+    \item multi-material transport using particles; $10^{10}$ jumps in coefficients
+    \end{itemize}
+  \item Block preconditioning with MG solve in viscous block
+  \item Matrix-free fine grid, start coarsening geometrically
+  \item Switch to Galerkin, smoothed aggregation (GAMG or ML)
+  \end{itemize}
+  \begin{tabular}{l rrr rr r}
+    \toprule
+    Operator    & Cores & Grid   & El/core & \multicolumn{2}{c}{Solve/core} & Op/core           \\
+    &       &        &         & El/s                    & GF/s & kEl/s \\
+    \midrule
+    Assembled   & 192 & $64^3$ & 1265 & 46  & 0.9 & 33         \\
+    Matrix-free & 192 & $64^3$ & 1265 & 69  & 2.6 & 62         \\
+    Tensor      & 192 & $64^3$ & 1265 & 128 & 2.4 & 323        \\
+    
+    Matrix-free & 1536 & $96^3$ & 576  & 47  & 2.2 & 60  \\
+    Tensor      & 1536 & $96^3$ & 576  & 72  & 2.2 & 252 \\
+    
+    Tensor      & 12288 & $192^3$ & 576  & 26 & 1.1 & 166 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{pTatin3D}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \includegraphics[width=\textwidth]{figures/LaetiRifting}
+      \end{center}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \includegraphics[width=\textwidth]{figures/inclusionsNc75_tubes_spheres.pdf}
+      \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{HPGMG-FE: a finite-element FAS benchmark}
+  \begin{itemize}
+  \item \url{https://hpgmg.org}
+  \item Unassembled $Q_2$ elements, FMG solve (3,1 cycle)
+  \item Scales at 23\% of peak on Edison (Cray XC-30)
+  \item 10x faster than assembled elements, less memory used
+  \end{itemize}
+  \centering
+  \includegraphics[width=0.75\textwidth]{figures/MG/hpgmgfe-edison-vesta.png}
+\end{frame}
+
+\end{document}
