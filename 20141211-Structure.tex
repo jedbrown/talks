@@ -1,0 +1,672 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{ANLBlue}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix,mindmap}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{Exploiting structure \\ in scientific computing}
+\subtitle{This talk: \url{http://59A2.org/files/20141211-Structure.pdf}}
+\begin{comment}
+  Implicit solvers are uniquely powerful instruments for managing
+  disparate scales as well as many tasks in the analysis of models, but
+  performance can be subtle and challenging.  "Black-box" solvers suffer
+  From limited applicability and poor efficiency on modern hardware.
+  Building efficient solvers relies increasingly on pairing
+  problem-specific structure with architectural capability and
+  expressing the resulting algorithms in terms of existing software.
+  Library design is the inverse problem: create maximally-reusable
+  components to satisfy a diverse range of present and future customers
+  and architectures.  This talk discusses recent examples in PETSc's
+  evolution and our vision for implicit solvers.
+\end{comment}
+
+\author{{\bf Jed Brown} \texttt{jed@jedbrown.org} (ANL and CU Boulder)}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+% \institute
+% {
+%   Mathematics and Computer Science Division \\ Argonne National Laboratory
+% }
+
+\date{CU Boulder, 2014-12-11}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% \begin{frame}{Computational Science and Engineering}
+%   \begin{itemize}
+%   \item Models
+%     \begin{itemize}
+%     \item PDE: fluids, structures, plasma, electromagnetics
+%     \item networks, circuits, power grids
+%     \item molecular dynamics
+%     \item electronic structure
+%     \end{itemize}
+%   \item Analysis
+%     \begin{itemize}
+%     \item sensitivity
+%     \item stability
+%     \item data assimilation/inversion
+%     \item optimization
+%     \item uncertainty quantification
+%     \item experimental design
+%     \end{itemize}
+%   \end{itemize}
+% \end{frame}
+
+\input{slides/CSEMindmap.tex}
+
+% \begin{frame}{CS\&E Tools}
+%   \begin{itemize}
+%   \item Discretization of space, time, parameters, stochastic
+%     \begin{itemize}
+%     \item convergence: stability, accuracy
+%     \item conservation, compatibility
+%     \item adaptivity
+%     \item efficiency, sparsity, parallelization
+%     \end{itemize}
+%   \item Algebraic Solvers (linear and nonlinear)
+%     \begin{itemize}
+%     \item Newton, Krylov, preconditioning, multigrid
+%     \item robustness, optimality, parallelization
+%     \end{itemize}
+%   \item Optimization
+%     \begin{itemize}
+%     \item constrained, unconstrained
+%     \item smooth and non-smooth
+%     \item sparsity
+%     \end{itemize}
+%   \end{itemize}
+% \end{frame}
+
+\begin{frame}{PETSc}
+  \begin{itemize}
+  \item Portable Extensible Toolkit for Scientific computing
+  \item Jed: User since 2004, developer since 2008
+  \item Known for parallel (differential) algebraic solvers
+  \item TAO: Toolbox for Advanced Optimization
+  \item Used by many open source libraries and applications
+  \item Deployment mechanism for algorithm development
+  \item Industry: Abaqus, Boeing, Schlumberger, Shell, etc.
+  \item Awards
+    \begin{itemize}
+    \item 3 Gordon Bell Prizes have used PETSc (1999, 2003, 2004)
+    \item R\&D100, E.O. Lawrence Award, SIAM/ACM CS\&E Prize
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{This talk}
+  \begin{itemize}
+  \item Implicitness: multiple time scales
+  \item Coupling for multi-physics
+  \item Multigrid solvers
+    \vspace{2em}
+  \item Parallelism and efficiency
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{State of implicitness}
+  \begin{itemize}
+  \item Nature has many spatial and temporal scales
+    \begin{itemize}
+    \item Porous media, structures, fluids, kinetics
+    \item Quasi-equilibrium processes
+    \end{itemize}
+  \item Science/engineering problem statement does not weak scale
+    \begin{itemize}
+    \item More time steps required at higher resolution
+    \end{itemize}
+  \item Robust discretizations and implicit solvers are needed to cope
+  \item Computer architecture is increasingly hierarchical
+    \begin{itemize}
+    \item algorithms should conform to this structure
+    \end{itemize}
+  \item Sparse matrices are comfortable, but outdated
+    \begin{itemize}
+    \item Algebraic multigrid, factorization
+    \item Memory bandwidth-limited
+    \end{itemize}
+  \item ``black box'' solvers are not sustainable: $\bigO(n^2)$ in 3D
+    \begin{itemize}
+    \item optimal solvers must accurately handle all scales
+    \item optimality is crucial for large-scale problems
+    \item hardware puts up a spirited fight to abstraction
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Model Coupling}
+  \begin{align*}
+    f(u; v) &= 0 \\
+    g(v; u) &= 0
+  \end{align*}
+  \begin{itemize}
+  \item $f$ and $g$ developed independently
+  \end{itemize}
+\end{frame}
+\input{slides/MonolithicOrSplit.tex}
+\input{slides/PETSc/Coupling.tex}
+\input{slides/FieldSplit.tex}
+\input{slides/PETSc/LocalSpaces.tex}
+
+\includepdf[pages=1]{davemay.pdf}
+\input{slides/HydrostaticEigen.tex}
+
+\begin{frame}[shrink=5]{Performance of assembled versus unassembled}
+  \vspace{1ex}
+  \includegraphics[width=\textwidth]{figures/TensorVsAssembly} \\
+  \begin{itemize}
+  \item Arithmetic intensity for $\Qk p$ elements
+    \begin{itemize}
+    \item $< \frac 1 4$ (assembled), $\approx 10$ (unassembled), $\gtrsim 5$ (hardware)
+    \end{itemize}
+  \item store Jacobian information at Gauss quadrature points, can use AD
+  \end{itemize}
+\end{frame}
+
+\input{slides/HardwareArithmeticIntensity.tex}
+
+\begin{frame}{$Q_2$ tensor product optimization}
+  \begin{itemize}
+  \item Reference gradient $\mathcal D_{\mathbf \xi} = [ \hat D \otimes \hat B \otimes \hat B, \hat B \otimes \hat D \otimes \hat B, \hat B \otimes \hat B \otimes \hat D]$
+  \item $\nabla_{\mathbf\xi} \mathbf x = (\mathcal D_{\mathbf\xi}\otimes I_3) (\mathcal E_e\otimes I_3) \mathbf x$ \alert{(29\%)}
+  \item Invert $3\times 3$ at quad. points: $\nabla_{\mathbf x} \mathbf \xi$ \alert{(7\%)}
+    \begin{equation*}
+      A \mathbf u = \sum_{e \, \in \, N_\text{el}} 
+      \underbrace{\mathcal E_e^T}_{\text{scatter accum}}
+      \overbrace{\mathcal D_{\mathbf \xi}^T}^{\text{tensor \alert{29\%}}}
+      \underbrace{\Lambda\Big((\nabla_{\mathbf x}\mathbf\xi)^T (\omega \eta) (\nabla_{\mathbf x}\mathbf\xi) \Big)}_{\text{independent at quadrature points \alert{6\%}}}
+      \overbrace{\mathcal D_{\mathbf \xi}}^{\text{tensor \alert{29\%}}}
+      \underbrace{\mathcal E_e}_{\text{gather}} \mathbf u
+    \end{equation*}
+  \item Pack 4 elements at a time in vector-friendly ordering
+  \item Intrinsics, $30\%$ of peak AVX (SNB) and FMA (Haswell)
+  \item Similar structure in HPGMG-FE (\url{https://hpgmg.org})
+  \end{itemize}
+  \vspace{-1.5em}
+  \begin{center}
+    \begin{tabular}{lrrrrrrr}
+      \toprule
+      Operator & Flops & \multicolumn{2}{c}{Pessimal Cache} & \multicolumn{2}{c}{Perfect Cache} & Time & GF/s \\
+               & & Bytes & F/B & Bytes & F/B & (ms) & \\
+      \midrule
+      Assembled & 9216 & --- & --- &  37248 & 0.247 & 42 & 113 \\
+      Matrix-free & 53622 & 2376 & 22.5 & 1008 & 53 & 22 & 651 \\
+      Tensor & 15228 & 2376 & 6.4 & 1008 & 15 & \textbf {4.2} & 1072 \\
+      Tensor C & 14214 & 5832 & 2.4 & 4920 & 2.9 & --- & --- \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Continental rifting}
+  \movie[width=\textwidth,height=0.66\textwidth,autostart,poster,showcontrols=false,loop]{Rifting Video}{LaetiSC14Rifting.mp4} \\
+  {\scriptsize [May, Brown, Le Pourhiet (SC14)]}
+\end{frame}
+
+\begin{frame}{Sparse linear algebra is dead (long live sparse \ldots)}
+  \begin{itemize}
+  \item Arithmetic intensity $< 1/4$
+  \item Idea: multiple right hand sides
+    \begin{equation*}
+      \frac{(2 k \text{ flops})(\text{bandwidth})}{\texttt{sizeof(Scalar)} + \texttt{sizeof(Int)}}, \quad k \ll \text{avg. nz/row}
+    \end{equation*}
+  \item Problem: popular algorithms have nested data dependencies
+    \begin{itemize}
+    \item Time step \\
+      \qquad Nonlinear solve \\
+      \qquad \qquad Krylov solve \\
+      \qquad \qquad \qquad Preconditioner/sparse matrix
+    \end{itemize}
+  \item Cannot parallelize/vectorize these nested loops
+  \item<2> \alert{Can we create new algorithms to reorder/fuse loops?}
+    \begin{itemize}
+    \item Reduce latency-sensitivity for communication
+    \item Reduce memory bandwidth (reuse matrix while in cache)
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Runge-Kutta methods}
+  \begin{gather*}
+    \dot u = F(u) \\
+    \underbrace{
+    \begin{pmatrix}
+      y_1 \\
+      \vdots \\
+      y_s
+    \end{pmatrix}}_Y =
+    u^{n} + h
+    \underbrace{
+    \begin{bmatrix}
+      a_{11} & \dotsb & a_{1s} \\
+      \vdots & \ddots & \vdots \\
+      a_{s1} & \dotsb & a_{ss}
+    \end{bmatrix}}_A
+    F
+    \begin{pmatrix}
+      y_1 \\
+      \vdots \\
+      y_s
+    \end{pmatrix} \\
+    u^{n+1} = u^n + b^T Y
+  \end{gather*}
+  \begin{itemize}
+  \item General framework for one-step methods
+  \item Diagonally implicit: $A$ lower triangular, stage order 1 (or 2 with explicit first stage)
+  \item Singly diagonally implicit: all $A_{ii}$ equal, reuse solver setup, stage order 1
+  \item If $A$ is a general full matrix, all stages are coupled, ``implicit RK''
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Method of Butcher (1976) and Bickart (1977)}
+  \begin{itemize}
+  \item Newton linearize Runge-Kutta system at $u^*$
+    \begin{align*}
+      Y &= u^{n} + h A F(Y) & \big[ I_s \otimes I_n + h A \otimes J(u^*)\big ] \delta Y &= RHS
+    \end{align*}
+  \item Solve linear system with tensor product operator
+    \begin{equation*}
+      \hat G = S \otimes I_n + I_s \otimes J
+    \end{equation*}
+    where $S = (hA)^{-1}$ is $s\times s$ dense, $J = -\partial F(u)/\partial u$ sparse
+  \item SDC (2000) is Gauss-Seidel with low-order corrector
+  \item Butcher/Bickart method: diagonalize $S = X \Lambda X^{-1}$
+    \begin{itemize}
+    \item $\Lambda \otimes I_n + I_s \otimes J$
+    \item $s$ decoupled solves
+    \item Complex eigenvalues (overhead for real problem)
+    \end{itemize}
+  \item Problem: $X$ is exponentially ill-conditioned wrt. $s$
+  \item We avoid diagonalization
+    \begin{itemize}
+    \item Permute $\hat G$ to reuse $J$: $G = I_n \otimes S + J \otimes I_s$
+    \item Stages coupled via register transpose at spatial-point granularity
+    \item Same convergence properties as Butcher/Bickart
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}{MatTAIJ: ``sparse'' tensor product matrices}
+  \begin{gather*}
+    G = I_n \otimes S + J \otimes T
+  \end{gather*}
+  \begin{itemize}
+  \item $J$ is parallel and sparse, $S$ and $T$ are small and dense
+  \item More general than multiple RHS (multivectors)
+  \item Compare $J \otimes I_s$ to multiple right hand sides in row-major
+  \item Runge-Kutta systems have $T = I_s$ (permuted from Butcher method)
+  \item Stream $J$ through cache once, same efficiency as multiple RHS
+  \item Unintrusive compared to spatial-domain vectorization or $s$-step
+  \end{itemize}
+\end{frame}
+\begin{frame}{Multigrid for Implicit Runge-Kutta: Diffusion}
+  \begin{columns}
+    \begin{column}{0.3\textwidth}
+      \includegraphics[width=\textwidth]{figures/TS/Gauss8-Eig.png}
+    \end{column}
+    \begin{column}{0.7\textwidth}
+      \begin{itemize}
+      \item Prolongation: $P \otimes I_s$
+      \item Coarse operator: $I_n \otimes S + (R J P) \otimes I_s$
+      \item Larger time steps
+      \item GMRES(2)/point-block Jacobi smoothing
+      \item FGMRES outer
+      \end{itemize}
+      \begin{tabular}{lrrrrr}
+        \toprule
+        Method & order & nsteps & Krylov its. & (Average) \\
+        \midrule
+        Gauss 1 & 2 & 16 & 82 & (5.1) \\
+        Gauss 2 & 4 & 8 & 64 & (8) \\
+        Gauss 4 & 8 & 4 & 44 & (11) \\
+        Gauss 8 & 16 & 2 & 42 & (21) \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\input{slides/PETSc/TSARKIMEX.tex}
+
+% \input{slides/MG/TauFAS.tex}
+
+\begin{frame}{$\tau$ corrections}
+  \begin{figure}
+  \centering
+  \begin{subfigure}[b]{0.18\textwidth}
+    \includegraphics[width=\textwidth]{figures/MG/ElasticityCompressTrim}
+    %\caption{Initial solution.}\label{fig:elast-initial}
+  \end{subfigure} ~
+  \begin{subfigure}[b]{0.18\textwidth}
+    \includegraphics[width=\textwidth]{figures/MG/ElasticityCompressShearTrim}
+    %\caption{Increment.}\label{fig:elast-increment}
+  \end{subfigure} ~
+  \begin{subfigure}[b]{0.28\textwidth}
+    \includegraphics[width=\textwidth]{figures/MG/ElasticityCompressErrorNoTauTrim}
+    %\caption{Smoothed error without $\tau$.}\label{fig:elast-error-notau}
+  \end{subfigure} ~
+  \begin{subfigure}[b]{0.28\textwidth}
+    \includegraphics[width=\textwidth]{figures/MG/ElasticityCompressErrorTauTrim}
+    %\caption{Smoothed error with $\tau$.}\label{fig:elast-error-tau}
+  \end{subfigure}
+  \begin{itemize}
+  \item Plane strain elasticity, $E=1000,\nu=0.4$ inclusions in $E=1,\nu=0.2$ material, coarsen by $3^2$.
+  \item Solve initial problem everywhere and compute $\tau_h^H = A^H \hat I_h^H u^h - I_h^H A^h u^h$
+  \item Change boundary conditions and solve FAS coarse problem
+    \begin{equation*}
+      N^H \acute u^H = \underbrace{I_h^H \acute f^h}_{\acute f^H} + \underbrace{N^H \hat I_h^H \tilde u^h - I_h^H N^h \tilde u^h}_{\tau_h^H}
+    \end{equation*}
+  \item Prolong, post-smooth, compute error $e^h = \acute u^h - (N^h)^{-1} \acute f^h$
+  \item<2> \alert{Coarse grid \emph{with $\tau$} is nearly $10\times$ better accuracy}
+  \end{itemize}
+  % \caption{Plane strain elasticity, $E=1000,\nu=0.4$ inclusions in $E=1,\nu=0.2$ material.  2-level multigrid with coarsening factor of $3^2$.
+  %   Panes (a) and (b) show the deformed body colored by strain.
+  %   The initial problem of compression by 0.2 from the right is solved (a) and $\tau = A^H \hat I_h^H u^h - I_h^H A^h u^h$ is computed.
+  %   Then a shear increment of 0.1 in the $y$ direction is added to the boundary condition, and the coarse-level problem is resolved, interpolated to the fine-grid, and a post-smoother is applied.
+  %   When the coarse problem is solved without a $\tau$ correction (c), the displacement error is nearly $10\times$ larger than when $\tau$ is included in the right hand side of the coarse problem (d).
+  % }\label{fig:tau-valid}
+  % ./ex49 -mx 90 -my 90 -da_refine_x 3 -da_refine_y 3 -elas_ksp_converged_reason -elas_ksp_rtol 1e-8 -no_view -c_str 3 -sponge_E0 1 -sponge_E1 1e3 -sponge_nu0 0.4 -sponge_nu1 0.2 -sponge_t 3 -sponge_w 9 -u_o vtk:ex49_sol.vts -use_nonsymbc -elas_pc_type mg -elas_pc_mg_levels 2 -elas_pc_mg_galerkin -tau1_o vtk:ex49_tau1.vts -tau2_o vtk:ex49_tau2.vts -taudiff_o vtk:ex49_taudiff.vts -u2_o vtk:ex49_sol2.vts -u2c_o vtk:ex49_sol2c.vts -u3_o vtk:ex49_sol3.vts -u4_o vtk:ex49_sol4.vts -u2err_o vtk:ex49_sol2err.vts -u3err_o vtk:ex49_sol3err.vts -u3c_o vtk:ex49_sol3c.vts -tau3_o vtk:ex49_tau3.vts
+\end{figure}
+\end{frame}
+
+\input{slides/MG/LowComm.tex}
+\begin{frame}{Segmental refinement: no horizontal communication}
+  \begin{itemize}
+  \item 27-point second-order stencil, manufactured analytic solution
+  \item 5 SR levels: $16^3$ cells/process local coarse grid
+  \item $\text{Overlap} = \text{Base} + (L-\ell) \text{Increment}$
+    \begin{itemize}
+    \item Implementation requires even number of cells---round down.
+    \end{itemize}
+  \item FMG with $V(2,2)$ cycles
+  \end{itemize}
+  \begin{columns}
+    \begin{column}{0.4\textwidth}
+      \begin{table}\small
+        \centering\caption{$\norm{e_{SR}}_\infty / \norm{e_{FMG}}_\infty$}\label{tab:sr-error}
+        \begin{tabular}{l rrr}
+          \toprule
+          & \multicolumn{3}{c}{Base} \\
+          Increment & 1 & 2 & 3 \\
+          \midrule
+          1 & {\color{red} 1.59} & {\color{red} 2.34} & 1.00 \\
+          2 & 1.00 & 1.00 & 1.00 \\
+          3 & 1.00 & 1.00 & 1.00 \\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+      \includegraphics[width=\textwidth]{figures/MG/weak_scaling_edison-eps-converted-to.pdf}
+    \end{column}
+  \end{columns}
+  {\scriptsize Adams, Brown, Knepley, Samtaney arXiv:1406.7808}
+\end{frame}
+\input{slides/MG/SmoothingNonlinearProblems.tex}
+
+\begin{frame}[fragile]{Multiscale compression and recovery using $\tau$ form}
+   \begin{tikzpicture}
+    [scale=0.7,every node/.style={scale=0.7},
+    >=stealth,
+    restrict/.style={thick,double},
+    prolong/.style={thick,double},
+    cprestrict/.style={green!50!black,thick,double,dashed},
+    control/.style={rectangle,red!40!black,draw=red!40!black,thick},
+    mglevel/.style={rounded rectangle,draw=blue!50!black,fill=blue!20,thick,minimum size=6mm},
+    checkpoint/.style={rectangle,draw=green!50!black,fill=green!20,thick,minimum size=6mm},
+    mglevelhide/.style={rounded rectangle,draw=gray!50!black,fill=gray!20,thick,minimum size=6mm},
+    tau/.style={text=red!50!black,draw=red!50!black,fill=red!10,inner sep=1pt},
+    crelax/.style={text=green!50!black,fill=green!10,inner sep=0pt}
+    ]
+    \begin{scope}
+      \newcommand\mgdx{1.9em}
+      \newcommand\mgdy{2.5em}
+      \newcommand\mgloc[4]{(#1 + #4*\mgdx*#3,#2 + \mgdy*#3)}
+      \node[mglevel] (fine0) at \mgloc{0}{0}{4}{-1} {\mglevelfine};
+      \node[mglevel] (finem1down0) at \mgloc{0}{0}{3}{-1} {};
+      \node[mglevel] (cp1down0) at \mgloc{0}{0}{2}{-1} {$\mglevelcp+1$};
+      \node[mglevel] (cpdown0) at \mgloc{0}{0}{1}{-1} {\mglevelcp};
+      \node[mglevel] (coarser0) at \mgloc{0}{0}{0}{0} {\ldots};
+
+      \node[mglevelhide] (cpup0) at \mgloc{0}{0}{1}{1} {};
+      \node (cp1up0) at \mgloc{0}{0}{2}{1} {};
+
+      \node (cpdown1) at \mgloc{4em}{0}{1}{-1} {};
+      \node[mglevelhide] (coarser1) at \mgloc{4em}{0}{0}{1} {\ldots};
+      \node[mglevel] (cpup1) at \mgloc{4em}{0}{1}{1} {\mglevelcp};
+      \node[mglevel] (cp1up1) at \mgloc{4em}{0}{2}{1} {$\mglevelcp+1$};
+      \node[mglevel] (finem1up1) at \mgloc{4em}{0}{3}{1} {};
+      \node[mglevel] (fine1) at \mgloc{4em}{0}{4}{1} {\mglevelfine};
+
+      \draw[->,restrict,dashed] (fine0) -- (finem1down0);
+      \draw[->,restrict] (finem1down0) -- (cp1down0);
+      \draw[->,restrict] (cp1down0) -- (cpdown0);
+      \draw[->,restrict,dashed] (cpdown0) -- (coarser0);
+      \draw[->,prolong,dashed] (coarser0) -- (cpup0);
+      \draw[->,prolong,dashed] (cpup0) -- (cp1up0);
+
+      \draw[->,restrict,dashed] (cpdown1) -- (coarser1);
+      \draw[->,prolong,dashed] (coarser1) -- (cpup1);
+      \draw[->,prolong] (cpup1) -- (cp1up1);
+      \draw[->,prolong] (cp1up1) -- (finem1up1);
+      \draw[->,prolong,dashed] (finem1up1) -- (fine1);
+
+      \node[checkpoint] at (4em + \mgdx*4,\mgdy) (cp) {CP};
+      \draw[>->,cprestrict] (fine1) -- node[below,sloped] {Restrict} (cp);
+
+      \node[left=\mgdx of fine0] (bnanchor) {};
+      \node[control,fill=red!20] at (1.1*\mgdx,3*\mgdy) {Solve $F(u^n;b^n) = 0$};
+      \node[mglevel,right=of fine1] (finedt) {next solve};
+      \draw[->, >=stealth, control] (fine1) to[out=20,in=170] node[above] {$b^{n+1}(u^n,b^n)$} (finedt);
+      \draw[->, >=stealth, control] (bnanchor) to[out=45,in=155] node[above] {$b^n$} (fine0);
+
+      % Recovery process
+      \begin{scope}[xshift=8*\mgdx]
+        \node[checkpoint] (rcp) at \mgloc{0}{0}{0}{0} {CP};
+        \node[mglevel] (r0a) at \mgloc{0}{\mgdy}{0}{0} {CR};
+        \node[mglevel] (r1a) at \mgloc{0}{\mgdy}{1}{1} {};
+        \node[mglevel] (r0b) at \mgloc{2*\mgdx}{\mgdy}{0}{0} {CR};
+        \node[mglevel] (r1b) at \mgloc{2*\mgdx}{\mgdy}{1}{1} {};
+        \node[mglevel] (r2b) at \mgloc{2*\mgdx}{\mgdy}{2}{1} {\mglevelfine};
+        \node[mglevel] (r1c) at \mgloc{6*\mgdx}{\mgdy}{1}{-1} {};
+        \node[mglevel] (r0d) at \mgloc{6*\mgdx}{\mgdy}{0}{0} {CR};
+        \node[mglevel] (r1d) at \mgloc{6*\mgdx}{\mgdy}{1}{1} {};
+        \node[mglevel] (r2d) at \mgloc{6*\mgdx}{\mgdy}{2}{1} {\mglevelfine};
+
+        \draw[-,prolong,green!50!black] (rcp) -- (r0a);
+        \draw[->,prolong] (r0a) -- (r1a);
+        \draw[->,restrict] (r1a) -- (r0b);
+        \draw[->,restrict] (r0b) -- (r1b);
+        \draw[->,restrict,dashed] (r1b) -- (r2b);
+        \draw[->,restrict,dashed] (r2b) -- (r1c);
+        \draw[->,restrict] (r1c) -- (r0d);
+        \draw[->,restrict] (r0d) -- (r1d);
+        \draw[->,restrict,dashed] (r1d) -- (r2d);
+
+        \foreach \smooth in {finem1down0, cp1down0, cpdown0, coarser0,
+          cpup1, cp1up1, finem1up1,
+          r0b,r1c,r0d,r1d} {
+          \node[above left=-5pt of \smooth.west,tau] {$\tau$};
+        }
+        \node[rectangle,fill=none,draw=green!50!black,thick,fit=(rcp)(r2d)] (recoverbox) {};
+        \node[rectangle,draw=green!50!black,fill=green!20,thick,minimum size=6mm,above={0cm of recoverbox.south east},anchor=south east] (recover) {FMG Recovery};
+      \end{scope}
+      \node (notation) at (\mgdx,5*\mgdy) {
+        \begin{minipage}{18em}\small\sf
+          \begin{itemize}\addtolength{\itemsep}{-5pt}
+          \item checkpoint converged coarse state
+          \item recover using FMG anchored at $\mglevelcp+1$
+          \item needs only $\mglevelcp$ neighbor points
+          \item $\tau$ correction is local
+          \end{itemize}
+        \end{minipage}
+      };
+    \end{scope}
+  \end{tikzpicture}
+  \begin{itemize}
+  \item Normal multigrid cycles visit all levels moving from $n \to n+1$
+  \item FMG recovery only accesses levels finer than $\ell_{CP}$
+  \item Only failed processes and neighbors participate in recovery
+  \item Lightweight checkpointing for transient adjoint computation
+  \item Postprocessing applications, e.g., in-situ visualization at high temporal resolution in part of the domain
+  \end{itemize}
+\end{frame}
+
+\input{slides/MG/HPGMGFE.tex}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Many more applications
+    \begin{itemize}
+    \item subsurface, aerospace, engines, plasma, atmosphere/ocean, nuclear materials engineering, biological fluids and solvation
+    \end{itemize}
+  \item Keep science objectives firmly in the driver's seat
+  \item Do not compromise discretization quality
+  \item Optimize convergence first, then implementation efficiency
+  \item Library design: create maximally reusable components
+  \item Users want performance versatility
+    \begin{itemize}
+    \item fast solution on supercomputer
+    \item high-resolution on small workstation/cluster
+    \end{itemize}
+  \item Robustness is always a challenge
+  \item Huge scope remains at problem formulation
+  \item Algorithmic optimality is crucial
+  \item Real problems are messy
+  \item Performance is always messy at scale
+  \item Ideas are easy, implementation and practical issues are hard
+  \item Maximize science per Watt
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{HPC Performance Modeling and Analysis}
+  \begin{itemize}
+  \item Spring 2015, Special Topics
+  \item Architectural roadmaps and modeling
+  \item Performance variability
+  \item Designing performance experiments
+  \item Application case studies
+  \item Target audience:
+    \begin{itemize}
+    \item Advanced undergraduate and graduate students in Computer Science
+    \item Graduate students in simulation-based science or engineering
+    \end{itemize}
+  \item \url{jed@jedbrown.org}
+  \end{itemize}
+\end{frame}
+
+\end{document}

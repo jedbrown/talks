@@ -1,0 +1,355 @@
+\documentclass[final,t]{beamer}
+\mode<presentation>
+{
+  \usetheme{MCSposter}
+  \usecolortheme{default}
+  \usefonttheme[onlymath]{serif}
+}
+\usepackage[orientation=landscape,size=custom,width=120,height=90,scale=1.3]{beamerposter}
+%\usepackage[orientation=landscape,size=a0,scale=1.4]{beamerposter}
+\usepackage{pgfpages}
+%\pgfpagesuselayout{resize to}[a4paper,landscape,border shrink=5mm]
+%\pgfpagesuselayout{resize to}[a0paper,landscape]
+
+% additional settings
+\setbeamerfont{itemize}{size=\normalsize}
+\setbeamerfont{itemize/enumerate body}{size=\normalsize}
+\setbeamerfont{itemize/enumerate subbody}{size=\normalsize}
+
+% additional packages
+\usepackage{times}
+%\usepackage{subcaption}
+\usepackage{subfig}
+\usepackage{textpos}
+\usepackage{wrapfig}
+\usepackage{sidecap}
+%\usepackage{sfmath} 
+\usepackage{amsmath,amsthm,bm}
+\usepackage{microtype}
+\usepackage{siunitx}
+\DeclareSIUnit\year{a}
+\sisetup{retain-unity-mantissa = false}
+\usepackage{exscale}
+\usepackage{multicol,multirow}
+\usepackage{booktabs}
+%\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\newcommand\todo[1]{{\color{red}\bf [TODO: #1]}}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+\usepackage{fancyvrb}
+\newcommand\cverb[1][]{\SaveVerb[%
+   aftersave={\textnormal{\UseVerb[#1]{vsave}}}]{vsave}}
+
+\bibliographystyle{unsrt-shortauthor}
+
+%\def\newblock{\hskip .11em plus .33em minus .07em} % for natbib and beamer IMPORTANT
+\listfiles
+\graphicspath{{/home/jed/talks/figures/}{/home/jed/src/aterrel-presentations/figures/}}
+% Display a grid to help align images
+%\beamertemplategridbackground[1cm]
+
+
+\title{\huge $\tau$-adaptivity for nonsmooth processes in heterogeneous media {\normalsize \texttt{DI11A-4256}}}
+\author[Jed Brown]{Jed Brown {\texttt{jed@jedbrown.org}} ANL and CU Boulder}
+\institute[MCS]{Download this poster from \url{https://jedbrown.org/files/20141215-AGUTauAdaptivity.pdf}}
+
+\newcommand{\newt}[1]{\tilde{#1}}
+\newcommand{\btab}{\hspace{\stretch{1}}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Rz}{\mathcal{R}}
+\newcommand{\RR}{{\bar{\mathbb{R}}}}
+\newcommand{\II}{\mathcal{I}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Zp}{\mathbb{Z}_+}
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\LL}{\mathcal{L}}
+\newcommand{\PP}{\mathscr{P}}
+\newcommand{\ff}{\bm f}
+\newcommand{\uu}{\bm u}
+\newcommand{\vv}{\bm v}
+\newcommand{\ww}{\bm w}
+\newcommand{\DD}{D}
+\newcommand{\EE}{\mathcal E}
+\newcommand{\VV}{\bm{\mathcal{V}}}
+\newcommand{\Pspace}{\mathcal{P}}
+\newcommand\pfrak{{\mathfrak p}}
+\newcommand{\di}{\partial}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\bigabs}[1]{\big\lvert #1 \big\rvert}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\dif}{\bigtriangleup}
+\newcommand{\ud}{\,\mathrm{d}}
+\newcommand{\tcolon}{\!:\!}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\card}{card}
+\DeclareMathOperator{\trace}{tr}
+\DeclareMathOperator{\sspan}{span}
+\renewcommand{\bar}{\overline}
+\newcommand{\ed}{\dot{\epsilon}}
+\newcommand\citet[1]{\cite{#1}}
+\newcommand\citep[1]{\cite{#1}}
+
+% abbreviations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Need to declare these here because newcommand inside a frame is fragile
+\newcommand\mgdx{1.9em}
+\newcommand\mgdy{2.5em}
+\newcommand\mgloc[4]{(#1 + #4*\mgdx*#3,#2 + \mgdy*#3)}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+\begin{document}
+\begin{frame}{} 
+  \vspace{-3em}
+  \begin{columns}
+    \begin{column}{0.31\textwidth}
+      \begin{block}{Implicit solution of localized nonlinearities}
+        Localized nonsmooth processes play a leading role in many geophysical problems, e.g.,
+        \begin{itemize}
+        \item plastic yielding, fracture
+        \item frictional contact: faults, sub-glacial
+        \item contact/collisions: marine glaciers, sedimentation
+        \item phase change: ice/water/steam, magma
+        \end{itemize}
+        If the effects are primarily \emph{local} (e.g., wetting and drying in coastal inundation), the nonsmoothness can be treated explicitly.
+        But long-range stress transmission is instantaneous on the time scales of most geophysical problems, necessitating \emph{implicit} treatment if time steps are to be chosen based on accuracy rather than stability.
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{Nonlinear solvers}
+        The prevailing nonlinear solution algorithms are based on global linearization, using either Newton or Picard iteration.
+        \begin{gather*}
+          F(u) = 0 \\
+          \text{Solve:}\quad J(u) v = -F(u), \quad u \gets u + v \\
+          \text{where}\quad J(u) \approx \nabla_u F(u)
+        \end{gather*}
+        \begin{itemize}
+        \item Each iteration requires a global linear solve (e.g., Krylov-Multigrid).
+        \item Each iteration moves important information over large distances.
+        \item Superlinear convergence not realized for nonsmooth problems.
+        \item The number of iterations depends on the strength of the nonlinearity.
+        \end{itemize}
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{Model problem: $\mathfrak p$-Laplacian with friction}        
+        \begin{columns}
+          \begin{column}{0.7\textwidth}
+            \begin{itemize}
+            \item 2-dimensional model problem for power-law fluid cross-section, $1 \le \pfrak \le \infty$
+              \begin{gather*}
+                -\nabla\cdot (\eta \nabla u) - f = 0 \\
+                \eta(\gamma) = \gamma_0(x) (\epsilon^2 + \gamma)^{\frac{\pfrak-2}{2}} \qquad \gamma(u) = \frac 1 2 \abs{\nabla u}^2
+              \end{gather*}
+            \item Friction boundary condition, $0 \le q \le 1$
+              \begin{gather*}
+                \nabla u \cdot \bm n + A(x) \abs{u}^{q-1} u = 0
+              \end{gather*}
+            \end{itemize}
+          \end{column}
+          \begin{column}{0.3\textwidth}
+            \begin{figure}
+              \includegraphics[width=\textwidth]{figures/MG/newton-convergence.png}
+              \caption{Convergence of residual norm.}
+            \end{figure}
+          \end{column}
+        \end{columns}
+
+        \begin{figure}
+          \centering
+          \subfloat[It 65]{\includegraphics[width=0.3\textwidth]{figures/MG/ex15-friction/visit0011.png}} ~
+          \subfloat[It 74]{\includegraphics[width=0.3\textwidth]{figures/MG/ex15-friction/visit0012.png}} ~
+          \subfloat[It 115]{\includegraphics[width=0.3\textwidth]{figures/MG/ex15-friction/visit0015.png}}
+          \caption{Convergence of heterogeneous $\pfrak = 1.3$, $\gamma_0 \in [10^{-2},1]$ with $q = 0.2$ friction at right boundary.}
+          \label{fig:plaplace-friction}
+        \end{figure}
+      \end{block}
+    \end{column}
+    %
+    \begin{column}{0.31\textwidth}
+      \begin{block}{Heterogeneous media: the bane of adaptive mesh refinement}
+        \begin{figure}
+          \centering
+          \subfloat[Zagros Mtns {\scriptsize [Yamato et al (2011)]}]{\includegraphics[width=0.49\textwidth]{figures/davemay/MayZagrosMountains.png}} ~
+          \subfloat[Layered granite and diorite on Mt Moffit]{\includegraphics[width=0.49\textwidth]{figures/MoffitLayers.jpg}}
+          \caption{Geology is complex at all scales}
+          \label{fig:moffit}
+        \end{figure}
+        \begin{itemize}
+        \item Adaptive spatial discretizations coarsen where acceptable accuracy can be achieved on coarse grids.
+        \item Heterogeneous media requires high resolution throughout the domain.
+        \end{itemize}
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{Full Approximation Scheme and $\tau$ corrections}
+        The Full Approximation Scheme is a naturally nonlinear multigrid algorithm that allows flexible incorporation of multilevel information.
+        \begin{itemize}
+        \item classical formulation: ``coarse grid \emph{accelerates} fine grid solution''
+        \item $\tau$ formulation: ``fine grid improves accuracy of coarse grid''
+        \item To solve $N u = f$, recursively apply
+          \begin{equation*}
+            \begin{split}
+              \text{pre-smooth} \:\: & \quad \tilde u^h \gets S^h_{\text{pre}}(u^h_0, f^h) \\
+              \text{solve coarse problem for $u^H$} \:\: & \quad N^H u^H = \underbrace{I_h^H f^h}_{f^H} + \underbrace{N^H \hat I_h^H \tilde u^h - I_h^H N^h \tilde u^h}_{\tau_h^H} \\
+              \text{correction and post-smooth} \:\: & \quad u^h \gets S^h_{\text{post}} \Big( \tilde u^h + I_H^h (u^H - \hat I_h^H \tilde u^h), f^h \Big) \\
+            \end{split}
+          \end{equation*}
+          \begin{tabular}{llll}
+            \toprule
+            $I_h^H$ & residual restriction & $\hat I_h^H$ & solution restriction \\
+            $I_H^h$ & solution interpolation & $f^H = I_h^H f^h$ & restricted forcing \\
+            $\{S^h_{\text{pre}},S^h_{\text{post}}\}$ & \multicolumn{3}{l}{smoothing operations on the fine grid} \\
+            \bottomrule
+          \end{tabular}
+        \item At convergence, $u^{H*} = \hat I_h^H u^{h*}$ solves the $\tau$-corrected coarse grid equation
+            $N^H u^H = f^H + \tau_h^H$,
+          thus $\tau_h^H$ is the ``fine grid feedback'' that makes the coarse grid equation accurate.
+        % \item $\tau_h^H$ is \emph{local} and need only be recomputed where it becomes stale.
+        \end{itemize}
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{Removing data dependencies with Segmental Refinement}
+        \begin{columns}
+          \begin{column}{0.7\textwidth}
+            % Introduction of overlap~\cite{adams2014segmental,brandt1994multigrid} enables removal of ``horizontal'' communication in the multigrid cycle.
+            % \begin{itemize}
+            % \item Rely strictly on coarse grid to move information.
+            % \item Robust coarsening crucial.
+            % \end{itemize}
+              \centering
+              \includegraphics[width=0.8\textwidth]{figures/MG/weak_scaling_edison-eps-converted-to.pdf}
+          \end{column}
+          \begin{column}{0.3\textwidth}
+              \centering
+              \includegraphics[width=0.7\textwidth]{figures/MG/LowCommunication}
+          \end{column}
+        \end{columns}
+        Introduce overlap to avoid horizontal communication in fine-grid visits.~\cite{adams2014segmental}
+      \end{block}
+
+      % \begin{block}{Nonlinearity, heterogeneity, and frozen $\tau$ techniques}
+      %   Strong material nonlinearities such as plasticity cause methods based on global linearization, such as Newton and Picard, to require many iterations.
+      %   Nonlinear multigrid avoids global linearization, leading to faster convergence rates when effective nonlinear smoothers are available.
+      %   With a nonlinear smoother, we naturally want to build interpolation and the coarse operator without global assembly of a fine-grid operator.
+      %   Unfortunately, traditional geometric multigrid does not accurately interpolate low-frequency modes and rediscretized coarse operators are notoriously inaccurate in highly heterogeneous cases.
+      %   A subdomain-centric coarse grid construction only involves solving local problems, thus allowing it to be updated only in regions with rapidly-changing nonlinearities.
+      % \end{block}
+
+      % \begin{block}{Subdomain-centric matrix-free coarsening}
+      %   {\bf Objective}: construct robust interpolation and coarse grid operator using only (a) local neighbor information, (b) application of local nonlinear operator, (c) point-block diagonal of principle linearization, and (d) application of triangular distribution operator or splitting~\cite{bkmms2012} for saddle points.
+      %   \begin{enumerate}
+      %   \item Select subdomains to become ``coarse elements'', add minimal stable node set to preliminary set of coarse dofs $C$.
+      %   \item If available, add approximate null space to set of ``low-energy'' modes $B$ that must be approximated accurately.
+      %   \item Use compatible relaxation with point-block preconditioned polynomial smoother to determine deficiencies of initial coarse basis.
+      %   \item Enrich $C$ by adding poorly-converging points.
+      %   \item Optimize energy of local basis functions by computing partition of coarse space $B$ on the boundary, then (approximately) harmonically extending to subdomain interior.
+      %   \item Optionally, use (non-local) bootstrap cycle~\cite{brandt2011bootstrap} to improve $B$.
+      %   \end{enumerate}
+      % \end{block}
+      % \vspace{-2.4em}
+      % \begin{block}{Low-communication cycling}
+      %       \begin{wrapfigure}{r}{0.45\textwidth}
+      %         \includegraphics[width=0.4\textwidth]{figures/MG/TauDeps.pdf}
+      %       \end{wrapfigure}
+      %       The $\tau$ formulation removes communication from all levels except the coarsest.
+      %       Instead of starting and ending on the fine grid, a cycle starts and ends on the coarse grid.
+      %       The figure shows the dependency graph of 3-level multigrid cycle that computes the correction $\tau_1^0$ (red) on the coarse grid equation starting with coarse grid state $u_0$ (blue).
+      %       A traditional multigrid cycle which has ``horizontal'' dependencies at every level.
+      % \end{block}
+    \end{column}
+    %
+    \begin{column}{0.31\textwidth}
+      \begin{block}{$\tau$-adaptivity}
+        \begin{figure}
+          \centering
+          \subfloat[Initial solution]{\includegraphics[width=0.18\textwidth]{figures/MG/ElasticityCompressTrim}} ~
+          \subfloat[Increment]{\includegraphics[width=0.18\textwidth]{figures/MG/ElasticityCompressShearTrim}} ~
+          \subfloat[Smoothed error (no $\tau$)]{\includegraphics[width=0.28\textwidth]{figures/MG/ElasticityCompressErrorNoTauTrim}} ~
+          \subfloat[Smoothed error (with $\tau$)]{\includegraphics[width=0.28\textwidth]{figures/MG/ElasticityCompressErrorTauTrim}}
+          \caption{Heterogeneous strain test using 2-level multigrid with coarsening factor of $3^2$.
+            The coarse (respectively fine) grid has 3 (9) $Q_1$ elements across each block and 2 (6) elements across each gap.
+            Panes (a) and (b) show the deformed body colored by strain.
+            The initial problem of compression by 0.2 from the right is solved (a) and $\tau = A^H \hat I_h^H u^h - I_h^H A^h u^h$ is computed.
+            Then a shear increment of 0.1 in the $y$ direction is added to the boundary condition, and the coarse-level problem is resolved, interpolated to the fine-grid, and a post-smoother is applied.
+            When the coarse problem is solved without a $\tau$ correction (c), the displacement error is nearly $10\times$ larger than when $\tau$ is included in the right hand side of the coarse problem (d).
+          }\label{fig:tau-valid}
+        \end{figure}
+        \begin{center}
+          {\LARGE \bf Only visit fine grid where $\tau$ is ``stale''. }
+        \end{center}
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{Comparison to nonlinear domain decomposition}
+        \begin{itemize}
+        \item ASPIN (Additive Schwarz preconditioned inexact Newton) \cite{cai2003npi} \\
+          \begin{itemize}
+          \item More local iterations in strongly nonlinear regions
+          \item Each nonlinear iteration only propagates information locally
+          \item Many real nonlinearities are activated by long-range forces
+            \begin{itemize}
+            \item faults, friction, locking in granular media
+            \end{itemize}
+          \item Two-stage algorithm has different load balancing
+            \begin{itemize}
+            \item Nonlinear subdomain solves
+            \item Global linear solve
+            \end{itemize}
+          \end{itemize}
+        \item $\tau$ adaptivity
+          \begin{itemize}
+          \item Minimum effort to communicate long-range information
+          \item Nonlinearity sees effects as accurate as with global fine-grid feedback
+          \item Fine-grid work always proportional to ``interesting'' changes
+          \end{itemize}
+        \end{itemize}
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{Status}
+        \begin{itemize}
+        \item Running proof of concept experiments
+        \item Library implementation underway
+        \item Need dynamic load balancing
+        \item Need locally computable estimates for refreshing $\tau$
+        \item Robust local coarsening, perhaps GenEO~\cite{spillane2011abstract,jolivet2013scalabledd}
+        \end{itemize}
+      \end{block}
+      \vspace{-2em}
+      \begin{block}{References}
+        \scriptsize
+        \nocite{adams2014segmental,brandt1984,brandt1994multigrid}
+        \begin{minipage}{\textwidth}
+          \begin{multicols}{2}
+            \bibliography{$HOME/jedbib/jedbib,$PETSC_DIR/src/docs/tex/petsc,$PETSC_DIR/src/docs/tex/petscapp}
+          \end{multicols}
+        \end{minipage}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+\end{document}
+
+        % Recursive application of a technique called \emph{segmental refinement}, in which the fine grid state is populated on the fly from the coarser grid followed by smoothing, permits solution of problems using only poly-logarithmic memory, provided that the right hand side and coefficients are similarly compressible.
+        % For highly heterogenous problems, the constants associated with this aggressive memory reduction become large, and we have to choose which ingredients are most crucial to a robust multigrid cycle.
+        % \begin{description}
+        % \item[Solution state] is small and frequently needed in complete form due to coupling to other equations and time-dependence.
+        %   It is relatively expensive to reconstruct on the fly, especially on multiple coarse levels.
+        % \item[Grid transfer operators] (coarse basis functions) are a critical ingredient for robust multigrid and also expensive to reconstruct in each visit.
+        % \item[Coarse operators] provide a systematic compression of fine-scale heterogeneity.
+        %   With a fast coarsening rate, coarse grid operators are relatively affordable.
+        % \item[Fine grid operators] typically consume significantly more memory than the rest of the multigrid hierarchy, are performance-limited by memory bandwidth, and too expensive to reassemble for highly nonlinear problems.
+        % \end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-PDF-mode: t
+%%% End: 

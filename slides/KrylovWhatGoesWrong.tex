@@ -1,0 +1,27 @@
+\begin{frame}{Norms}
+  \begin{itemize}
+  \item Krylov subspace: $\{P^{-1}b,(P^{-1}A)P^{-1}b,(P^{-1}A)^2P^{-1}b,\dotsc\}$
+  \item Subspace needs to contain the solution
+    \begin{itemize}
+    \item Diameter of preconditioned connectivity graph
+    \end{itemize}
+  \item Need to find the correct linear combination
+    \begin{itemize}
+    \item Optimize unpreconditioned residual norm (usually right preconditioning)
+      \begin{equation*}
+        \norm{A x - b}_2 = \norm{A (x - x^*)}_2 = \norm{x-x^*}_{A^T A}
+      \end{equation*}
+    \item Optimize preconditioned residual norm (usually left preconditioning)
+      \begin{equation*}
+        \norm{P^{-1} (A x - b)}_2 = \norm{P^{-1}A (x - x^*)}_2 = \norm{x-x^*}_{A^T P^{-T} P^{-1} A}
+      \end{equation*}
+    \item Natural norm (conjugate gradients) minimizes $\norm{x-x^*}_{P^{-1/2}AP^{-1/2}}$
+    \end{itemize}
+  \item Evaluating convergence
+    \begin{itemize}
+    \item Preconditioned, unpreconditioned, or natural norm
+    \item Which one to trust?
+    \item \code{-ksp\_monitor\_true\_residual}, \code{-ksp\_norm\_type}
+    \end{itemize}
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,17 @@
+\begin{frame}{PDE-constrained optimization: Elliptic}
+  \begin{gather*}
+    \min_{u,y} \frac 1 2 \norm{Qy - d}^2 + \frac \alpha 2 \norm{L(u - u_{\text{ref}})}^2 \\
+    \quad c(u,y) = 0
+  \end{gather*}
+  \begin{itemize}
+  \item Design $u$, state $y$, data $d$
+  \item $Q$ is an observation operator
+  \item $L$ is cost functional for design
+  \item $\alpha$ is tradeoff between cost of design and fitting data
+  \item Equivalent to Bayesian MAP with uncorrelated standard Gaussian observation error and design prior
+  \item Provide objective functional, gradient, (optionally) Hessian
+  \item Constraint $c(u,y)$, Jacobian of constraint $\partial c/\partial u$ and $\partial c/\partial y$
+  \item {\small \code{src/tao/pde\_constrained/examples/tutorials/elliptic.c}}
+  \item Similar examples for parabolic and hyperbolic
+  \end{itemize}
+\end{frame}

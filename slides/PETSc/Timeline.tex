@@ -3,20 +3,21 @@
    \fill[blue] (#3/\xtick-1991/\xtick,#1*0.4-.1) rectangle (#4/\xtick-1991/\xtick,#1*0.4+.1);}
 \newcommand\ganttlabel[6]{% year, label, color, yloc, anchor
   \node[#3] at (#1/\xtick+#6/\xtick-1991/\xtick,#4) [anchor=#5] {#2};
-  \fill[#3] (#1/\xtick-1991/\xtick,1/2-.1) rectangle (#1/\xtick-1991/\xtick+0.04,12/2+.1);}
+  \fill[#3] (#1/\xtick-1991/\xtick,1/2-.1) rectangle (#1/\xtick-1991/\xtick+0.04,12/2+.6);}
 
 %\begin{frame}{Timeline}
 \frame{
 \begin{figure}[htbp]
-\def\present{2014.9}
-\def\xtick{2.2}
+\def\present{2015.5}
+\def\xtick{2.4}
 \begin{tikzpicture}[y=-1cm]
    %\draw[help lines] (0.5,5) grid (8,0.5);
-   \ganttlabel{1991}{1991}{red}{6.2}{north}{0}
-   \ganttlabel{1995}{1995}{red}{6.2}{north}{0}
-   \ganttlabel{2000}{2000}{red}{6.2}{north}{0}
-   \ganttlabel{2005}{2005}{red}{6.2}{north}{0}
-   \ganttlabel{2010}{2010}{red}{6.2}{north}{0}
+   \ganttlabel{1991}{1991}{red}{6.7}{north}{0}
+   \ganttlabel{1995}{1995}{red}{6.7}{north}{0}
+   \ganttlabel{2000}{2000}{red}{6.7}{north}{0}
+   \ganttlabel{2005}{2005}{red}{6.7}{north}{0}
+   \ganttlabel{2010}{2010}{red}{6.7}{north}{0}
+   \ganttlabel{2015}{2015}{red}{6.7}{north}{0}
    \ganttlabel{1992}{PETSc-1}{green!70!black}{0}{center}{0}
    \ganttlabel{1994.4}{MPI-1}{magenta!70!black}{-.5}{center}{0}
    \ganttlabel{1997.6}{MPI-2}{magenta!70!black}{-.5}{center}{0}
@@ -39,6 +40,7 @@
    \ganttline{13}{Shri}{2009.8}{\present}
    \ganttline{14}{Peter}{2011.6}{2014.5}
    \ganttline{15}{Mark}{2011.9}{\present}
+   \ganttline{16}{Toby}{2013.3}{\present}
 \end{tikzpicture}
 \end{figure}
 }

@@ -11,7 +11,7 @@
       \begin{itemize}
       \item \texttt{FormRHSFunction(ts,$t$,$x$,$F$,void *ctx);}
       \item \texttt{FormIFunction(ts,$t$,$x$,$\dot x$,$G$,void *ctx);}
-      \item \texttt{FormIJacobian(ts,$t$,$x$,$\dot x$,$\alpha$,$J$,$J_{p}$,mstr,void *ctx);}
+      \item \texttt{FormIJacobian(ts,$t$,$x$,$\dot x$,$\alpha$,$J$,$J_{p}$,void *ctx);}
       \end{itemize}
     \item Can have $L$-stable DIRK for stiff part $G$, SSP explicit part, etc.
     \item Orders 2 through 5, embedded error estimates
@@ -23,6 +23,6 @@
     \item Easy to register new methods: \code{TSARKIMEXRegister()}
     \end{itemize}
   \item Single step interface so user can have own time loop
-  \item Same interface for Extrapolation IMEX, LMS IMEX (in development)
+  \item Same interface for Extrapolation IMEX
   \end{itemize}
 \end{frame}

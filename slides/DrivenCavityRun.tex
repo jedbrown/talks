@@ -63,8 +63,8 @@ lid velocity = 100, prandtl \# = 1, grashof \# = 100000 \\
     \end{itemize}
   \item The nonlinearity is just really strong
     \begin{itemize}
-    \item Run with \code{-info} or \code{-snes\_ls\_monitor} (petsc-dev) to see line search
-    \item Try using trust region instead of line search \code{-snes\_type tr}
+    \item Run with \code{-snes\_linesearch\_monitor}
+    \item Try using trust region instead of line search \code{-snes\_type newtontr}
     \item Try grid sequencing if possible
     \item Use a continuation
     \end{itemize}
@@ -73,7 +73,7 @@ lid velocity = 100, prandtl \# = 1, grashof \# = 100000 \\
 
 \begin{frame}{Globalizing the lid-driven cavity}
   \begin{itemize}
-  \item Pseudotransient continuation continuation ($\Psi tc$)
+  \item Pseudotransient continuation ($\Psi tc$)
     \begin{itemize}
     \item Do linearly implicit backward-Euler steps, driven by
       steady-state residual
@@ -101,7 +101,7 @@ CONVERGED\_TIME at time 6.80079e+14 after 30 steps
 }}
   \item<3> Make the method nonlinearly implicit: \code{-snes\_type ls -snes\_monitor}
     \oneitem{Compare required number of linear iterations}
-  \item<3> Try error-based adaptivity: \code{-ts\_type rosw}
+  \item<3> Try error-based adaptivity: \code{-ts\_type rosw -ts\_adapt\_dt\_min 1e-4}
   \item<3> Try increasing \code{-lidvelocity}, \code{-grashof}, and problem size
   \item<3> Coffey, Kelley, and Keyes, \emph{Pseudotransient continuation and differential algebraic equations}, SIAM J. Sci. Comp, 2003.
   \end{itemize}

@@ -1,0 +1,15 @@
+\begin{frame}{Anselm}
+  \begin{itemize}
+  \item \code{module rm cmake mkl ipp tbb intel}
+  \item \code{module load petsc/3.5.3-icc15-impi-mkl-opt}
+  \item \code{git clone \~{}jbrown/petsc petsc}
+  \item Interactive session
+    \begin{itemize}
+    \item \code{qsub -A dd-15-20 -q qexp -l select=1:ncpus=16 -I}
+    \item \code{module load petsc/3.5.3-icc15-impi-mkl-opt}
+    \item \code{mpdboot}
+    \end{itemize}
+  \item Use two terminals so you can compile on the login node, but run
+    in your interactive session on the compute node.
+  \end{itemize}
+\end{frame}

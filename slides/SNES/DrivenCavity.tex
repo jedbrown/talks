@@ -47,12 +47,12 @@ DrivenCavityFunction(SNES snes, Vec X, Vec F, void *ptr) {
   PetscErrorCode ierr;
 
   /* Code to communicate nonlocal ghost point data */
-  VecGetArray(F, &f);
+  DMDAVecGetArray(da, F, &f);
 
   /* Loop over local part and assemble into f[idxloc] */
   /* .... */
 
-  VecRestoreArray(F, &f);
+  DMDAVecRestoreArray(da, F, &f);
   return 0;
 }
 \end{minted}

@@ -1,23 +1,17 @@
 \begin{frame}[fragile]{SNES Jacobian}
-The user provided function which calculates the Jacobian has signature
+The user provided function that calculates the Jacobian has signature
 \begin{minted}{c}
-PetscErrorCode (*func)(SNES snes,Vec x,Mat *J,Mat *M,
-                       MatStructure *flag,void *ctx)
+PetscErrorCode (*func)(SNES snes,Vec x,Mat J,
+                       Mat Jpre,void *ctx)
 \end{minted}
 
 \begin{itemize}
   \item[{\kb x}:] The current solution
   \item[{\kb J}:] The Jacobian
-  \item[{\kb M}:] The Jacobian preconditioning matrix (possibly J itself)
+  \item[{\kb Jpre}:] The Jacobian preconditioning matrix (possibly J itself)
   \item[{\kb ctx}:] The user context passed to {\kb SNESSetFunction()}
   \begin{itemize}
     \item Use this to pass application information, e.g. physical constants
-  \end{itemize}
-
-  \item Possible {\kb MatStructure} values are:
-  \begin{itemize}
-    \item SAME\_NONZERO\_PATTERN
-    \item DIFFERENT\_NONZERO\_PATTERN
   \end{itemize}
 \end{itemize}
 

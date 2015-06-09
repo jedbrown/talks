@@ -61,11 +61,10 @@
       -snes\_view}
   \item \shell{./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \\
       -snes\_monitor -\{ksp,snes\}\_converged\_reason \\
-      -snes\_view -mat\_view draw -draw\_pause 0.5}
+      -snes\_view -ksp\_view\_mat draw -draw\_pause -1}
   \item \shell{./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \\
       -snes\_monitor -\{ksp,snes\}\_converged\_reason \\
-      -snes\_view -mat\_view draw -draw\_pause 0.5 \\
-      -pc\_type lu -pc\_factor\_mat\_ordering\_type natural}
+      -snes\_view -pc\_type lu -pc\_factor\_mat\_ordering\_type natural}
   \item Use \code{-help} to find other ordering types
 \end{itemize}
 \end{frame}
@@ -151,7 +150,7 @@ SNES Object: 1 MPI processes
     \item simulate a big machine: \code{-pc\_asm\_blocks 512}
     \item change the Krylov method: \code{-ksp\_type ibcgs}
     \item use algebraic multigrid: \code{-pc\_type hypre}
-    \item use smoothed aggregation multigrid: \code{-pc\_type ml}
+    \item use smoothed aggregation multigrid: \code{-pc\_type gamg} or \code{-pc\_type ml}
     \end{itemize}
   \end{itemize}
 \end{frame}

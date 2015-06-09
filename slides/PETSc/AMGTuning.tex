@@ -1,0 +1,18 @@
+\begin{frame}{Algebraic Multigrid Tuning}
+  \begin{itemize}
+  \item Smoothed Aggregation (GAMG, ML)
+    \begin{itemize}
+    \item Graph/strength of connection -- MatSetBlockSize()
+    \item Threshold (\code{-pc\_gamg\_threshold})
+    \item Aggregate (MIS, HEM)
+    \item Tentative prolongation -- MatSetNearNullSpace()
+    \item Eigenvalue estimate
+    \item Chebyshev smoothing bounds
+    \end{itemize}
+  \item BoomerAMG (Hypre)
+    \begin{itemize}
+    \item Strong threshold (\code{-pc\_hypre\_boomeramg\_strong\_threshold})
+    \item Aggressive coarsening options
+    \end{itemize}
+  \end{itemize}
+\end{frame}

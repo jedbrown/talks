@@ -19,12 +19,12 @@
     \item Neighbor-wise Collective: \code{VecScatterBegin(), MatMult()}
       \begin{itemize}
       \item Point-to-point communication between two processes
-      \item Neighbor collectives in upcoming MPI-3
+      \item Neighbor collectives in MPI-3
       \end{itemize}
     \item Collective: \code{VecNorm(), MatAssemblyBegin(), KSPCreate()}
       \begin{itemize}
       \item Global communication, synchronous
-      \item Non-blocking collectives in upcoming MPI-3
+      \item Non-blocking collectives in MPI-3
       \end{itemize}
     \end{itemize}
   \item Deadlock if some process doesn't participate (\eg wrong order)
