@@ -2,7 +2,7 @@
 \small
 \begin{minted}{c}
 v[0] = -1.0; v[1] = 2.0; v[2] = -1.0;
-for(row = start;  row < end; row++) {
+for (row = start;  row < end; row++) {
   cols[0] = row-1; cols[1] = row; cols[2] = row+1;
   if (row == 0) {
     MatSetValues(A,1,&row,2,&cols[1],&v[1],INSERT_VALUES);

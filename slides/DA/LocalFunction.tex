@@ -19,8 +19,9 @@ The user provided function which calculates the nonlinear residual in 2D has sig
 \bigskip
 
 The local DMDA function is activated by calling
-\begin{center}
-  {\kb SNESSetDM(snes,dm)}
-  {\kb SNESSetFunction(snes, r, SNESDAFormFunction, ctx)}
-\end{center}
+\begin{itemize}
+\item {\kb SNESSetDM(snes,dm);}
+\item {\kb DMDASNESSetFunctionLocal(dm, InsertMode imode, lfunc, ctx);} \\
+  where {\kb imode} is {\kb INSERT\_VALUES} or {\kb ADD\_VALUES}
+\end{itemize}
 }

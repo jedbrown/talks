@@ -154,7 +154,6 @@
 \input{slides/PETSc/BetterthanPETSc.tex}
 \input{slides/BillGroppAdvice.tex}
 \input{slides/PETSc/Installation.tex}
-\input{slides/PETSc/Anselm.tex}
 
 \input{slides/PETSc/Composition.tex}
 
@@ -166,11 +165,6 @@
 \input{slides/WhyParallel.tex}
 
 \section[Core/Algorithms]{Core PETSc Components and Algorithms Primer}
-\subsection{Time integration}
-\input{slides/PETSc/TSARKIMEX.tex}
-\input{slides/SNES/FlowControl.tex}
-\input{slides/PETSc/TSMethods.tex}
-\input{slides/PETSc/TSUsage.tex}
 
 \subsection{Nonlinear solvers: SNES}
 \input{slides/SNES/SNESNewton.tex}
@@ -240,6 +234,12 @@
 
 
 \part{Integration and Efficiency}
+\subsection{Time integration}
+\input{slides/PETSc/TSARKIMEX.tex}
+\input{slides/SNES/FlowControl.tex}
+\input{slides/PETSc/TSMethods.tex}
+\input{slides/PETSc/TSUsage.tex}
+
 \section{Application Integration}
 \input{slides/PETSc/Integration/ApplicationIntegration.tex}
 \input{slides/ApplicationIntegration.tex}
@@ -260,7 +260,7 @@
 \input{slides/ACaseForUnassembledMatrices.tex}
 \input{slides/OptimizingSpMVUnassembled.tex}
 \input{slides/HardwareArithmeticIntensity.tex}
-
+\todo{add slide with https://www.karlrupp.net/2013/06/cpu-gpu-and-mic-hardware-characteristics-over-time/}
 %\input{slides/MultigridAdvice.tex}
 
 \part{Extra topics}
@@ -292,6 +292,16 @@
 \input{slides/SNES/MultiphysicsAssemblyResiduals.tex}
 \input{slides/SNES/MultiphysicsAssemblyJacobians.tex}
 \input{slides/PETSc/MatGetLocalSubMatrix.tex}
+\begin{frame}{SNES ex28}
+  \begin{itemize}
+  \item Example: {\kb src/snes/examples/tutorials/ex28.c}
+  \item Solves a diffusion PDE for $u$
+    $$-(k u_x)_x = 1$$
+    on $(0,1)$, subject to $u(0) = 0, u(1) = 1$
+  \item with implicitly defined coefficient $k$ solving
+    $\exp(k-1) + k = 1/\Big(1/(1+u) + 1/(1+u_x^2)\Big)$
+  \end{itemize}
+\end{frame}
 \subsection{Variational inequalities}
 \input{slides/PETSc/SNESVI.tex}
 

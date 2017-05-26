@@ -21,8 +21,8 @@
 \begin{frame}[fragile]{Configuration}
 \begin{block}{Basic configuration}
 \begin{itemize}\footnotesize
-  \item \shell{export PETSC\_DIR=\$PWD PETSC\_ARCH=intel-dbg}
-  \item \shell{./configure -{}-with-mpi-dir=/opt/intel/mpi/impi/intel64/ \mtab \bslash \\
+  \item \shell{export PETSC\_DIR=\$PWD PETSC\_ARCH=gnu-dbg}
+  \item \shell{./configure -{}-with-mpi-dir=/usr/ \mtab \bslash \\
       \qquad\qquad -{}-download-f2cblaslapack \mtab \bslash \\
   	\qquad\qquad -{}-download-\{ml,hypre\}}
   \item \shell{make all test}
@@ -38,18 +38,18 @@
   \item \code{-{}-download-\{umfpack,mumps,scalapack,parmetis\}}
   \end{itemize}
 \item reconfigure at any time with \\
-  {\footnotesize \shell{intel-dbg/conf/reconfigure-intel-dbg.py \mtab\bslash\\
+  {\footnotesize \shell{gnu-dbg/conf/reconfigure-gnu-dbg.py \mtab\bslash\\
       \qquad\qquad -{}-new-options}}
 \end{itemize}
 \end{frame}
 
-\input{slides/PETSc/AutomaticDownloads}
+\input{slides/PETSc/AutomaticDownloads.tex}
 
 \begin{frame}{An optimized build}
   \begin{itemize}
-  \item \shell{\small intel-dbg/conf/reconfigure-intel-dbg.py \\
-      PETSC\_ARCH=intel-opt \\
-      -{}-with-debugging=0 \&\& make PETSC\_ARCH=intel-opt}
+  \item \shell{\small gnu-dbg/conf/reconfigure-gnu-dbg.py \\
+      PETSC\_ARCH=gnu-opt \\
+      -{}-with-debugging=0 \&\& make PETSC\_ARCH=gnu-opt}
   \item What does \code{-{}-with-debugging=1} (default) do?
     \begin{itemize}
     \item Keeps debugging symbols (of course)

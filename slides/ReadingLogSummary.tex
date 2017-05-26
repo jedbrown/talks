@@ -1,4 +1,4 @@
-\begin{frame}[fragile]{Reading \code{-log\_summary}}
+\begin{frame}[fragile]{Reading \code{-log\_view}}
 \begin{itemize}
 \item
 {\scriptsize
@@ -15,12 +15,12 @@ MPI Reductions:       2.799e+03      1.00000
 \item Also a summary per stage
 \item Memory usage per stage (based on when it was allocated)
 \item Time, messages, reductions, balance, flops per event per stage
-\item Always send \code{-log\_summary} when asking \\
-  performance questions on mailing list
+\item Always send \code{-log\_view} when asking performance questions on
+  mailing list
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Reading \code{-log\_summary}}
+\begin{frame}[fragile]{Reading \code{-log\_view}}
 \begin{Verbatim}[formatcom=\tiny]
 Event                Count      Time (sec)     Flops                             --- Global ---  --- Stage ---   Total
                    Max Ratio  Max     Ratio   Max  Ratio  Mess   Avg len Reduct  %T %F %M %L %R  %T %F %M %L %R Mflop/s

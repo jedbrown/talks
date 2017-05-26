@@ -6,7 +6,7 @@
     \item \code{VecMDot}
     \item \code{VecNorm}
     \item \code{MatAssemblyBegin}
-    \item Change algorithm (e.g. IBCGS)
+    \item Change algorithm (e.g. IBCGS, PGMRES)
     \end{itemize}
   \item Point-to-point (nearest neighbor), latency or bandwidth
     \begin{itemize}
@@ -17,7 +17,7 @@
     \item \code{SNESFunctionEval}
     \item \code{SNESJacobianEval}
     \item Compute subdomain boundary fluxes redundantly
-    \item Ghost exchange for all fields at once
+    \item Ghost exchange for all fields at once, or overlap
     \item Better partition
     \end{itemize}
   \end{itemize}

@@ -8,11 +8,11 @@
   \begin{itemize}
     \item Can set the type at runtime
   \end{itemize}
-  \item {\kb MatMPIBAIJSetPreallocation(Mat,...)} %(Mat,int bs,int d_nz,const int
-                                %d_nnz[],int o_nz,const int o_nnz[])}
-    \oneitem{important for assembly performance}
   \item {\kb MatSetBlockSize(Mat, int bs)}
     \oneitem{for vector problems}
+  \item {\kb MatXAIJSetPreallocation(Mat,...)} %(Mat,int bs,int d_nz,const int
+                                %d_nnz[],int o_nz,const int o_nnz[])}
+    \oneitem{important for assembly performance}
   \item {\kb MatSetValues(Mat,...)}
   \begin{itemize}
     \item {\bf MUST} be used, but does automatic communication

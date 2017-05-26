@@ -30,10 +30,10 @@
 
 \begin{frame}{Relaxation}
   Split into lower, diagonal, upper parts: \alert{$ A = L + D + U $}
-  \begin{block}{Jacobi}
+  \begin{block}{Jacobi \texttt{-pc\_type jacobi}}
     Cheapest preconditioner: $P^{-1} = D^{-1}$
   \end{block}
-  \begin{block}{Successive over-relaxation (SOR)}
+  \begin{block}{Successive over-relaxation (SOR) \texttt{-pc\_type sor}}
     \begin{gather*}
       \left(L + \frac 1 \omega D\right) x_{n+1} = \left[\left(\frac
           1\omega-1\right)D - U\right] x_n + \omega b \\
@@ -46,6 +46,8 @@
     \end{itemize}
   \end{block}
 \end{frame}
+
+\todo{Fundamentals of Richardson convergence}
 
 \begin{frame}[shrink=5]{Factorization}
   Two phases
@@ -72,6 +74,7 @@
     \item Only allow fill for entries that exceed threshold: ILUT
     \item Usually poor scaling in parallel
     \item No guarantees
+    \item Hierarchical/low-rank representations have potential: STRUMPACK
     \end{itemize}
   \end{block}
 \end{frame}
@@ -82,7 +85,7 @@
     \begin{itemize}\item Solve Dirichlet problems on overlapping
       subdomains
     \item No overlap: $\textit{its} \in \bigO\big( \frac{L}{\sqrt{Hh}} \big)$
-    \item Overlap $\delta$: $\textit{its} \in \big( \frac L {\sqrt{H\delta}} \big)$
+    \item Overlap $\delta$: $\textit{its} \in \bigO\big( \frac L {\sqrt{H\delta}} \big)$
     \end{itemize}
   \end{block}
   \vspace{-1ex}

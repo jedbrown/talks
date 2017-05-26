@@ -28,7 +28,7 @@
   \begin{itemize}
     \item {\kb MatSeqAIJSetPreallocation()}
     \item {\kb MatMPIBAIJSetPreallocation()}
-    \item Only the relevant data will be used
+    \item Only the relevant data will be used.  Or {\kb MatXAIJSetPreallocation()}
   \end{itemize}
 \end{itemize}
 \end{frame}
@@ -39,7 +39,7 @@
 \vbox{
 \begin{itemize}
   \item[nz:] expected number of nonzeros in any row
-  \item[nnz(i):] expected number of nonzeros in row i
+  \item[nnz[i]:] expected number of nonzeros in row i
 \end{itemize}
 }
 }
@@ -77,9 +77,9 @@
   \qquad \qquad int onz, int onnz[])}
 \begin{itemize}
   \item[dnz:] expected number of nonzeros in any row in the diagonal block
-  \item[dnnz(i):] expected number of nonzeros in row i in the diagonal block
+  \item[dnnz[i]:] expected number of nonzeros in row i in the diagonal block
   \item[onz:] expected number of nonzeros in any row in the offdiagonal portion
-  \item[onnz(i):] expected number of nonzeros in row i in the offdiagonal portion
+  \item[onnz[i]:] expected number of nonzeros in row i in the offdiagonal portion
 \end{itemize}
 }
 }
@@ -90,6 +90,8 @@
   \item Use runtime options \\
     {\kb -mat\_new\_nonzero\_location\_err} \\
     {\kb -mat\_new\_nonzero\_allocation\_err}
+  \item Use {\kb -ksp\_view} or {\kb -snes\_view} and look for \\
+    {\kb total number of mallocs used during MatSetValues calls =0}
   \item Use runtime option {\kb -info}
   \item Output: \\
 {\kb

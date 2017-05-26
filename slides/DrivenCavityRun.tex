@@ -50,7 +50,7 @@ lid velocity = 100, prandtl \# = 1, grashof \# = 100000 \\
 \begin{frame}{Why isn't SNES converging?}
   \begin{itemize}
   \item The Jacobian is wrong (maybe only in parallel)
-    \oneitem{Check with \code{-snes\_type test} and \code{-snes\_mf\_operator -pc\_type lu}}
+    \oneitem{Check with \code{-snes\_compare\_explicit} and \code{-snes\_mf\_operator -pc\_type lu}}
   \item The linear system is not solved accurately enough
     \begin{itemize}
     \item Check with \code{-pc\_type lu}

@@ -28,9 +28,9 @@ typedef struct {
 
 typedef struct {
        /* physical parameters */
-   PassiveReal lidvelocity,prandtl,grashof;
+   PetscReal lidvelocity,prandtl,grashof;
        /* color plots of the solution */
-   PetscTruth  draw_contours;
+   PetscBool  draw_contours;
 } AppCtx;
 \end{minted}
 \end{frame}
