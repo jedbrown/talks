@@ -1,0 +1,22 @@
+\begin{frame}{Approximating condition numbers}
+
+\begin{itemize}
+\item Small matrices: \\
+  {\kb -pc\_type svd -pc\_svd\_monitor}
+\item Large matrices (avoid restarts!): \\
+  {\kb -pc\_type none -ksp\_type gmres -ksp\_monitor\_singular\_value \bslash\\
+    \qquad-ksp\_gmres\_restart 1000}
+\item Condition of preconditioned operator: \\
+  {\kb -pc\_type some\_pc -ksp\_type gmres \bslash \\
+    \qquad -ksp\_monitor\_singular\_value \bslash \\
+    \qquad -ksp\_gmres\_restart 1000}
+\end{itemize}
+
+Try these:
+
+\begin{itemize}
+\item \shell{cd \$PETSC\_DIR/src/ksp/ksp/examples/tutorials \bslash \\ \&\& make ex2}
+\item \shell{./ex2 -m 20 -n 20 <other\_options>}
+\end{itemize}
+
+\end{frame}

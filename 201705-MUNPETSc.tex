@@ -84,22 +84,22 @@
 \def\Rnewtonbug{8}
 \def\Rnewtonfix{9}
 
-\title[http://59A2.org/files/201505-IT4IPETSc.pdf]{PETSc Tutorial}
+\title[]{PETSc Tutorial}
 
-\author{Jed Brown}
+\author{Jed Brown\inst{1} \& Kevin Green\inst{2}}
 
 
 % - Use the \inst command only if there are several affiliations.
 % - Keep it simple, no one is interested in your street address.
-\institute[CU/ANL]{CU Boulder and Argonne National Laboratory}
+\institute[CU/ANL,UofS]{\inst{1}CU Boulder and Argonne National Laboratory \and
+\inst{2} University of Saskatchewan}
 
-\date{IT4Innovations, 2015-05-21/22}
+\date{MUN, 2017-05-29/30/31}
 
 
 % This is only inserted into the PDF information catalog. Can be left
 % out.
 \subject{Talks}
-
 
 
 % If you have a file called "university-logo-filename.xxx", where xxx
@@ -147,6 +147,7 @@
 \end{frame}
 \input{slides/PETSc/RequestsNotSpecific.tex}
 
+
 \section{Introduction}
 \input{slides/PETSc/Timeline.tex}
 \input{slides/PETSc/About.tex}
@@ -164,7 +165,7 @@
 \section{Why Parallel?}
 \input{slides/WhyParallel.tex}
 
-\section[Core/Algorithms]{Core PETSc Components and Algorithms Primer}
+\section[Core I]{Core PETSc Components and Algorithms Primer}
 
 \subsection{Nonlinear solvers: SNES}
 \input{slides/SNES/SNESNewton.tex}
@@ -207,6 +208,7 @@
 \input{slides/PETSc/Integration/MatrixAssembly.tex}
 \input{slides/PETSc/Integration/EfficientMatrixAssembly.tex}
 \input{slides/PETSc/Integration/WhyArePETScMatricesThatWay.tex}
+\input{slides/PETSc/Integration/ApproximatingConditionNumbers.tex}
 
 \section*{Preliminary Conclusions}
 \begin{frame}{Preliminary Conclusions}
@@ -233,12 +235,9 @@
 \end{frame}
 
 
+
 \part{Integration and Efficiency}
-\subsection{Time integration}
-\input{slides/PETSc/TSARKIMEX.tex}
-\input{slides/SNES/FlowControl.tex}
-\input{slides/PETSc/TSMethods.tex}
-\input{slides/PETSc/TSUsage.tex}
+
 
 \section{Application Integration}
 \input{slides/PETSc/Integration/ApplicationIntegration.tex}
@@ -248,6 +247,10 @@
 \input{slides/PETSc/MatrixMemoryPreallocation.tex}
 \input{slides/PETSc/Integration/LinearSolvers.tex}
 \input{slides/PETSc/Integration/NonlinearSolvers.tex}
+
+
+\section{Hydrostatic Ice}
+\input{slides/ToyHydrostaticIce.tex}
 
 \section{Performance and Scalability}
 \input{slides/JFNKBottlenecks.tex}
@@ -260,15 +263,22 @@
 \input{slides/ACaseForUnassembledMatrices.tex}
 \input{slides/OptimizingSpMVUnassembled.tex}
 \input{slides/HardwareArithmeticIntensity.tex}
-\todo{add slide with https://www.karlrupp.net/2013/06/cpu-gpu-and-mic-hardware-characteristics-over-time/}
+%\todo{add slide with https://www.karlrupp.net/2013/06/cpu-gpu-and-mic-hardware-characteristics-over-time/}
 %\input{slides/MultigridAdvice.tex}
 
+\section{Time integration}
+\input{slides/PETSc/TSARKIMEX.tex}
+\input{slides/SNES/FlowControl.tex}
+\input{slides/PETSc/TSMethods.tex}
+\input{slides/PETSc/TSUsage.tex}
+\input{slides/PETSc/TSUsage.tex}
+
 \part{Extra topics}
+
+
 \section{PETSc Project and Git Workflow}
 \input{slides/PETSc/ProjectManagement.tex}
 \section{Representative examples and algorithms}
-\subsection{Hydrostatic Ice}
-\input{slides/ToyHydrostaticIce.tex}
 \subsection{Driven cavity}
 \input{slides/SNES/DrivenCavity.tex}
 \input{slides/DrivenCavityRun.tex}
@@ -312,7 +322,7 @@
   \item Wan, Chan, and Smith, \emph{An Energy-minimizing Interpolation for Robust Multigrid Methods}, SIAM J. Sci. Comp, 2000.
   \item Gropp, Kaushik, Keyes, Smith, \emph{Performance Modeling and Tuning of an Unstructured Mesh CFD Application}, Supercomputing, 2000.
   \item Gropp, \emph{Exploiting Existing Software in Libraries: Successes, Failures, and Reasons Why}, OO methods for interoperable scientific and engineering computing, 1999.
-  \item ICiS Multiphysics workshop report:  IJHPCA 27(1), Feb 2013, http://dx.doi.org/10.1177/1094342012468181 
+  \item ICiS Multiphysics workshop report:  IJHPCA 27(1), Feb 2013, http://dx.doi.org/10.1177/1094342012468181
   \end{itemize}
 \end{frame}
 

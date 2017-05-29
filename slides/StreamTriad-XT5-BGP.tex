@@ -1,12 +1,11 @@
 \begin{frame}[shrink=1]{Memory Bandwidth}
-\todo{Replace with performance numbers for current CPUs.  Mention make streams.}
+\todo{Replace with performance numbers for current CPUs.}
 \begin{itemize}
 \item Stream Triad benchmark (GB/s): $\bm w \gets \alpha \bm x + \bm y$
 \includegraphics[width=0.8\textwidth]{figures/StreamTriadXT5VsBGP} \\
 \item Sparse matrix-vector product: 6 bytes per flop
 \includegraphics[width=0.8\textwidth]{figures/SparseMatVec} \\
-%{\footnotesize (from Dinesh Kaushik)}
+% {\footnotesize (from Dinesh Kaushik)}
+\item Can test on your system using: {\kb cd \$PETSC\_DIR \&\& make streams}
 \end{itemize}
 \end{frame}
-
-
