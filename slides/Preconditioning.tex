@@ -47,7 +47,21 @@
   \end{block}
 \end{frame}
 
-\todo{Fundamentals of Richardson convergence}
+\begin{frame}{Preconditioned Richardson convergence}
+  The Richardson iteration for $A x = b$ with preconditioner $\omega P^{-1}$ is
+  \begin{equation*}
+    x_{n+1} = x_n + \omega P^{-1}(b - A x_n)
+  \end{equation*}
+  \begin{itemize}
+  \item If $X_*$ is a solution $A x_* = b$ then
+    \begin{gather*}
+      \underbrace{x_{n+1} - x_*}_{e_{n+1}} = \underbrace{x_n - x_*}_{e_n} - \omega P^{-1}A (\underbrace{x_n - x_*}_{e_n}) = (I - \omega P^{-1}A) e_n \\
+      e_n = (I - \omega P^{-1}A)^n e_0
+    \end{gather*}
+  \item If $\lVert I - \omega P^{-1}A \rVert < 1$ then we get convergence with any initial guess $x_0$
+  \item If an eigendecomposition $X \Lambda X^{-1} = I - \omega P^{-1}A$ exists, we would like to choose $\omega$ to minimize the maximum eigenvalue magnitude.
+  \end{itemize}
+\end{frame}
 
 \begin{frame}[shrink=5]{Factorization}
   Two phases
