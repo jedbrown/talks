@@ -25,28 +25,28 @@
 \begin{alltt}\footnotesize
 mpiexec -n 4 ./ex48
 -M 16
--P 2
--da\_refine\_hierarchy\_x 1,8,8 \\
+-P 2 \bslash\\
+-da\_refine\_hierarchy\_x 1,8,8 \bslash\\
 -da\_refine\_hierarchy\_y 2,1,1
--da\_refine\_hierarchy\_z 2,1,1 \\
+-da\_refine\_hierarchy\_z 2,1,1 \bslash\\
 -snes\_grid\_sequence 1
--log\_view \\
+-log\_view \bslash\\
 -ksp\_converged\_reason
--ksp\_gmres\_modifiedgramschmidt \\
+-ksp\_gmres\_modifiedgramschmidt \bslash\\
 -ksp\_monitor
--ksp\_rtol 1e-2 \\
--pc\_mg\_type multiplicative \\
+-ksp\_rtol 1e-2 \bslash\\
+-pc\_mg\_type multiplicative \bslash\\
 -mg\_coarse\_pc\_type lu
--mg\_levels\_0\_pc\_type lu \\
--mg\_coarse\_pc\_factor\_mat\_solver\_package mumps \\
--mg\_levels\_0\_pc\_factor\_mat\_solver\_package mumps \\
--mg\_levels\_1\_sub\_pc\_type cholesky \\
+-mg\_levels\_0\_pc\_type lu \bslash\\
+-mg\_coarse\_pc\_factor\_mat\_solver\_package mumps \bslash\\
+-mg\_levels\_0\_pc\_factor\_mat\_solver\_package mumps \bslash\\
+-mg\_levels\_1\_sub\_pc\_type cholesky \bslash\\
 -snes\_converged\_reason
 -snes\_monitor
--snes\_stol 1e-12 \\
+-snes\_stol 1e-12 \bslash\\
 -thi\_L 80e3
 -thi\_alpha 0.05
--thi\_friction\_m 0.3 \\
+-thi\_friction\_m 0.3 \bslash\\
 -thi\_hom x
 -thi\_nlevels 4
 \end{alltt}
