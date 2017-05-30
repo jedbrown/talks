@@ -4,8 +4,9 @@
 \item Small matrices: \\
   {\kb -pc\_type svd -pc\_svd\_monitor}
 \item Large matrices (avoid restarts!): \\
-  {\kb -pc\_type none -ksp\_type gmres -ksp\_monitor\_singular\_value \bslash\\
-    \qquad-ksp\_gmres\_restart 1000}
+  {\kb -pc\_type none -ksp\_type gmres \bslash\\
+    \qquad -ksp\_monitor\_singular\_value \bslash\\
+    \qquad -ksp\_gmres\_restart 1000}
 \item Condition of preconditioned operator: \\
   {\kb -pc\_type some\_pc -ksp\_type gmres \bslash \\
     \qquad -ksp\_monitor\_singular\_value \bslash \\
