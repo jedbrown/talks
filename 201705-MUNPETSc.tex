@@ -270,17 +270,69 @@
 
 \part{Extra topics}
 
-
 \section{Time integration}
 \input{slides/PETSc/TSARKIMEX.tex}
-\input{slides/SNES/FlowControl.tex}
+%\input{slides/SNES/FlowControl.tex}
 \input{slides/PETSc/TSMethods.tex}
 \input{slides/PETSc/TSUsage.tex}
-\input{slides/PETSc/TSUsage.tex}
+
+\begin{frame}
+  \frametitle{TS Exercise}
+\only<1-2>{  {\kb src/ts/examples/ex12.c}}
+
+\only<1>{
+  solves the problem
+  \[
+    u_{tt}-\Delta u = 0,
+  \]
+  \[
+    u(0,x,y) =      \begin{cases}
+      e^{-30r^3} & r < 0.125 \\
+      0 & \text{otherwise}
+    \end{cases},\quad u_t(0,x,y) = 0
+  \]
+  \[
+    r = \sqrt{(x-0.5)^2+(y-0.5^2)}
+  \]
+  for  $(x,y)\in [0,1]^2$, and $u=u_t=0$ on the boundary.
+
+  \shell{./ex12 -ts\_monitor\_draw\_solution -da\_refine 3 -ts\_type rosw -ts\_final\_time 1 -ts\_max\_steps 1000}
+}
+
+\only<2>{
+  Starting from this, modify the code to solve
+  \[
+    \begin{aligned}
+      u_t & = d_1\Delta u + \lambda u - u^3 +\sigma v + \kappa \\
+      v_t & = d_2\Delta v +u - v
+    \end{aligned}
+  \]
+  \[
+    u(0,x,y) = u_t(0,x,y) =     \begin{cases}
+      e^{-30r^3} & r < 0.125 \\
+      0 & \text{otherwise}
+    \end{cases}
+  \]
+  for  $(x,y)\in [0,1]^2$ with periodic boundary conditions.
+}
+
+\only<3>{
+  To modify:
+  \begin{itemize}
+  \item Add a struct for parameters
+  \item Set parameters (from command line)
+  \item {\kb DMDA\_BOUNDARY\_PERIODIC}
+  \item Change RHSFunction evaluation
+  \item Change initial conditions?
+  \item Add an analytic Jacobian?
+  \item Move diffusion into IFunction?
+  \end{itemize}
+}
+\end{frame}
+
 
 \section{PETSc Project and Git Workflow}
 \input{slides/PETSc/ProjectManagement.tex}
-
 
 \section{Difficult and coupled problems}
 \input{slides/FieldSplit.tex}
