@@ -5,20 +5,17 @@
   \item We will use Git in this tutorial:
   \begin{itemize}
     \item \url{http://git-scm.com}
-    \item Debian/Ubuntu: \shell{aptitude install git}
+    \item Debian/Ubuntu: \shell{apt install git}
     \item Fedora: \shell{yum install git}
   \end{itemize}
-  \item Get the most recent release of PETSc
+  \item Get the most recent stable PETSc
   \begin{itemize}\footnotesize
     \item \shell{\small git clone https://bitbucket.org/petsc/petsc}
     \item \shell{cd petsc}
-    \item \shell{git checkout v3.7.6}
-  \end{itemize}
-  \item Can also get the maint branch
-  \begin{itemize}
     \item \shell{git checkout maint}
-    \item Get the latest bug fixes with \shell{git pull}
   \end{itemize}
+  \item Get the latest bug fixes with \shell{git pull}
+  \item Can also \shell{git checkout v3.7.6}
 \end{itemize}
 \end{frame}
 
@@ -45,7 +42,7 @@
 \end{itemize}
 \end{frame}
 
-\input{slides/PETSc/AutomaticDownloads.tex}
+% \input{slides/PETSc/AutomaticDownloads.tex}
 
 \begin{frame}{An optimized build}
   \begin{itemize}
