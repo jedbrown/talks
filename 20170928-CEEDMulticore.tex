@@ -1,0 +1,534 @@
+% \documentclass[handout]{beamer}
+\documentclass[aspectratio=169]{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\usepackage{transparent}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{Center for Efficient Exascale Discretization}
+\author{{\bf Jed Brown} (CU Boulder) and the CEED team}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+% \institute
+% {
+%   Mathematics and Computer Science Division \\ Argonne National Laboratory
+% }
+
+\date{Multicore 7 workshop, 2017-09-28}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\setbeamercolor{background canvas}{bg=}
+
+\includepdf[pages=2-3]{figures/ceed/1am/fy17-review.pdf}
+\includepdf[pages=7]{figures/ceed/1am/CEED1AM-FuturePlans.pdf} % High Order Software Ecosystem
+\includepdf[pages=7]{figures/ceed/1am/fy17-review.pdf} % CEED Software Products
+\includepdf[pages=46]{/home/jed/ceed/ceed/talks/CEED-ECP-FY17-Review-Aug-2017.pdf} % Applicable to variety of physics
+
+\begin{frame}{Nekbone}
+  \begin{itemize}
+  \item Conjugate gradient spectral element benchmark with sum factorization
+  \item Without multigrid preconditioner -- a significant and interesting factor for Nek5000
+  \end{itemize}
+  \includegraphics[width=\textwidth]{figures/ceed/ms8/figures/nekbone/nekbone_rate_vs_time.png}
+\end{frame}
+
+\begin{frame}{$n_{1/2}$ and $t_{1/2}$}
+  \begin{itemize}
+  \item Suppose a linear scaling algorithm
+  \item Let $r(n)$ be the performance rate (e.g., DOF/second or GF/s) for local problem size $n = N/P$
+  \item Let $r_{\max} = \max_n r(n)$ be the peak attainable performance
+  \item $ n_{1/2} = \min \{ n : r(n) \ge \frac 1 2 r_{\max} \} $
+  \item $ t_{1/2} = 2 n_{1/2} / r_{\max} $
+  \end{itemize}
+\end{frame}
+
+\includepdf[pages=19]{figures/ceed/1am/fy17-review.pdf} % CEED Bake-off problems
+\begin{frame}{BP1 on KNL: Nek5000 and MFEM}
+  \begin{columns}
+    \begin{column}{.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/ceed/ms6/plot2_Nek5000_bp1_linux_intel_N001_pn32.pdf} \\
+      Nek5000 $n_{1/2} = 15k, t_{1/2}= 150\mu s$
+    \end{column}
+    \begin{column}{.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/ceed/ms6/plot2_MFEM_bp1_v1_linux_intel_N001_pn32.pdf} \\
+      MFEM $n_{1/2} = 10k, t_{1/2} = 400 \mu s$
+    \end{column}
+  \end{columns}
+  \begin{itemize}
+  \item BG/Q has similar performance
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{BP2 on KNL: Nek5000 and MFEM}
+  \begin{columns}
+    \begin{column}{.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/ceed/ms6/plot2_Nek5000_bp2_linux_intel_N001_pn32.pdf} \\
+      Nek5000 $n_{1/2} = 30k, t_{1/2} = 300\mu s$
+    \end{column}
+    \begin{column}{.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/ceed/ms6/plot2_MFEM_bp2a_v1_linux_intel_N001_pn32.pdf} \\
+      MFEM $n_{1/2} = 15k, t_{1/2} = 300\mu s$
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{BP1 on Power8: Nek5000 and MFEM}
+  \includegraphics[width=.49\textwidth]{figures/ceed/ms6/plot2_Nek5000_bp1_ray_gcc_N001_pn32.pdf}
+  \includegraphics[width=.49\textwidth]{figures/ceed/ms6/plot2_MFEM_bp1_v1_ray_gcc_N001_pn32.pdf}
+  \begin{itemize}
+  \item Nek5000 $t_{1/2} = 75 \mu s$, MFEM $t_{1/2} = 200 \mu s$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{table}
+    \caption{Performance results for various machines using metrics
+      defined in Sec. \ref{sec:n12}.
+      Each entry corresponds to Nek/MFEM results.
+      Results sorted by problem and $t_{\frac{1}{2}}$ performance.}
+    \label{tab:bp-summary}
+    \begin{center}
+      \begin{tabular}{llll}
+        Machine/Problem & $r_{max}$ (MDOFs) & $n_{\frac{1}{2}}$ (KDOFs)
+        &  $t_{\frac{1}{2}}$ (ms) \\
+        \toprule
+        Ray/BP1-gcc     & 400/350 & 15/35 & 0.075/0.200 \\
+        KNL32/BP1-intel & 200/150 & 15/30 & 0.150/0.400 \\
+        KNL32/BP1-gcc   & 100/100 & 20/8  & 0.400/0.160 \\
+        Vulcan/BP1-gcc  & \phantom{0}35/40  & 15/10 & 0.857/0.500 \\
+        \toprule
+        KNL32/BP2-intel & 200/100 & 30/15 & 0.300/0.300 \\
+        KNL32/BP2-gcc   & 100/100 & 50/15 & 1.000/0.300 \\
+        Vulcan/BP2-gcc  & \phantom{0}35/30  & 21/10 & 1.200/0.666 \\
+        \toprule
+        Vulcan/BP3-gcc  & \phantom{100}/30 & \phantom{10}/10 & \phantom{0.000}/0.666 \\
+        Vulcan/BP3-xlc  & \phantom{100}/20 & \phantom{10}/10 & \phantom{0.000}/1.000 \\
+        \toprule
+        Vulcan/BP4-gcc  & \phantom{100}/20 & \phantom{10}/10 & \phantom{0.000}/1.000 \\
+
+        \bottomrule
+      \end{tabular}
+    \end{center}
+  \end{table}
+\end{frame}
+
+\includepdf[pages=11]{figures/ceed/1am/fy17-review.pdf} % CEED/OCCA
+
+\begin{frame}{OCCA optimizations for NVIDIA P100}
+  \includegraphics[width=.49\textwidth]{figures/ceed/ms8/figures/occa/BP1FigV1V2V3512.pdf}
+  \includegraphics[width=.49\textwidth]{figures/ceed/ms8/figures/occa/BP1FigV24096.pdf}
+\end{frame}
+
+\includepdf[pages=9]{figures/ceed/1am/fy17-review.pdf} % MAGMA batched
+
+\begin{frame}{MPICH CH4: lightweight device layer}
+  \begin{itemize}
+  \item CH4: faster offload, better fast path/inlining/IPO
+  \end{itemize}
+  \includegraphics[width=.49\textwidth]{figures/ceed/ms6/figure7_1_nek.pdf}
+  \includegraphics[width=.49\textwidth]{figures/ceed/ms6/figure7_2_nek.pdf}
+\end{frame}
+
+\begin{frame}{High-level API}
+  \begin{gather*}
+    v^T F(u) \sim \int_\Omega v \cdot f_0(u, \nabla u) + \nabla v \tcolon f_1(u, \nabla u) \qquad
+    v^T J w \sim \int_\Omega \begin{bmatrix} v \\ \nabla v \end{bmatrix}^T \begin{bmatrix} f_{0,0} & f_{0,1} \\ f_{1,0} & f_{1,1} \end{bmatrix} \begin{bmatrix} w \\ \nabla w \end{bmatrix} \\
+    u_e = B \mathcal E_e u \qquad \nabla u_e = \frac{\partial X}{\partial x} D \mathcal E_e u \\
+    J w = \sum_e \mathcal E_e^T \begin{bmatrix} B \\ D \end{bmatrix}^T
+    \underbrace{\begin{bmatrix} I & \\ & \left( \frac{\partial X}{\partial x}\right)^T \end{bmatrix} W_q \begin{bmatrix} f_{0,0} & f_{0,1} \\ f_{1,0} & f_{1,1} \end{bmatrix} \begin{bmatrix} I & \\ & \left( \frac{\partial X}{\partial x}\right) \end{bmatrix}}_{\text{coefficients at quadrature points}} \begin{bmatrix} B \\ D \end{bmatrix} \mathcal E_e w 
+  \end{gather*}
+  \begin{itemize}
+  \item $B$ and $D$ are tensor contractions -- independent of element
+  \item Choice of how to order and represent gathers $\mathcal E$ and scatters $\mathcal E^T$
+  \item Who computes the metric terms and other coefficients?
+  \item Similar for Neumann/Robin and nonlinear boundary conditions
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{High-level API Proposal}
+  \begin{gather*} v^T J w = \sum_e \mathcal E_e^T \begin{bmatrix} B \\ D \end{bmatrix}^T
+    \underbrace{\begin{bmatrix} I & \\ & \left( \frac{\partial X}{\partial x}\right)^T \end{bmatrix} W_q \begin{bmatrix} f_{0,0} & f_{0,1} \\ f_{1,0} & f_{1,1} \end{bmatrix} \begin{bmatrix} I & \\ & \left( \frac{\partial X}{\partial x}\right) \end{bmatrix}}_{\text{coefficients at quadrature points}} \begin{bmatrix} B \\ D \end{bmatrix} \mathcal E_e w
+  \end{gather*}
+  \begin{itemize}
+  \item Proposal:
+    \begin{itemize}
+    \item Setup: specify $\mathcal E$ and local ordering choice for $f$
+    \item Apply: implementation handles batching, work buffers, and calling $f(u, \nabla u)$.
+    \end{itemize}
+  \item User links to interface library
+  \item Backend implementation switchable at run-time
+  \item Two-phase implementation enables connectivity analysis and JIT
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}{HPGMG: a benchmark for supercomputers}
+  \begin{itemize}
+  \item \url{https://hpgmg.org}, hpgmg-forum@hpgmg.org mailing list
+  \item Mark Adams, Sam Williams (finite-volume), Jed (finite-element), John Shalf, Brian Van Straalen, Erich Strohmeier, Rich Vuduc
+  \item Gathering momentum, annual BoFs at Supercomputing since 2014
+  \item Implementations
+    \begin{description}
+    \item[Finite Volume] memory bandwidth intensive, simple data dependencies, 4th order
+    \item[Finite Element] compute- and cache-intensive, vectorizes, overlapping writes
+    \end{description}
+  \item Full multigrid, well-defined, scale-free problem
+  \item Matrix-free operators, Chebyshev smoothers
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Full Multigrid (FMG): Prototypical Fast Algorithm}
+  \begin{figure}
+  \centering
+  \begin{tikzpicture}
+    [>=stealth,
+    every node/.style={inner sep=2pt},
+    restrict/.style={thick},
+    prolong/.style={thick},
+    mglevel/.style={rounded rectangle,draw=blue!50!black,fill=blue!20,thick,minimum size=4mm},
+    ]
+    \begin{scope}\scriptsize
+      \newcommand\mgdx{3.0em}
+      \newcommand\mgdy{3.0em}
+      \newcommand\mgl[1]{(pow(2,#1+1))}
+      \newcommand\mgloc[4]{(#1 + #4*\mgdx*#3,#2 + \mgdy*#3)}
+
+      \node[mglevel] (coarseinit) at \mgloc{-3}{0}{0}{0} {$\mglevel_{coarse}$};
+
+      \node[mglevel] (afine) at \mgloc{0}{0}{1}{1} {};
+
+      \node[mglevel] (bcoarse) at \mgloc{2*\mgdx}{0}{0}{1} {$\mglevel_{coarse}$};
+      \node[mglevel] (bup1) at \mgloc{2*\mgdx}{0}{1}{1} {};
+      \node[mglevel] (bfine) at \mgloc{2*\mgdx}{0}{2}{1} {};
+
+      \node[mglevel] (cdown1) at \mgloc{6*\mgdx}{0}{1}{-1} {};
+      \node[mglevel] (ccoarse) at \mgloc{6*\mgdx}{0}{0}{-1} {};
+      \node[mglevel] (cup1) at \mgloc{6*\mgdx}{0}{1}{1} {};
+      \node[mglevel] (cfine) at \mgloc{6*\mgdx}{0}{2}{1} {$\mglevel_{fine}$};
+
+
+      \draw[->,restrict,double]
+                         (coarseinit) -- node [above right] {} (afine);
+      \draw[->,restrict]
+                         (afine) -- node [above right] {} (bcoarse);
+      \draw[->,restrict]
+                         (bcoarse) -- node [above right] {} (bup1);
+      \draw[->,restrict,double]
+                         (bup1) -- node [above left] {$\mathbb I_H^h$} (bfine);
+      \draw[->,restrict]
+                         (bfine) -- node [above right] {$I_h^H,\hat I_h^H$} (cdown1);
+      \draw[->,restrict]
+                         (cdown1) -- node [above right] {} (ccoarse);
+      \draw[->,restrict]
+                         (ccoarse) -- node [above right] {} (cup1);
+      \draw[->,restrict]
+                         (cup1) -- node [above left] {$I_H^h$} (cfine);
+
+      %grids
+      \newcommand\mghx{0.9*\mgdx}
+      \newcommand\mghy{0.9*\mgdy}
+
+      \draw[shift=\mgloc{-2*\mgdx}{0}{2}{0},
+      xstep=\mghy/\mgl{2},
+      ystep=\mghy/\mgl{2}]
+      (-0.5*\mghy,-0.5*\mghy) grid (0.5*\mghy,0.5*\mghy);
+
+      \draw[shift=\mgloc{-2*\mgdx}{0}{1}{0},
+      xstep=\mghy/\mgl{1},
+      ystep=\mghy/\mgl{1}]
+      (-0.5*\mghy,-0.5*\mghy) grid (0.5*\mghy,0.5*\mghy);
+
+      \draw[shift=\mgloc{-2*\mgdx}{0}{0}{0},
+      xstep=\mghy/\mgl{0},
+      ystep=\mghy/\mgl{0}]
+      (-0.5*\mghy,-0.5*\mghy) grid (0.5*\mghy,0.5*\mghy);
+
+  \end{scope}
+\end{tikzpicture}
+\label{fig:FMG}
+\end{figure}
+\begin{itemize}
+  \item start with coarse grid
+  \item truncation error within one cycle
+  \item about five work units for many problems
+  \item no ``fat'' left to trim -- robust to gaming
+  \item distributed memory -- restrict active process set using Z-order
+    \begin{itemize}
+    \item $\bigO(\log^2 N)$ parallel complexity stresses network
+    \end{itemize}
+  \item scale-free specification
+    \begin{itemize}
+    \item no mathematical reward for decomposition granularity
+    \item don't have to adjudicate ``subdomain''
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Multigrid design decisions}
+  \begin{itemize}
+  \item $Q_2$ finite elements
+    \begin{itemize}
+    \item Partition of work not partition of data -- sharing/overlapping writes
+    \item $Q_2$ is a middle-ground between lowest order and high order
+    \item Matrix-free pays off, tensor-product element evaluation
+    \end{itemize}
+  \item Linear elliptic equation with manufactured solution
+  \item Mapped coordinates
+    \begin{itemize}
+    \item More memory streams, increase working set, longer critical path
+    \end{itemize}
+  \item No reductions
+    \begin{itemize}
+    \item Coarse grid is strictly more difficult than reduction
+    \item Not needed because FMG is a direct method
+    \end{itemize}
+  \item Chebyshev/Jacobi smoothers, $V(3,1)$ cycle
+    \begin{itemize}
+    \item Multiplicative smoothers hard to verify in parallel
+    \item Avoid intermediate scales (like Block Jacobi/Gauss-Seidel)
+    \end{itemize}
+  \item Full Approximation Scheme
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2017 HPGMG performance spectra}
+  \begin{center}
+    \vspace{-1em}
+    \includegraphics[trim=0 5 0 20,clip,width=.8\textwidth]{figures/hpgmg/hpgmg-fv-201706.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}{HPGMG-FE on Edison, SuperMUC, Titan}
+  \begin{center}
+    \vspace{-1em}
+    \includegraphics[trim=0 10 0 20,clip,width=.8\textwidth]{figures/hpgmg/range-edison-supermuc-titan-ann2.eps}
+  \end{center}
+\end{frame}
+
+\begin{frame}{MPI-3: Halos or contiguous memory?}
+  \begin{center}
+    \includegraphics[width=.8\textwidth]{figures/MPI/Hoefler-WinShared.png} \\
+    {\scriptsize [Hoefler at al, 2013]}
+  \end{center}
+  \begin{itemize}
+  \item Common assumption: halo copying is expensive
+  \item Alternative is shared memory
+  \item Cache utilization for $16^3$ local domain with halos
+    \begin{itemize}
+    \item Entire local region is contiguous; no partially filled cache lines
+    \item $18^3 * \texttt{sizeof(double)} = 46656 B$
+    \end{itemize}
+  \item $16^3$ local domain embedded in contiguous memory
+    \begin{itemize}
+    \item Avoid false sharing: align owned portion to cache-line boundaries
+    \item $32\times 18\times 18 * \texttt{sizeof(double)} = 82944 B$
+    \item False sharing a serious problem if local sizes not divisible by line size
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Messaging from threaded code}
+  \begin{itemize}
+  \item Off-node messages need to be packed and unpacked
+  \item Many MPI+threads apps pack in serial -- bottleneck
+  \item Extra software synchronization required to pack in parallel
+    \begin{itemize}
+    \item Formally $O(\log T)$ critical path, $T$ threads/NIC context
+    \item Typical OpenMP uses barrier -- oversynchronizes
+    \end{itemize}
+  \item \texttt{MPI\_THREAD\_MULTIPLE} -- atomics and $O(T)$ critical path
+  \item Choose serial or parallel packing based on $T$ and message sizes?
+  \item Is there always at least one hardware NIC context/core?
+  \item What is lowest overhead approach to message coalescing?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{HPGMG-FV: flat MPI vs MPI+OpenMP (Aug 2014)}
+  \begin{center}
+    \includegraphics[width=.75\textwidth]{figures/hpgmg/hpgmg-fv-201408-flatmpi-vs-openmp.pdf}
+  \end{center}
+  \begin{itemize}
+  \item c/o Sam Williams
+  \end{itemize}
+\end{frame}
+
+\includepdf[pages=12]{figures/ceed/1am/CEED1AM-FuturePlans.pdf}
+
+\begin{frame}{Adaptive BDDC: robust coarsening/smoothing}
+    \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{figures/MandelSousedikBDDCCoarseBasis} \\
+      {\small [Mandel and Sousedik 2010]}
+      \begin{itemize}
+      \item Theory: Mandel, Sousedík, Spillane, Pechstein, Dohrmann, Widlund
+      \item Collaboration with Stefano Zampini (author of PETSc's PCBDDC)
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item only low-order continuity between subdomains
+      \item corrected by more technical subdomain smoother
+      \item ``deluxe'' face balancing operator
+      \item adaptive coarse spaces
+        \begin{itemize}
+        \item solve face eigenproblems
+        \item choose coarse space using eigenvalue threshold $\lambda_{\text{thresh}}$
+        \item $\lambda_{\text{threshold}}$ a sharp, analytic function of global condition number
+        \end{itemize}
+      \item guarantees convergence rate, not complexity -- adaptive agglomeration
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Implicit Runge-Kutta and MatKAIJ: ``sparse'' Kronecker products}
+    \begin{gather*}
+    \dot u = F(u) \\
+    \underbrace{
+    \begin{pmatrix}
+      y_1 \\
+      \vdots \\
+      y_s
+    \end{pmatrix}}_Y =
+    u^{n} + h
+    \underbrace{
+    \begin{bmatrix}
+      a_{11} & \dotsb & a_{1s} \\
+      \vdots & \ddots & \vdots \\
+      a_{s1} & \dotsb & a_{ss}
+    \end{bmatrix}}_A
+    F
+    \begin{pmatrix}
+      y_1 \\
+      \vdots \\
+      y_s
+    \end{pmatrix} \\
+    u^{n+1} = u^n + h b^T F(Y) \\
+    \alert{G = I_n \otimes S + J \otimes I_s}
+  \end{gather*}
+  \begin{itemize}
+  \item $J$ is parallel and sparse, $S$ is small and dense
+  \item More general than multiple RHS (multivectors)
+  \item Compare $J \otimes I_s$ to multiple right hand sides in row-major
+  \item Stream $J$ through cache once, same efficiency as multiple RHS
+  \item Unintrusive compared to spatial-domain vectorization or $s$-step
+  \end{itemize}
+\end{frame}
+
+\end{document}

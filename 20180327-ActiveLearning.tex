@@ -1,0 +1,336 @@
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  % \usefonttheme[onlymath]{serif}
+  % \usetheme{Singapore}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{infolines}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=20}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+\newcommand{\matr}[1]{\bm{#1}}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{Active learning for cost-aware model reduction}
+\author{Dmitry Duplyakin (U Utah and CU), {\bf Jed Brown} (CU Boulder), Donna Calhoun (Boise State) \\
+  \texttt{jed.brown@colorado.edu}}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+% \institute
+% {
+%   Mathematics and Computer Science Division \\ Argonne National Laboratory
+% }
+
+\date{Copper Mountain Conference on Iterative Methods \\
+  {\small \url{https://jedbrown.org/files/20180327-ActiveLearning.pdf}}}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{AMR shock-bubble with 4, 5, and 6 levels}
+  \begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.9\columnwidth}
+      \includegraphics[width=1.0\columnwidth]{figures/al-amr/shockbubble_level_4a.pdf}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.9\columnwidth}
+      \includegraphics[width=1.0\columnwidth]{figures/al-amr/shockbubble_level_5a.pdf}
+    \end{subfigure}
+    \centering 
+    \begin{subfigure}[b]{0.9\columnwidth}
+      \includegraphics[width=1.0\columnwidth]{figures/al-amr/shockbubble_level_6a.pdf}
+    \end{subfigure}
+    \label{fig:shockbubble}
+  \end{figure}
+\end{frame}
+
+\begin{frame}{What goes wrong?}
+{\small \texttt{
+=================================================================================== \\
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES \\
+=   PID 17873 RUNNING AT joule \\
+=   EXIT CODE: 139 \\
+=   CLEANING UP REMAINING PROCESSES \\
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES \\
+=================================================================================== \\
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11) \\
+}}
+\begin{itemize}
+\item Resubmit batch job, this time using more nodes.
+\item Tweak a refinement parameter.
+\end{itemize}
+\end{frame}
+\begin{frame}{On the last time step?}
+{\small \texttt{
+=================================================================================== \\
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES \\
+=   PID 16824 RUNNING AT joule \\
+=   EXIT CODE: 152 \\
+=   CLEANING UP REMAINING PROCESSES \\
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES \\
+=================================================================================== \\
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: CPU time limit exceeded (signal 24) \\
+}}
+\begin{itemize}
+\item Checkpoint more often?
+\item Need to wait through the queue again.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{New computer}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/hpgmg/hpgmg-fv-201706.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Modeling}
+  \begin{equation*}
+    \textrm{(response)} = f(x) + \mathcal N(0, \sigma_n^2)
+  \end{equation*}
+  \begin{description}
+  \item[$x$] user-relevant parameters
+    \begin{itemize}
+    \item Physics: bubble size, density, shock intensity
+    \item Numerics: box size, max levels, refinement criteria
+    \item Machine: \# nodes, MPI/OpenMP, compilers
+    \end{itemize}
+  \item[$f$] Response
+    \begin{itemize}
+    \item CPU time
+    \item Wall-clock time
+    \item Peak memory usage
+    \item Physics: $\Delta$ entropy, decay time
+    \end{itemize}
+  \item[$\sigma_n$] unbiased Gaussian noise
+  \end{description}
+\end{frame}
+
+\begin{frame}{LOL Gaussian!}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/HoeflerBelli-HPL50.png} \\
+    {\small [Hoefler \& Belli, SC15]}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Gaussian process regression}
+  \begin{equation*}
+    p\big( f(\matr{x}_\star)~|~\matr{X},\matr{y} \big) \sim 
+    \mathcal{N} \left( \matr{\mu}_\star, \matr{\sigma}_{\star}^2 \right)
+  \end{equation*}
+  \begin{align*}	
+    \matr{\mu}_\star &= \matr{k}_\star^\mathsf{T} \matr{K}_y ^{-1} \matr{y} \\
+    \matr{\sigma}^2_\star  &= \matr{k}_{\star\star} - \matr{k}_\star^\mathsf{T} \matr{K}_y^{-1} \matr{k}_\star \\
+    \matr{K}_y &= \matr{K} + \sigma^2_n\matr{I}
+  \end{align*}
+  where
+  \begin{align*}
+    [\matr{K}]_{ij} = k(\matr{x}_i, \matr{x}_j) &= \sigma^2_f  \mathsf{exp}\left( - \frac{ | \matr{x}_i-\matr{x}_j | ^2}{2\ell^2}  \right)
+  \end{align*}
+  in terms of \emph{hyperparameters} $\ell, \sigma_f, \sigma_n$.
+\end{frame}
+
+\begin{frame}{Optimizing hyperparameters}
+  The evidence provided by $(\matr X, \matr y)$ in support of $(\ell, \sigma_f, \sigma_n)$ is quantified by
+  \begin{equation*}
+    \mathcal L(\ell, \sigma_f, \sigma_n) = \log p(\matr{y}~|~\matr{X},l,\sigma^2_f,\sigma^2_n)= -\frac{1}{2}\left( \matr{y}^\mathsf{T}\matr{K}^{-1}_y \matr{y} + \log \lvert\matr{K}_y\rvert \right) + \matr{C}
+  \end{equation*}
+  \begin{itemize}
+  \item Non-convex optimization problem
+  \item Determinant $\lvert\matr{K}_y\rvert$ due to normalization
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Offline Active Learning}
+  \begin{itemize}
+  \item Precompute database of features and responses
+  \item Partition data $(\matr X, \matr y)$ into Initial, Active, Test
+  \item Compare many ``trajectories'' using different partitions
+  \end{itemize}
+  \begin{block}{Algorithm}
+    \begin{itemize}
+    \item Train GPR for each feature (e.g., cost and memory) in Initial set
+    \item Repeat
+      \begin{enumerate}
+      \item Consult GPR models to select next observation from Active
+      \item Make that observation (incurring cost, etc.)
+      \item Retrain GPRs with new observation (including failure)
+      \end{enumerate}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Selection procedure}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/al-amr/sequence-150-only_violin.pdf}
+  \end{center}
+  \begin{description}
+  \item[RandUniform] Uniform random sampling
+  \item[MaxSigma] Choose candidate with largest uncertainty
+  \item[MinPred] Maximize $\sigma_{\text{cost}} / \mu_{\text{cost}}$
+  \item[RandGoodness] Probability density $\sim \sigma_{\text{cost}} / \mu_{\text{cost}}$
+  \item[RandGoodness with Memory Awarness] As above, but exclude cases that violate memory bound
+  \end{description}
+\end{frame}
+
+\begin{frame}{Metrics}
+  \begin{description}
+  \item[Accuracy] $$ RMSE = \sqrt{\frac 1 n_{\text{Test}} \bm e^T e } $$
+    where $\bm e = \bm{\mu}^{\text{Test}} - \bm{y}^{\text{Test}}$
+  \item[Cumulative Cost] Total cost of selected experiments, including failures
+  \item[Cumulative Regret] Costs incurred attempting failures
+  \end{description}
+\end{frame}
+
+\begin{frame}{Memory limits}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/al-amr/partitions.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Cumulative Regret by Algorithm}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/al-amr/CR-by-alg.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Cumulative Regret by nInit}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/al-amr/CR-by-nInit.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}{RMSE vs Cumulative Cost}
+  \begin{center}
+     \includegraphics[width=\textwidth]{figures/al-amr/rmse-RGMA-and-RG.pdf}
+  \end{center}
+\end{frame}
+    
+\begin{frame}{RMSE vs Cumulative Cost}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/al-amr/ProgressAndTradeoff/complete-dataset/tradeoff-595-up-to-60.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}{RMSE vs Cumulative Cost}
+  \begin{center}
+    \includegraphics[width=\textwidth]{figures/al-amr/rmse.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Outlook}
+  \begin{itemize}
+  \item Better measure of ``risk'' of exceeding memory bound
+  \item Domain-specific kernel functions
+  \item Non-Gaussian distributions
+  \item Online mode
+  \item Thanks to NERSC Edison and Cori, and to DOE ASCR
+  \end{itemize}
+\end{frame}
+\end{document}
