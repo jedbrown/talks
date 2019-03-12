@@ -1,0 +1,208 @@
+% \documentclass[handout]{beamer}
+\documentclass[aspectratio=1610]{beamer}
+
+\mode<presentation>
+{
+  % \usefonttheme[onlymath]{serif}
+  \usetheme{default}
+  % \usetheme{Warsaw}
+  % \usetheme{Malmoe}
+  % \useinnertheme{circles}
+  % \useoutertheme{default}
+  % \useinnertheme{rounded}
+
+  \setbeamercovered{transparent=1}
+}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{alltt,listings,multirow,ulem,siunitx}
+\usepackage[absolute,overlay]{textpos}
+\TPGrid{1}{1}
+\usepackage{pdfpages}
+\usepackage{animate}
+\usepackage{ulem}
+\usepackage{multimedia}
+\usepackage{multicol}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{bm}
+\usepackage{comment}
+\usepackage{subcaption}
+\usepackage{amscd}
+
+% font definitions, try \usepackage{ae} instead of the following
+% three lines if you don't like this look
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+% \usepackage{courier}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shadows,arrows,shapes.misc,shapes.arrows,shapes.multipart,arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shadows,chains,matrix,mindmap}
+
+\newcommand\vvec{\bm v}
+\newcommand\bvec{\bm b}
+\newcommand\bxk{\bvec_0 \times \kappa_0 \cdot \nabla}
+\newcommand\delp{\nabla_\perp}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{4 on 1}[a4paper,landscape,border shrink=5mm]
+
+\usepackage{JedMacros}
+\usepackage{standalone}
+
+\newcommand{\timeR}{t_{\mathrm{R}}}
+\newcommand{\timeW}{t_{\mathrm{W}}}
+\newcommand{\mglevel}{\ensuremath{\ell}}
+\newcommand{\mglevelcp}{\ensuremath{\mglevel_{\mathrm{cp}}}}
+\newcommand{\mglevelcoarse}{\ensuremath{\mglevel_{\mathrm{coarse}}}}
+\newcommand{\mglevelfine}{\ensuremath{\mglevel_{\mathrm{fine}}}}
+
+%solution and residual
+\newcommand{\vx}{\ensuremath{x}}
+\newcommand{\vc}{\ensuremath{\hat{x}}}
+\newcommand{\vr}{\ensuremath{r}}
+\newcommand{\vb}{\ensuremath{b}}
+
+%operators
+\newcommand{\vA}{\ensuremath{A}}
+\newcommand{\vP}{\ensuremath{I_H^h}}
+\newcommand{\vS}{\ensuremath{S}}
+\newcommand{\vR}{\ensuremath{I_h^H}}
+\newcommand{\vI}{\ensuremath{\hat I_h^H}}
+\newcommand{\vV}{\ensuremath{\mathbf{V}}}
+\newcommand{\vF}{\ensuremath{F}}
+\newcommand{\vtau}{\ensuremath{\mathbf{\tau}}}
+
+
+\title{From Wolves to Computational Science \& Engineering}
+\author{{\bf Jed Brown}}
+
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+% \institute
+% {
+%   Mathematics and Computer Science Division \\ Argonne National Laboratory
+% }
+
+\date{Early Career Panel, SIAM CSE, 2019-02-25}
+%\\[1em]
+%This talk: \url{https://jedbrown.org/files/20181002-PhyPID.pdf}}
+
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+\subject{Talks}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+% \AtBeginSubsection[]
+% {
+% \begin{frame}<beamer>
+%   \frametitle{Outline}
+%   \tableofcontents[currentsection,currentsubsection]
+% \end{frame}
+% }
+
+% \AtBeginSection[]
+% {
+%   \begin{frame}<beamer>
+%     \frametitle{Outline}
+%     \tableofcontents[currentsection]
+%   \end{frame}
+% }
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{document}
+\lstset{language=C}
+\normalem
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{University of Alaska Fairbanks}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \includegraphics[width=\textwidth]{$HOME/pics/antarctica/dscf1399.jpg}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{itemize}
+      \item 2004 BS Math, BS Physics
+      \item NCAA Cross-country ski racing
+      \item 2003 Began undergraduate research in ice sheet modeling
+        \begin{itemize}
+        \item Inherited Fortran code; heavily refactored, added
+          OpenMP, many features
+        \item Started over in C++ with PETSc: Parallel Ice Sheet Model
+        \end{itemize}
+      \item 2006 MS Mathematics (PISM)
+      \item Worked part-time developing PISM as Research Technician
+      \item Accepted PhD position at ETH Z\"urich on high fidelity flow modeling
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{ETH Z\"urich to Argonne}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{$HOME/pics/xuelian/037-img_0112.jpg}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item Advisor promptly lost interest in high fidelity 3D
+        modeling
+      \item I hung out in Applied Math, Geodynamics, and petsc-dev
+      \item Developed solvers for saddle point problems, lots of other
+        PETSc features
+      \item Co-wrote DOE ASCR proposal for ice sheet modeling
+        $\to$ Postdoc at Argonne
+      \item PETSc core development: time integration, composable
+        linear and nonlinear solvers
+      \item Lots of travel representing PETSc
+      \item Permanent after two years; working remotely from Boulder,
+        Adjoint Professor
+      \item SIAM/ACM CS\&E, SIAG/SC Jr. Scientist
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{CU Boulder}
+  \begin{columns}
+    \begin{column}{0.4\textwidth}
+      \includegraphics[width=\textwidth]{$HOME/dl/IMG_20190126_114410.jpg}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+      \item 2015 Asst. Professor of CS at CU Boulder
+      \item Research autonomy
+      \item Feasible to bootstrap deep/risky work before funding
+      \item Deeper and more personal work on education and career development
+      \item Major course revisions; more hands-on activities
+      \item Faculty hiring, committee work
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Group Meeting}
+  \includegraphics[width=.8\textwidth]{figures/phypid/2018-group-meeting.jpg}
+\end{frame}
+
+\end{document}

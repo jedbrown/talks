@@ -54,7 +54,8 @@
 \end{frame}
 
 \begin{frame}{Try it out}
-  \shell{\small cd \$PETSC\_DIR/src/snes/examples/tutorials \&\& make ex5} \\
+  \shell{\small make tests/snes/examples/tutorials/ex5} \\
+  \shell{\small cd tests/snes/examples/tutorials} \\
   \begin{itemize}
   \item \shell{./ex5 -da\_grid\_x 10 -da\_grid\_y 10 -par 6.7 \bslash\\
       -snes\_monitor -\{ksp,snes\}\_converged\_reason \bslash\\

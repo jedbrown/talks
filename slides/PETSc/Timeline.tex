@@ -6,18 +6,19 @@
   \fill[#3] (#1/\xtick-1991/\xtick,1/2-.1) rectangle (#1/\xtick-1991/\xtick+0.04,12/2+.6);}
 
 %\begin{frame}{Timeline}
-\frame{
+\begin{frame}[shrink=5]{}
 \begin{figure}[htbp]
-\def\present{2015.5}
+\def\present{2019.2}
 \def\xtick{2.4}
+\vspace{-1ex}
 \begin{tikzpicture}[y=-1cm]
    %\draw[help lines] (0.5,5) grid (8,0.5);
-   \ganttlabel{1991}{1991}{red}{6.7}{north}{0}
-   \ganttlabel{1995}{1995}{red}{6.7}{north}{0}
-   \ganttlabel{2000}{2000}{red}{6.7}{north}{0}
-   \ganttlabel{2005}{2005}{red}{6.7}{north}{0}
-   \ganttlabel{2010}{2010}{red}{6.7}{north}{0}
-   \ganttlabel{2015}{2015}{red}{6.7}{north}{0}
+   \ganttlabel{1991}{1991}{red}{7.5}{north}{0}
+   \ganttlabel{1995}{1995}{red}{7.5}{north}{0}
+   \ganttlabel{2000}{2000}{red}{7.5}{north}{0}
+   \ganttlabel{2005}{2005}{red}{7.5}{north}{0}
+   \ganttlabel{2010}{2010}{red}{7.5}{north}{0}
+   \ganttlabel{2015}{2015}{red}{7.5}{north}{0}
    \ganttlabel{1992}{PETSc-1}{green!70!black}{0}{center}{0}
    \ganttlabel{1994.4}{MPI-1}{magenta!70!black}{-.5}{center}{0}
    \ganttlabel{1997.6}{MPI-2}{magenta!70!black}{-.5}{center}{0}
@@ -34,14 +35,15 @@
    \ganttline{9}{Victor}{2003}{2006.9}
    \ganttline{9}{}{2007.3}{2007.5}
    \ganttline{9}{}{2008.5}{2008.7}
-   \ganttline{10}{Dmitry}{2005.6}{\present}
+   \ganttline{10}{Dmitry}{2005.6}{2015.6}
    \ganttline{11}{Lisandro}{2006.9}{\present}
    \ganttline{12}{Jed}{2009}{\present}
    \ganttline{13}{Shri}{2009.8}{\present}
    \ganttline{14}{Peter}{2011.6}{2014.5}
    \ganttline{15}{Mark}{2011.9}{\present}
-   \ganttline{16}{Toby}{2013.3}{\present}
+   \ganttline{16}{Stefano}{2012.1}{\present}
+   \ganttline{17}{Toby}{2013.3}{\present}
+   \ganttline{18}{Mr. Hong}{2014.7}{\present}
 \end{tikzpicture}
 \end{figure}
-}
-%\end{frame}
+\end{frame}
