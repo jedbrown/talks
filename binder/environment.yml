@@ -10,3 +10,4 @@ dependencies:
   - rise
   - pip:
     - jupyter-contrib-nbextensions
+    - hide_code
