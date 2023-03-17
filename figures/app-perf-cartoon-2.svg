@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1121.5234"
+   height="1112.7589"
+   viewBox="0 0 296.7364 294.41747"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.1 (c4e8f9ed74, 2021-05-24)"
+   sodipodi:docname="app-perf-cartoon-2.svg"
+   inkscape:export-filename="/home/jed/talks/figures/app-perf-cartoon-2.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs2">
+    <filter
+       inkscape:collect="always"
+       style="color-interpolation-filters:sRGB"
+       id="filter8934"
+       x="-0.015954963"
+       width="1.0319099"
+       y="-0.015954963"
+       height="1.0319099">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.1549063"
+         id="feGaussianBlur8936" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.92172518"
+     inkscape:cx="644.98618"
+     inkscape:cy="703.02951"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     showborder="false"
+     units="px"
+     inkscape:window-width="1914"
+     inkscape:window-height="2083"
+     inkscape:window-x="26"
+     inkscape:window-y="23"
+     inkscape:window-maximized="0"
+     inkscape:pagecheckerboard="0" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(82.748138,-62.557621)">
+    <rect
+       style="opacity:0.60500004;fill:none;stroke:#000000;stroke-width:2.646;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:69.90000153;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter8934)"
+       id="rect8450"
+       width="256.64584"
+       height="256.64584"
+       x="-62.36607"
+       y="80.041656"
+       transform="matrix(-1,0,0,1,131.91371,0)" />
+    <flowRoot
+       transform="matrix(0,-0.26458333,0.26458333,0,-193.8757,183.92783)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:96px;line-height:1.25;font-family:'Source Serif Pro';-inkscape-font-specification:'Source Serif Pro, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       id="flowRoot8952"
+       xml:space="preserve"><flowRegion
+         id="flowRegion8948"><rect
+           y="366.80536"
+           x="-190"
+           height="184.28572"
+           width="507.85715"
+           id="rect8946" /></flowRegion><flowPara
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:48px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start"
+         id="flowPara8950">Latency</flowPara></flowRoot>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot8960"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:96px;line-height:1.25;font-family:'Source Serif Pro';-inkscape-font-specification:'Source Serif Pro, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0,0.26458333,-0.26458333,0,324.84298,218.65026)"><flowRegion
+         id="flowRegion8956"><rect
+           id="rect8954"
+           width="507.85715"
+           height="184.28572"
+           x="-190"
+           y="366.80536" /></flowRegion><flowPara
+         id="flowPara8958"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:48px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start">Throughput</flowPara></flowRoot>
+    <flowRoot
+       transform="matrix(0.26458333,0,0,0.26458333,63.647954,-48.569941)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:96px;line-height:1.25;font-family:'Source Serif Pro';-inkscape-font-specification:'Source Serif Pro, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       id="flowRoot8968"
+       xml:space="preserve"><flowRegion
+         id="flowRegion8964"><rect
+           y="366.80536"
+           x="-190"
+           height="184.28572"
+           width="507.85715"
+           id="rect8962" /></flowRegion><flowPara
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:48px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start"
+         id="flowPara8966">Compute-limited</flowPara></flowRoot>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot8976"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:96px;line-height:1.25;font-family:'Source Serif Pro';-inkscape-font-specification:'Source Serif Pro, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,59.034282,235.47917)"><flowRegion
+         id="flowRegion8972"><rect
+           id="rect8970"
+           width="507.85715"
+           height="184.28572"
+           x="-190"
+           y="366.80536" /></flowRegion><flowPara
+         id="flowPara8974"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:48px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start">Bandwidth-limited</flowPara></flowRoot>
+    <flowRoot
+       transform="matrix(0.13229167,-0.22913589,0.22913589,0.13229167,-131.36555,116.21291)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       id="flowRoot8984"
+       xml:space="preserve"><flowRegion
+         id="flowRegion8980"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"><rect
+           y="366.80536"
+           x="-190"
+           height="184.28572"
+           width="507.85715"
+           id="rect8978"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle" /></flowRegion><flowPara
+         id="flowPara9050">ms-scale molecular </flowPara><flowPara
+         id="flowPara9052">dynamics</flowPara></flowRoot>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot8992"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,148.05327,-13.191367)"><flowRegion
+         id="flowRegion8988"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"><rect
+           id="rect8986"
+           width="507.85715"
+           height="184.28572"
+           x="-190"
+           y="366.80536"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle" /></flowRegion><flowPara
+         id="flowPara9014">HPL</flowPara><flowPara
+         id="flowPara9016">Benchmark</flowPara></flowRoot>
+    <flowRoot
+       transform="matrix(0.26458333,0,0,0.26458333,94.598272,0.89053446)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       id="flowRoot9004"
+       xml:space="preserve"><flowRegion
+         id="flowRegion9000"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"><rect
+           y="366.80536"
+           x="-190"
+           height="85.890045"
+           width="359.12949"
+           id="rect8998"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle" /></flowRegion><flowPara
+         id="flowPara4849">Large batch</flowPara><flowPara
+         id="flowPara103005">deep learning</flowPara></flowRoot>
+    <flowRoot
+       transform="matrix(0.26458333,0,0,0.26458333,140.6827,209.39881)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       id="flowRoot9026"
+       xml:space="preserve"><flowRegion
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"
+         id="flowRegion9020"><rect
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"
+           y="366.80536"
+           x="-190"
+           height="184.28572"
+           width="507.85715"
+           id="rect9018" /></flowRegion><flowPara
+         id="flowPara9036">HPCG &amp; STREAM</flowPara><flowPara
+         id="flowPara9038">Benchmarks</flowPara></flowRoot>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot9048"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,126.62203,152.3244)"><flowRegion
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"
+         id="flowRegion9042"><rect
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"
+           id="rect9040"
+           width="237.29633"
+           height="77.762253"
+           x="-190"
+           y="366.80536" /></flowRegion><flowPara
+         id="flowPara137915">steady-state implicit fluids</flowPara></flowRoot>
+    <flowRoot
+       transform="matrix(0.26458333,0,0,0.26458333,13.229175,201.27232)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       id="flowRoot9066"
+       xml:space="preserve"><flowRegion
+         id="flowRegion9060"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"><rect
+           y="366.80536"
+           x="-190"
+           height="184.28572"
+           width="507.85715"
+           id="rect9058"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle" /></flowRegion><flowPara
+         id="flowPara9068">Algebraic multigrid</flowPara></flowRoot>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot9086"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.22913589,-0.13229167,0.13229167,0.22913589,-105.03798,129.00707)"><flowRegion
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"
+         id="flowRegion9080"><rect
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"
+           id="rect9078"
+           width="507.85715"
+           height="184.28572"
+           x="-190"
+           y="366.80536" /></flowRegion><flowPara
+         id="flowPara9090">climate &amp;</flowPara><flowPara
+         id="flowPara9092">weather</flowPara></flowRoot>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4859"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,83.597459,65.370464)"><flowRegion
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"
+         id="flowRegion4853"><rect
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"
+           id="rect4851"
+           width="507.85715"
+           height="184.28572"
+           x="-190"
+           y="366.80536" /></flowRegion><flowPara
+         id="flowPara4861">MOOSE JFNK</flowPara></flowRoot>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="60.318806"
+       y="130.60515"
+       id="text108641"><tspan
+         sodipodi:role="line"
+         id="tspan108639"
+         style="stroke-width:0.264583"
+         x="60.318806"
+         y="130.60515" /></text>
+    <flowRoot
+       transform="matrix(0.26458333,0,0,0.26458333,27.71568,119.78706)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       id="flowRoot108731"
+       xml:space="preserve"><flowRegion
+         id="flowRegion108725"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"><rect
+           y="366.80536"
+           x="-190"
+           height="85.890045"
+           width="359.12949"
+           id="rect108723"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle" /></flowRegion><flowPara
+         id="flowPara108727">Small batch</flowPara><flowPara
+         id="flowPara108729">deep learning</flowPara></flowRoot>
+    <flowRoot
+       transform="matrix(0.16480279,-0.20698884,0.20698884,0.16480279,-106.94211,211.9777)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;line-height:1.25;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       id="flowRoot23680"
+       xml:space="preserve"><flowRegion
+         id="flowRegion23674"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle"><rect
+           y="366.80536"
+           x="-190"
+           height="90.019508"
+           width="279.62054"
+           id="rect23672"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:'Humor Sans';-inkscape-font-specification:'Humor Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle" /></flowRegion><flowPara
+         id="flowPara23678">unsteady fluids (LES)</flowPara></flowRoot>
+  </g>
+</svg>
