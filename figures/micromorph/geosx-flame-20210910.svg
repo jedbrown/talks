@@ -1,0 +1,3424 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="358" onload="init(evt)" viewBox="0 0 1200 358" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom();
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				clearzoom();
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x = txt.length - 2; x > 0; x--) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom() {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="358.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="341" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="341" > </text>
+<g id="frames">
+<g >
+<title>VectorT&lt;unsigned long&gt;::operator[] (44 samples, 0.01%)</title><rect x="417.9" y="245" width="0.1" height="15.0" fill="rgb(239,218,13)" rx="2" ry="2" />
+<text  x="420.89" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::deleteOutOfRangeParticles (1,564 samples, 0.33%)</title><rect x="941.6" y="261" width="4.0" height="15.0" fill="rgb(250,194,10)" rx="2" ry="2" />
+<text  x="944.65" y="271.5" ></text>
+</g>
+<g >
+<title>mv2_increment_allgather_coll_counter (117 samples, 0.02%)</title><rect x="1031.6" y="245" width="0.3" height="15.0" fill="rgb(219,105,36)" rx="2" ry="2" />
+<text  x="1034.60" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::TensorBaseT (827 samples, 0.18%)</title><rect x="1100.9" y="229" width="2.1" height="15.0" fill="rgb(237,159,33)" rx="2" ry="2" />
+<text  x="1103.89" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (6,286 samples, 1.34%)</title><rect x="430.3" y="181" width="15.7" height="15.0" fill="rgb(250,76,42)" rx="2" ry="2" />
+<text  x="433.26" y="191.5" ></text>
+</g>
+<g >
+<title>operator new (3,784 samples, 0.81%)</title><rect x="449.3" y="149" width="9.5" height="15.0" fill="rgb(245,163,2)" rx="2" ry="2" />
+<text  x="452.25" y="159.5" ></text>
+</g>
+<g >
+<title>operator+ (2,911 samples, 0.62%)</title><rect x="841.4" y="245" width="7.4" height="15.0" fill="rgb(218,203,17)" rx="2" ry="2" />
+<text  x="844.44" y="255.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::allocate (4,352 samples, 0.93%)</title><rect x="419.2" y="181" width="10.9" height="15.0" fill="rgb(232,129,23)" rx="2" ry="2" />
+<text  x="422.17" y="191.5" ></text>
+</g>
+<g >
+<title>std::_Construct&lt;R1TensorT&lt;3&gt;&gt; (564 samples, 0.12%)</title><rect x="498.2" y="149" width="1.4" height="15.0" fill="rgb(253,113,29)" rx="2" ry="2" />
+<text  x="501.20" y="159.5" ></text>
+</g>
+<g >
+<title>std::operator==&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (145 samples, 0.03%)</title><rect x="1162.4" y="261" width="0.4" height="15.0" fill="rgb(246,62,41)" rx="2" ry="2" />
+<text  x="1165.39" y="271.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (204 samples, 0.04%)</title><rect x="1166.3" y="229" width="0.5" height="15.0" fill="rgb(221,161,24)" rx="2" ry="2" />
+<text  x="1169.28" y="239.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::Det (48 samples, 0.01%)</title><rect x="907.4" y="229" width="0.2" height="15.0" fill="rgb(245,78,28)" rx="2" ry="2" />
+<text  x="910.43" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (2,273 samples, 0.48%)</title><rect x="359.7" y="53" width="5.7" height="15.0" fill="rgb(241,223,40)" rx="2" ry="2" />
+<text  x="362.71" y="63.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;int, std::allocator&lt;int&gt; &gt;::operator[] (256 samples, 0.05%)</title><rect x="417.2" y="229" width="0.7" height="15.0" fill="rgb(247,203,24)" rx="2" ry="2" />
+<text  x="420.21" y="239.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_Vector_base (2,250 samples, 0.48%)</title><rect x="523.5" y="149" width="5.6" height="15.0" fill="rgb(233,78,50)" rx="2" ry="2" />
+<text  x="526.47" y="159.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;double&gt;::VectorT (469 samples, 0.10%)</title><rect x="914.8" y="213" width="1.2" height="15.0" fill="rgb(246,125,52)" rx="2" ry="2" />
+<text  x="917.83" y="223.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeGridShapeFunctionWeights (87 samples, 0.02%)</title><rect x="1159.6" y="277" width="0.2" height="15.0" fill="rgb(254,5,42)" rx="2" ry="2" />
+<text  x="1162.63" y="287.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_Vector_base (74 samples, 0.02%)</title><rect x="447.5" y="197" width="0.2" height="15.0" fill="rgb(244,37,53)" rx="2" ry="2" />
+<text  x="450.55" y="207.5" ></text>
+</g>
+<g >
+<title>std::fill_n&lt;double*, unsigned long, double&gt; (85 samples, 0.02%)</title><rect x="915.8" y="101" width="0.2" height="15.0" fill="rgb(235,165,39)" rx="2" ry="2" />
+<text  x="918.80" y="111.5" ></text>
+</g>
+<g >
+<title>operator+ (53 samples, 0.01%)</title><rect x="1168.6" y="245" width="0.1" height="15.0" fill="rgb(250,155,48)" rx="2" ry="2" />
+<text  x="1171.57" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computePolarDecomposition (2,708 samples, 0.58%)</title><rect x="902.6" y="261" width="6.8" height="15.0" fill="rgb(213,204,5)" rx="2" ry="2" />
+<text  x="905.62" y="271.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeNeighborList (65 samples, 0.01%)</title><rect x="1159.8" y="277" width="0.2" height="15.0" fill="rgb(244,68,32)" rx="2" ry="2" />
+<text  x="1162.85" y="287.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::do_put (53 samples, 0.01%)</title><rect x="1186.8" y="213" width="0.1" height="15.0" fill="rgb(245,69,5)" rx="2" ry="2" />
+<text  x="1189.80" y="223.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (2,133 samples, 0.45%)</title><rect x="523.6" y="53" width="5.3" height="15.0" fill="rgb(252,98,3)" rx="2" ry="2" />
+<text  x="526.59" y="63.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeStress (9,108 samples, 1.94%)</title><rect x="909.4" y="261" width="22.9" height="15.0" fill="rgb(211,126,6)" rx="2" ry="2" />
+<text  x="912.42" y="271.5" >M..</text>
+</g>
+<g >
+<title>free@plt (51 samples, 0.01%)</title><rect x="1126.2" y="261" width="0.1" height="15.0" fill="rgb(246,173,19)" rx="2" ry="2" />
+<text  x="1129.17" y="271.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeParticlesGridNodes (759 samples, 0.16%)</title><rect x="1160.1" y="277" width="1.9" height="15.0" fill="rgb(237,203,37)" rx="2" ry="2" />
+<text  x="1163.12" y="287.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (49 samples, 0.01%)</title><rect x="1168.8" y="213" width="0.1" height="15.0" fill="rgb(249,13,51)" rx="2" ry="2" />
+<text  x="1171.81" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::TensorBaseT (218 samples, 0.05%)</title><rect x="914.2" y="69" width="0.6" height="15.0" fill="rgb(232,215,37)" rx="2" ry="2" />
+<text  x="917.22" y="79.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (2,273 samples, 0.48%)</title><rect x="359.7" y="101" width="5.7" height="15.0" fill="rgb(219,54,0)" rx="2" ry="2" />
+<text  x="362.71" y="111.5" ></text>
+</g>
+<g >
+<title>bufvector::Pack (71 samples, 0.02%)</title><rect x="1113.4" y="229" width="0.2" height="15.0" fill="rgb(254,149,37)" rx="2" ry="2" />
+<text  x="1116.39" y="239.5" ></text>
+</g>
+<g >
+<title>MPMSolver::kernel (11,661 samples, 2.48%)</title><rect x="958.1" y="245" width="29.3" height="15.0" fill="rgb(247,139,45)" rx="2" ry="2" />
+<text  x="961.09" y="255.5" >MP..</text>
+</g>
+<g >
+<title>MPMSolver::computeGridShapeFunctionWeights (8,089 samples, 1.72%)</title><rect x="557.8" y="261" width="20.3" height="15.0" fill="rgb(242,211,2)" rx="2" ry="2" />
+<text  x="560.78" y="271.5" ></text>
+</g>
+<g >
+<title>std::string::_Rep::_M_dispose (62 samples, 0.01%)</title><rect x="923.0" y="229" width="0.2" height="15.0" fill="rgb(208,172,6)" rx="2" ry="2" />
+<text  x="926.00" y="239.5" ></text>
+</g>
+<g >
+<title>operator+ (138 samples, 0.03%)</title><rect x="1154.3" y="261" width="0.3" height="15.0" fill="rgb(238,90,34)" rx="2" ry="2" />
+<text  x="1157.27" y="271.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;unsigned long, std::allocator&lt;unsigned long&gt; &gt;::_M_allocate (156 samples, 0.03%)</title><rect x="1157.8" y="229" width="0.4" height="15.0" fill="rgb(249,150,9)" rx="2" ry="2" />
+<text  x="1160.82" y="239.5" ></text>
+</g>
+<g >
+<title>mv2_increment_shmem_coll_counter (119 samples, 0.03%)</title><rect x="1031.9" y="245" width="0.3" height="15.0" fill="rgb(252,3,25)" rx="2" ry="2" />
+<text  x="1034.89" y="255.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (82 samples, 0.02%)</title><rect x="1153.8" y="245" width="0.2" height="15.0" fill="rgb(214,196,11)" rx="2" ry="2" />
+<text  x="1156.79" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (226 samples, 0.05%)</title><rect x="1167.5" y="197" width="0.5" height="15.0" fill="rgb(242,48,0)" rx="2" ry="2" />
+<text  x="1170.46" y="207.5" ></text>
+</g>
+<g >
+<title>__atomic_add_dispatch (41 samples, 0.01%)</title><rect x="932.1" y="181" width="0.2" height="15.0" fill="rgb(210,155,35)" rx="2" ry="2" />
+<text  x="935.15" y="191.5" ></text>
+</g>
+<g >
+<title>std::string::_M_rep (186 samples, 0.04%)</title><rect x="515.0" y="197" width="0.5" height="15.0" fill="rgb(245,184,5)" rx="2" ry="2" />
+<text  x="518.03" y="207.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::allocate (1,822 samples, 0.39%)</title><rect x="530.2" y="149" width="4.5" height="15.0" fill="rgb(245,47,8)" rx="2" ry="2" />
+<text  x="533.17" y="159.5" ></text>
+</g>
+<g >
+<title>std::string::compare (162 samples, 0.03%)</title><rect x="516.4" y="229" width="0.4" height="15.0" fill="rgb(209,199,40)" rx="2" ry="2" />
+<text  x="519.42" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;false&gt;::__uninit_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (371 samples, 0.08%)</title><rect x="529.1" y="117" width="0.9" height="15.0" fill="rgb(206,77,30)" rx="2" ry="2" />
+<text  x="532.12" y="127.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (71 samples, 0.02%)</title><rect x="941.2" y="149" width="0.2" height="15.0" fill="rgb(253,180,53)" rx="2" ry="2" />
+<text  x="944.22" y="159.5" ></text>
+</g>
+<g >
+<title>hwloc_look_linuxfs (62 samples, 0.01%)</title><rect x="1184.4" y="277" width="0.1" height="15.0" fill="rgb(216,181,29)" rx="2" ry="2" />
+<text  x="1187.36" y="287.5" ></text>
+</g>
+<g >
+<title>_IO_vsnprintf (45 samples, 0.01%)</title><rect x="1186.8" y="165" width="0.1" height="15.0" fill="rgb(231,20,16)" rx="2" ry="2" />
+<text  x="1189.81" y="175.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeStress (289 samples, 0.06%)</title><rect x="1162.0" y="277" width="0.8" height="15.0" fill="rgb(207,173,10)" rx="2" ry="2" />
+<text  x="1165.03" y="287.5" ></text>
+</g>
+<g >
+<title>std::__basic_file&lt;char&gt;::open (143 samples, 0.03%)</title><rect x="1155.7" y="229" width="0.3" height="15.0" fill="rgb(211,143,19)" rx="2" ry="2" />
+<text  x="1158.68" y="239.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;unsigned long&gt; &gt;::_S_construct&lt;unsigned long, unsigned long const&amp;&gt; (2,297 samples, 0.49%)</title><rect x="830.0" y="213" width="5.8" height="15.0" fill="rgb(244,36,9)" rx="2" ry="2" />
+<text  x="832.98" y="223.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;double*, unsigned long&gt; (85 samples, 0.02%)</title><rect x="915.8" y="133" width="0.2" height="15.0" fill="rgb(212,204,39)" rx="2" ry="2" />
+<text  x="918.80" y="143.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::resize (11,469 samples, 2.44%)</title><rect x="418.3" y="229" width="28.8" height="15.0" fill="rgb(208,200,53)" rx="2" ry="2" />
+<text  x="421.26" y="239.5" >st..</text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (2,772 samples, 0.59%)</title><rect x="358.5" y="149" width="6.9" height="15.0" fill="rgb(241,218,34)" rx="2" ry="2" />
+<text  x="361.46" y="159.5" ></text>
+</g>
+<g >
+<title>hwloc_look_x86 (588 samples, 0.13%)</title><rect x="1184.7" y="101" width="1.5" height="15.0" fill="rgb(247,153,24)" rx="2" ry="2" />
+<text  x="1187.70" y="111.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (113 samples, 0.02%)</title><rect x="939.3" y="213" width="0.3" height="15.0" fill="rgb(221,204,22)" rx="2" ry="2" />
+<text  x="942.33" y="223.5" ></text>
+</g>
+<g >
+<title>std::map&lt;std::string, Array1dT&lt;R1TensorT&lt;3&gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::erase (92 samples, 0.02%)</title><rect x="496.6" y="229" width="0.3" height="15.0" fill="rgb(212,212,52)" rx="2" ry="2" />
+<text  x="499.63" y="239.5" ></text>
+</g>
+<g >
+<title>std::fill_n&lt;double*, unsigned long, double&gt; (78 samples, 0.02%)</title><rect x="500.0" y="149" width="0.2" height="15.0" fill="rgb(216,15,21)" rx="2" ry="2" />
+<text  x="502.99" y="159.5" ></text>
+</g>
+<g >
+<title>malloc@plt (50 samples, 0.01%)</title><rect x="458.6" y="133" width="0.2" height="15.0" fill="rgb(224,181,13)" rx="2" ry="2" />
+<text  x="461.63" y="143.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;double, std::allocator&lt;double&gt; &gt;::_M_allocate (337 samples, 0.07%)</title><rect x="914.9" y="117" width="0.8" height="15.0" fill="rgb(253,193,35)" rx="2" ry="2" />
+<text  x="917.86" y="127.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator= (3,076 samples, 0.65%)</title><rect x="545.0" y="245" width="7.7" height="15.0" fill="rgb(234,219,26)" rx="2" ry="2" />
+<text  x="547.97" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeParticleCornerLocations (8,530 samples, 1.82%)</title><rect x="837.2" y="261" width="21.4" height="15.0" fill="rgb(251,129,43)" rx="2" ry="2" />
+<text  x="840.15" y="271.5" >M..</text>
+</g>
+<g >
+<title>Array1dT&lt;double&gt;::Array1dT (80 samples, 0.02%)</title><rect x="10.1" y="277" width="0.2" height="15.0" fill="rgb(236,2,6)" rx="2" ry="2" />
+<text  x="13.14" y="287.5" ></text>
+</g>
+<g >
+<title>__memcmp_sse4_1 (226 samples, 0.05%)</title><rect x="1178.5" y="277" width="0.6" height="15.0" fill="rgb(212,117,50)" rx="2" ry="2" />
+<text  x="1181.49" y="287.5" ></text>
+</g>
+<g >
+<title>std::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;::~basic_string (65 samples, 0.01%)</title><rect x="923.0" y="245" width="0.2" height="15.0" fill="rgb(216,178,49)" rx="2" ry="2" />
+<text  x="926.00" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeParticlesGridNodes (17,536 samples, 3.73%)</title><rect x="858.6" y="261" width="44.0" height="15.0" fill="rgb(248,129,43)" rx="2" ry="2" />
+<text  x="861.58" y="271.5" >MPMS..</text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (2,273 samples, 0.48%)</title><rect x="359.7" y="85" width="5.7" height="15.0" fill="rgb(232,207,3)" rx="2" ry="2" />
+<text  x="362.71" y="95.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (918 samples, 0.20%)</title><rect x="849.6" y="197" width="2.3" height="15.0" fill="rgb(219,121,48)" rx="2" ry="2" />
+<text  x="852.63" y="207.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::L2_Norm (175 samples, 0.04%)</title><rect x="934.6" y="245" width="0.4" height="15.0" fill="rgb(250,138,22)" rx="2" ry="2" />
+<text  x="937.58" y="255.5" ></text>
+</g>
+<g >
+<title>ProblemManagerT::Run (144 samples, 0.03%)</title><rect x="1186.6" y="261" width="0.4" height="15.0" fill="rgb(211,87,17)" rx="2" ry="2" />
+<text  x="1189.60" y="271.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::operator= (79 samples, 0.02%)</title><rect x="920.4" y="245" width="0.2" height="15.0" fill="rgb(215,5,54)" rx="2" ry="2" />
+<text  x="923.37" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;6&gt;::operator= (56 samples, 0.01%)</title><rect x="1080.7" y="245" width="0.1" height="15.0" fill="rgb(227,48,23)" rx="2" ry="2" />
+<text  x="1083.66" y="255.5" ></text>
+</g>
+<g >
+<title>std::string::compare (3,169 samples, 0.67%)</title><rect x="923.7" y="229" width="8.0" height="15.0" fill="rgb(236,134,27)" rx="2" ry="2" />
+<text  x="926.74" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::resize (41 samples, 0.01%)</title><rect x="1157.5" y="261" width="0.1" height="15.0" fill="rgb(251,61,51)" rx="2" ry="2" />
+<text  x="1160.50" y="271.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;int&gt;::operator[] (3,019 samples, 0.64%)</title><rect x="749.2" y="245" width="7.6" height="15.0" fill="rgb(226,63,30)" rx="2" ry="2" />
+<text  x="752.24" y="255.5" ></text>
+</g>
+<g >
+<title>std::ostream::_M_insert&lt;double&gt; (54 samples, 0.01%)</title><rect x="1186.8" y="245" width="0.1" height="15.0" fill="rgb(219,28,3)" rx="2" ry="2" />
+<text  x="1189.80" y="255.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (1,047 samples, 0.22%)</title><rect x="407.0" y="69" width="2.6" height="15.0" fill="rgb(209,162,12)" rx="2" ry="2" />
+<text  x="409.97" y="79.5" ></text>
+</g>
+<g >
+<title>MPMSolver::kernelFieldGradient (33,498 samples, 7.13%)</title><rect x="946.7" y="261" width="84.1" height="15.0" fill="rgb(212,220,51)" rx="2" ry="2" />
+<text  x="949.71" y="271.5" >MPMSolver..</text>
+</g>
+<g >
+<title>SpatialPartition::RepartitionGhostParticlesToNeighbors (584 samples, 0.12%)</title><rect x="1112.8" y="261" width="1.5" height="15.0" fill="rgb(206,131,7)" rx="2" ry="2" />
+<text  x="1115.83" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (499 samples, 0.11%)</title><rect x="838.4" y="229" width="1.3" height="15.0" fill="rgb(237,123,44)" rx="2" ry="2" />
+<text  x="841.43" y="239.5" ></text>
+</g>
+<g >
+<title>__memcmp_sse4_1 (69 samples, 0.01%)</title><rect x="918.2" y="181" width="0.1" height="15.0" fill="rgb(228,83,33)" rx="2" ry="2" />
+<text  x="921.17" y="191.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (187 samples, 0.04%)</title><rect x="935.0" y="229" width="0.5" height="15.0" fill="rgb(241,41,30)" rx="2" ry="2" />
+<text  x="938.02" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~vector (211 samples, 0.04%)</title><rect x="934.1" y="197" width="0.5" height="15.0" fill="rgb(225,166,7)" rx="2" ry="2" />
+<text  x="937.05" y="207.5" ></text>
+</g>
+<g >
+<title>Dot (116 samples, 0.02%)</title><rect x="936.6" y="229" width="0.3" height="15.0" fill="rgb(221,65,45)" rx="2" ry="2" />
+<text  x="939.58" y="239.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;, std::_Select1st&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::erase[abi:cxx11] (56 samples, 0.01%)</title><rect x="496.7" y="165" width="0.2" height="15.0" fill="rgb(237,40,23)" rx="2" ry="2" />
+<text  x="499.72" y="175.5" ></text>
+</g>
+<g >
+<title>MPI_Init (688 samples, 0.15%)</title><rect x="1184.5" y="261" width="1.8" height="15.0" fill="rgb(237,51,39)" rx="2" ry="2" />
+<text  x="1187.55" y="271.5" ></text>
+</g>
+<g >
+<title>std::operator==&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (257 samples, 0.05%)</title><rect x="918.1" y="229" width="0.6" height="15.0" fill="rgb(247,137,23)" rx="2" ry="2" />
+<text  x="921.08" y="239.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::Inverse (975 samples, 0.21%)</title><rect x="905.6" y="245" width="2.5" height="15.0" fill="rgb(222,167,30)" rx="2" ry="2" />
+<text  x="908.61" y="255.5" ></text>
+</g>
+<g >
+<title>_int_malloc (1,443 samples, 0.31%)</title><rect x="531.0" y="101" width="3.6" height="15.0" fill="rgb(210,70,29)" rx="2" ry="2" />
+<text  x="533.97" y="111.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::operator= (214 samples, 0.05%)</title><rect x="914.2" y="37" width="0.6" height="15.0" fill="rgb(241,139,13)" rx="2" ry="2" />
+<text  x="917.23" y="47.5" ></text>
+</g>
+<g >
+<title>R2SymTensorT&lt;3&gt;::R2SymTensorT (69 samples, 0.01%)</title><rect x="1080.6" y="261" width="0.2" height="15.0" fill="rgb(241,137,41)" rx="2" ry="2" />
+<text  x="1083.62" y="271.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;unsigned long&gt; &gt;::allocate (137 samples, 0.03%)</title><rect x="1157.9" y="213" width="0.3" height="15.0" fill="rgb(244,209,4)" rx="2" ry="2" />
+<text  x="1160.87" y="223.5" ></text>
+</g>
+<g >
+<title>floor (143 samples, 0.03%)</title><rect x="1184.0" y="277" width="0.3" height="15.0" fill="rgb(216,205,12)" rx="2" ry="2" />
+<text  x="1186.96" y="287.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;std::_Rb_tree_node&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::destroy&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; (42 samples, 0.01%)</title><rect x="496.7" y="85" width="0.1" height="15.0" fill="rgb(226,104,3)" rx="2" ry="2" />
+<text  x="499.73" y="95.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_allocate (4,388 samples, 0.93%)</title><rect x="419.1" y="197" width="11.0" height="15.0" fill="rgb(244,83,28)" rx="2" ry="2" />
+<text  x="422.08" y="207.5" ></text>
+</g>
+<g >
+<title>MPMSolver::cpdiDomainScaling (333 samples, 0.07%)</title><rect x="1168.1" y="261" width="0.9" height="15.0" fill="rgb(237,15,5)" rx="2" ry="2" />
+<text  x="1171.13" y="271.5" ></text>
+</g>
+<g >
+<title>smpi_load_hwloc_topology (648 samples, 0.14%)</title><rect x="1184.6" y="165" width="1.6" height="15.0" fill="rgb(211,124,1)" rx="2" ry="2" />
+<text  x="1187.55" y="175.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (344 samples, 0.07%)</title><rect x="1035.0" y="261" width="0.8" height="15.0" fill="rgb(205,164,44)" rx="2" ry="2" />
+<text  x="1037.96" y="271.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::R2TensorT (368 samples, 0.08%)</title><rect x="919.0" y="245" width="0.9" height="15.0" fill="rgb(211,5,27)" rx="2" ry="2" />
+<text  x="922.00" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (73 samples, 0.02%)</title><rect x="838.2" y="229" width="0.2" height="15.0" fill="rgb(250,118,42)" rx="2" ry="2" />
+<text  x="841.24" y="239.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (352 samples, 0.07%)</title><rect x="837.4" y="229" width="0.8" height="15.0" fill="rgb(224,81,12)" rx="2" ry="2" />
+<text  x="840.36" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::size (45 samples, 0.01%)</title><rect x="1030.7" y="245" width="0.1" height="15.0" fill="rgb(209,205,11)" rx="2" ry="2" />
+<text  x="1033.73" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (216 samples, 0.05%)</title><rect x="1035.0" y="245" width="0.5" height="15.0" fill="rgb(243,4,25)" rx="2" ry="2" />
+<text  x="1037.96" y="255.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;false&gt;::__uninit_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (684 samples, 0.15%)</title><rect x="497.9" y="165" width="1.7" height="15.0" fill="rgb(228,121,5)" rx="2" ry="2" />
+<text  x="500.89" y="175.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Array1dT&lt;unsigned long&gt;, std::allocator&lt;Array1dT&lt;unsigned long&gt; &gt; &gt;::operator[] (1,088 samples, 0.23%)</title><rect x="728.0" y="213" width="2.8" height="15.0" fill="rgb(207,229,32)" rx="2" ry="2" />
+<text  x="731.04" y="223.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeOrthonormalBasis (147 samples, 0.03%)</title><rect x="835.9" y="245" width="0.4" height="15.0" fill="rgb(217,16,30)" rx="2" ry="2" />
+<text  x="838.89" y="255.5" ></text>
+</g>
+<g >
+<title>std::less&lt;std::string&gt;::operator (68 samples, 0.01%)</title><rect x="497.4" y="181" width="0.2" height="15.0" fill="rgb(214,22,18)" rx="2" ry="2" />
+<text  x="500.43" y="191.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::Det (49 samples, 0.01%)</title><rect x="917.0" y="229" width="0.1" height="15.0" fill="rgb(240,168,30)" rx="2" ry="2" />
+<text  x="919.96" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (4,003 samples, 0.85%)</title><rect x="479.7" y="117" width="10.1" height="15.0" fill="rgb(243,8,6)" rx="2" ry="2" />
+<text  x="482.74" y="127.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (14,132 samples, 3.01%)</title><rect x="365.5" y="245" width="35.5" height="15.0" fill="rgb(241,17,8)" rx="2" ry="2" />
+<text  x="368.51" y="255.5" >Vec..</text>
+</g>
+<g >
+<title>std::_Construct&lt;R1TensorT&lt;3&gt;&gt; (4,901 samples, 1.04%)</title><rect x="433.7" y="149" width="12.3" height="15.0" fill="rgb(220,63,51)" rx="2" ry="2" />
+<text  x="436.74" y="159.5" ></text>
+</g>
+<g >
+<title>__strlen_sse2_pminub (59 samples, 0.01%)</title><rect x="516.6" y="197" width="0.2" height="15.0" fill="rgb(210,211,1)" rx="2" ry="2" />
+<text  x="519.63" y="207.5" ></text>
+</g>
+<g >
+<title>std::string::size (347 samples, 0.07%)</title><rect x="514.6" y="213" width="0.9" height="15.0" fill="rgb(250,88,18)" rx="2" ry="2" />
+<text  x="517.62" y="223.5" ></text>
+</g>
+<g >
+<title>std::string::compare@plt (127 samples, 0.03%)</title><rect x="931.7" y="229" width="0.3" height="15.0" fill="rgb(254,180,27)" rx="2" ry="2" />
+<text  x="934.70" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::_M_default_append (108 samples, 0.02%)</title><rect x="499.9" y="213" width="0.3" height="15.0" fill="rgb(225,43,25)" rx="2" ry="2" />
+<text  x="502.91" y="223.5" ></text>
+</g>
+<g >
+<title>__GI___libc_free (91 samples, 0.02%)</title><rect x="920.9" y="245" width="0.2" height="15.0" fill="rgb(218,181,20)" rx="2" ry="2" />
+<text  x="923.86" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (139 samples, 0.03%)</title><rect x="935.1" y="197" width="0.4" height="15.0" fill="rgb(207,220,39)" rx="2" ry="2" />
+<text  x="938.14" y="207.5" ></text>
+</g>
+<g >
+<title>[unknown] (4,570 samples, 0.97%)</title><rect x="1164.1" y="277" width="11.5" height="15.0" fill="rgb(228,120,14)" rx="2" ry="2" />
+<text  x="1167.14" y="287.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (866 samples, 0.18%)</title><rect x="911.9" y="53" width="2.2" height="15.0" fill="rgb(244,78,40)" rx="2" ry="2" />
+<text  x="914.90" y="63.5" ></text>
+</g>
+<g >
+<title>operator/ (97 samples, 0.02%)</title><rect x="1030.5" y="245" width="0.2" height="15.0" fill="rgb(215,113,50)" rx="2" ry="2" />
+<text  x="1033.49" y="255.5" ></text>
+</g>
+<g >
+<title>operator new@plt (102 samples, 0.02%)</title><rect x="458.8" y="149" width="0.2" height="15.0" fill="rgb(212,190,20)" rx="2" ry="2" />
+<text  x="461.76" y="159.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::_M_default_initialize (101 samples, 0.02%)</title><rect x="915.8" y="165" width="0.2" height="15.0" fill="rgb(233,144,30)" rx="2" ry="2" />
+<text  x="918.76" y="175.5" ></text>
+</g>
+<g >
+<title>__libm_pow_l9 (103 samples, 0.02%)</title><rect x="921.1" y="245" width="0.3" height="15.0" fill="rgb(225,103,44)" rx="2" ry="2" />
+<text  x="924.10" y="255.5" ></text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::Array2dT (75 samples, 0.02%)</title><rect x="10.4" y="277" width="0.2" height="15.0" fill="rgb(226,81,27)" rx="2" ry="2" />
+<text  x="13.37" y="287.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (123 samples, 0.03%)</title><rect x="1154.6" y="245" width="0.3" height="15.0" fill="rgb(221,212,2)" rx="2" ry="2" />
+<text  x="1157.61" y="255.5" ></text>
+</g>
+<g >
+<title>_int_malloc (756 samples, 0.16%)</title><rect x="356.3" y="53" width="1.9" height="15.0" fill="rgb(236,184,9)" rx="2" ry="2" />
+<text  x="359.32" y="63.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (600 samples, 0.13%)</title><rect x="850.4" y="181" width="1.5" height="15.0" fill="rgb(219,148,43)" rx="2" ry="2" />
+<text  x="853.43" y="191.5" ></text>
+</g>
+<g >
+<title>memcmp@plt (75 samples, 0.02%)</title><rect x="509.5" y="197" width="0.2" height="15.0" fill="rgb(210,196,46)" rx="2" ry="2" />
+<text  x="512.48" y="207.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;, std::_Select1st&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::find (47 samples, 0.01%)</title><rect x="1031.3" y="213" width="0.1" height="15.0" fill="rgb(218,114,15)" rx="2" ry="2" />
+<text  x="1034.26" y="223.5" ></text>
+</g>
+<g >
+<title>std::__convert_from_v (47 samples, 0.01%)</title><rect x="1186.8" y="181" width="0.1" height="15.0" fill="rgb(229,177,52)" rx="2" ry="2" />
+<text  x="1189.81" y="191.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (73 samples, 0.02%)</title><rect x="838.2" y="213" width="0.2" height="15.0" fill="rgb(243,197,42)" rx="2" ry="2" />
+<text  x="841.24" y="223.5" ></text>
+</g>
+<g >
+<title>ObjectDataStructureBaseT::AddKeylessDataField&lt;R1TensorT&lt;3&gt; &gt; (978 samples, 0.21%)</title><rect x="497.2" y="245" width="2.4" height="15.0" fill="rgb(243,94,48)" rx="2" ry="2" />
+<text  x="500.16" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_Vector_impl::_Vector_impl (74 samples, 0.02%)</title><rect x="447.5" y="165" width="0.2" height="15.0" fill="rgb(241,189,39)" rx="2" ry="2" />
+<text  x="450.55" y="175.5" ></text>
+</g>
+<g >
+<title>__libm_round_y8 (215 samples, 0.05%)</title><rect x="1116.3" y="261" width="0.5" height="15.0" fill="rgb(252,216,46)" rx="2" ry="2" />
+<text  x="1119.28" y="271.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_check_len (59 samples, 0.01%)</title><rect x="941.4" y="213" width="0.2" height="15.0" fill="rgb(224,120,16)" rx="2" ry="2" />
+<text  x="944.42" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (4,899 samples, 1.04%)</title><rect x="433.7" y="117" width="12.3" height="15.0" fill="rgb(206,149,12)" rx="2" ry="2" />
+<text  x="436.74" y="127.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~vector (72 samples, 0.02%)</title><rect x="496.4" y="213" width="0.2" height="15.0" fill="rgb(227,213,18)" rx="2" ry="2" />
+<text  x="499.44" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (226 samples, 0.05%)</title><rect x="1167.5" y="213" width="0.5" height="15.0" fill="rgb(234,138,9)" rx="2" ry="2" />
+<text  x="1170.46" y="223.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::allocate (233 samples, 0.05%)</title><rect x="940.5" y="197" width="0.6" height="15.0" fill="rgb(241,63,41)" rx="2" ry="2" />
+<text  x="943.50" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (204 samples, 0.04%)</title><rect x="1166.3" y="197" width="0.5" height="15.0" fill="rgb(228,68,15)" rx="2" ry="2" />
+<text  x="1169.28" y="207.5" ></text>
+</g>
+<g >
+<title>operator* (1,164 samples, 0.25%)</title><rect x="554.9" y="245" width="2.9" height="15.0" fill="rgb(236,37,28)" rx="2" ry="2" />
+<text  x="557.86" y="255.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;unsigned long&gt;::operator[] (44 samples, 0.01%)</title><rect x="417.9" y="261" width="0.1" height="15.0" fill="rgb(213,11,33)" rx="2" ry="2" />
+<text  x="420.89" y="271.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::operator[] (1,568 samples, 0.33%)</title><rect x="492.5" y="229" width="3.9" height="15.0" fill="rgb(219,133,35)" rx="2" ry="2" />
+<text  x="495.50" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::TensorBaseT (1,005 samples, 0.21%)</title><rect x="1100.4" y="245" width="2.6" height="15.0" fill="rgb(229,70,46)" rx="2" ry="2" />
+<text  x="1103.44" y="255.5" ></text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (2,235 samples, 0.48%)</title><rect x="490.8" y="261" width="5.6" height="15.0" fill="rgb(247,35,24)" rx="2" ry="2" />
+<text  x="493.82" y="271.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::operator= (2,904 samples, 0.62%)</title><rect x="530.0" y="213" width="7.3" height="15.0" fill="rgb(224,46,16)" rx="2" ry="2" />
+<text  x="533.05" y="223.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R2TensorT&lt;3&gt; &gt;::allocate (909 samples, 0.19%)</title><rect x="911.8" y="85" width="2.3" height="15.0" fill="rgb(244,59,51)" rx="2" ry="2" />
+<text  x="914.84" y="95.5" ></text>
+</g>
+<g >
+<title>GPAC_IO::FileManagerT::ReadParticleFile (71 samples, 0.02%)</title><rect x="10.8" y="261" width="0.1" height="15.0" fill="rgb(253,59,27)" rx="2" ry="2" />
+<text  x="13.77" y="271.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_move_if_noexcept_a&lt;R1TensorT&lt;3&gt;*, R1TensorT&lt;3&gt;*, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; (173 samples, 0.04%)</title><rect x="1113.7" y="213" width="0.5" height="15.0" fill="rgb(225,138,25)" rx="2" ry="2" />
+<text  x="1116.73" y="223.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;double&gt;::Array1dT (1,478 samples, 0.31%)</title><rect x="406.8" y="261" width="3.7" height="15.0" fill="rgb(225,71,49)" rx="2" ry="2" />
+<text  x="409.77" y="271.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator (15,549 samples, 3.31%)</title><rect x="756.8" y="245" width="39.1" height="15.0" fill="rgb(250,47,3)" rx="2" ry="2" />
+<text  x="759.84" y="255.5" >R1T..</text>
+</g>
+<g >
+<title>operator new (1,078 samples, 0.23%)</title><rect x="406.9" y="85" width="2.7" height="15.0" fill="rgb(237,164,26)" rx="2" ry="2" />
+<text  x="409.92" y="95.5" ></text>
+</g>
+<g >
+<title>std::string::_S_compare (111 samples, 0.02%)</title><rect x="930.6" y="213" width="0.3" height="15.0" fill="rgb(218,173,14)" rx="2" ry="2" />
+<text  x="933.61" y="223.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator[] (859 samples, 0.18%)</title><rect x="552.7" y="245" width="2.2" height="15.0" fill="rgb(244,25,47)" rx="2" ry="2" />
+<text  x="555.70" y="255.5" ></text>
+</g>
+<g >
+<title>std::string::_M_data (177 samples, 0.04%)</title><rect x="931.3" y="181" width="0.4" height="15.0" fill="rgb(208,202,31)" rx="2" ry="2" />
+<text  x="934.25" y="191.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;double, std::allocator&lt;double&gt; &gt;::_M_create_storage (346 samples, 0.07%)</title><rect x="914.8" y="133" width="0.9" height="15.0" fill="rgb(230,57,37)" rx="2" ry="2" />
+<text  x="917.83" y="143.5" ></text>
+</g>
+<g >
+<title>vtable for std::basic_stringstream&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (52 samples, 0.01%)</title><rect x="1189.9" y="277" width="0.1" height="15.0" fill="rgb(252,178,32)" rx="2" ry="2" />
+<text  x="1192.87" y="287.5" ></text>
+</g>
+<g >
+<title>std::string::_M_data (186 samples, 0.04%)</title><rect x="515.0" y="181" width="0.5" height="15.0" fill="rgb(210,190,18)" rx="2" ry="2" />
+<text  x="518.03" y="191.5" ></text>
+</g>
+<g >
+<title>MPID_Init (673 samples, 0.14%)</title><rect x="1184.5" y="213" width="1.7" height="15.0" fill="rgb(228,130,12)" rx="2" ry="2" />
+<text  x="1187.55" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (496 samples, 0.11%)</title><rect x="534.7" y="101" width="1.3" height="15.0" fill="rgb(216,114,43)" rx="2" ry="2" />
+<text  x="537.75" y="111.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::operator= (405 samples, 0.09%)</title><rect x="908.4" y="229" width="1.0" height="15.0" fill="rgb(233,43,20)" rx="2" ry="2" />
+<text  x="911.40" y="239.5" ></text>
+</g>
+<g >
+<title>hwloc_linux_set_tid_cpubind (521 samples, 0.11%)</title><rect x="1184.7" y="69" width="1.3" height="15.0" fill="rgb(210,114,52)" rx="2" ry="2" />
+<text  x="1187.70" y="79.5" ></text>
+</g>
+<g >
+<title>MPIDI_CH3I_set_affinity (650 samples, 0.14%)</title><rect x="1184.5" y="197" width="1.7" height="15.0" fill="rgb(239,42,50)" rx="2" ry="2" />
+<text  x="1187.55" y="207.5" ></text>
+</g>
+<g >
+<title>std::basic_stringstream&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;::str (43 samples, 0.01%)</title><rect x="500.2" y="245" width="0.1" height="15.0" fill="rgb(233,211,39)" rx="2" ry="2" />
+<text  x="503.23" y="255.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (7,353 samples, 1.57%)</title><rect x="730.8" y="229" width="18.4" height="15.0" fill="rgb(215,200,14)" rx="2" ry="2" />
+<text  x="733.77" y="239.5" ></text>
+</g>
+<g >
+<title>std::operator==&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (5,617 samples, 1.20%)</title><rect x="502.1" y="245" width="14.1" height="15.0" fill="rgb(217,169,42)" rx="2" ry="2" />
+<text  x="505.09" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (128 samples, 0.03%)</title><rect x="1035.5" y="245" width="0.3" height="15.0" fill="rgb(254,64,18)" rx="2" ry="2" />
+<text  x="1038.50" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_Vector_impl::_Vector_impl (43 samples, 0.01%)</title><rect x="358.3" y="149" width="0.1" height="15.0" fill="rgb(240,2,22)" rx="2" ry="2" />
+<text  x="361.31" y="159.5" ></text>
+</g>
+<g >
+<title>SpatialPartition::RepartitionMasterParticlesToNeighbors (210 samples, 0.04%)</title><rect x="1114.3" y="261" width="0.5" height="15.0" fill="rgb(218,66,38)" rx="2" ry="2" />
+<text  x="1117.29" y="271.5" ></text>
+</g>
+<g >
+<title>operator- (95 samples, 0.02%)</title><rect x="1168.7" y="245" width="0.2" height="15.0" fill="rgb(207,133,37)" rx="2" ry="2" />
+<text  x="1171.70" y="255.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R2TensorT&lt;3&gt; &gt;::operator[] (2,242 samples, 0.48%)</title><rect x="401.1" y="245" width="5.7" height="15.0" fill="rgb(206,142,25)" rx="2" ry="2" />
+<text  x="404.14" y="255.5" ></text>
+</g>
+<g >
+<title>std::__convert_from_v (140 samples, 0.03%)</title><rect x="1156.7" y="197" width="0.3" height="15.0" fill="rgb(220,228,12)" rx="2" ry="2" />
+<text  x="1159.69" y="207.5" ></text>
+</g>
+<g >
+<title>_int_free (1,585 samples, 0.34%)</title><rect x="538.0" y="85" width="4.0" height="15.0" fill="rgb(243,150,24)" rx="2" ry="2" />
+<text  x="541.03" y="95.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::~VectorT (211 samples, 0.04%)</title><rect x="934.1" y="213" width="0.5" height="15.0" fill="rgb(235,97,6)" rx="2" ry="2" />
+<text  x="937.05" y="223.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;std::_Rb_tree_node&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt; &gt;::destroy&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; (42 samples, 0.01%)</title><rect x="496.7" y="117" width="0.1" height="15.0" fill="rgb(246,224,14)" rx="2" ry="2" />
+<text  x="499.73" y="127.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_Vector_base (2,250 samples, 0.48%)</title><rect x="523.5" y="165" width="5.6" height="15.0" fill="rgb(209,201,2)" rx="2" ry="2" />
+<text  x="526.47" y="175.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (7,353 samples, 1.57%)</title><rect x="730.8" y="245" width="18.4" height="15.0" fill="rgb(230,201,17)" rx="2" ry="2" />
+<text  x="733.77" y="255.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::Det (45 samples, 0.01%)</title><rect x="918.9" y="245" width="0.1" height="15.0" fill="rgb(233,186,31)" rx="2" ry="2" />
+<text  x="921.89" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeGridShapeFunctionGradient (248 samples, 0.05%)</title><rect x="1159.0" y="277" width="0.6" height="15.0" fill="rgb(218,66,43)" rx="2" ry="2" />
+<text  x="1162.00" y="287.5" ></text>
+</g>
+<g >
+<title>MPMSolver::kernelGradient (2,217 samples, 0.47%)</title><rect x="987.4" y="245" width="5.5" height="15.0" fill="rgb(233,90,34)" rx="2" ry="2" />
+<text  x="990.38" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::push_back (231 samples, 0.05%)</title><rect x="1113.6" y="245" width="0.6" height="15.0" fill="rgb(246,142,26)" rx="2" ry="2" />
+<text  x="1116.59" y="255.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::operator (156 samples, 0.03%)</title><rect x="920.0" y="245" width="0.4" height="15.0" fill="rgb(245,81,28)" rx="2" ry="2" />
+<text  x="922.98" y="255.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (65 samples, 0.01%)</title><rect x="836.9" y="229" width="0.1" height="15.0" fill="rgb(238,23,43)" rx="2" ry="2" />
+<text  x="839.87" y="239.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeGridShapeFunctionGradient (16,292 samples, 3.47%)</title><rect x="516.9" y="261" width="40.9" height="15.0" fill="rgb(209,99,50)" rx="2" ry="2" />
+<text  x="519.86" y="271.5" >MPM..</text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (1,568 samples, 0.33%)</title><rect x="492.5" y="245" width="3.9" height="15.0" fill="rgb(224,125,3)" rx="2" ry="2" />
+<text  x="495.50" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeElasticProperties (319 samples, 0.07%)</title><rect x="917.9" y="245" width="0.8" height="15.0" fill="rgb(217,151,38)" rx="2" ry="2" />
+<text  x="920.93" y="255.5" ></text>
+</g>
+<g >
+<title>__memcmp_sse4_1 (984 samples, 0.21%)</title><rect x="925.1" y="197" width="2.5" height="15.0" fill="rgb(217,200,27)" rx="2" ry="2" />
+<text  x="928.14" y="207.5" ></text>
+</g>
+<g >
+<title>ObjectDataStructureBaseT::FieldHasSingleType (48 samples, 0.01%)</title><rect x="497.2" y="229" width="0.1" height="15.0" fill="rgb(243,164,1)" rx="2" ry="2" />
+<text  x="500.16" y="239.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::operator= (405 samples, 0.09%)</title><rect x="908.4" y="245" width="1.0" height="15.0" fill="rgb(247,174,30)" rx="2" ry="2" />
+<text  x="911.40" y="255.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (123 samples, 0.03%)</title><rect x="944.5" y="229" width="0.3" height="15.0" fill="rgb(209,179,23)" rx="2" ry="2" />
+<text  x="947.51" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_default_append (502 samples, 0.11%)</title><rect x="940.3" y="229" width="1.3" height="15.0" fill="rgb(218,106,43)" rx="2" ry="2" />
+<text  x="943.31" y="239.5" ></text>
+</g>
+<g >
+<title>__GI___printf_fp_l (94 samples, 0.02%)</title><rect x="1156.8" y="149" width="0.2" height="15.0" fill="rgb(247,221,4)" rx="2" ry="2" />
+<text  x="1159.78" y="159.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_deallocate (1,996 samples, 0.42%)</title><rect x="537.3" y="133" width="5.1" height="15.0" fill="rgb(246,110,34)" rx="2" ry="2" />
+<text  x="540.34" y="143.5" ></text>
+</g>
+<g >
+<title>std::string::size (46 samples, 0.01%)</title><rect x="497.5" y="133" width="0.1" height="15.0" fill="rgb(239,207,27)" rx="2" ry="2" />
+<text  x="500.48" y="143.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (555 samples, 0.12%)</title><rect x="498.2" y="101" width="1.4" height="15.0" fill="rgb(251,160,19)" rx="2" ry="2" />
+<text  x="501.22" y="111.5" ></text>
+</g>
+<g >
+<title>operator delete@plt (175 samples, 0.04%)</title><rect x="1126.5" y="261" width="0.4" height="15.0" fill="rgb(250,167,18)" rx="2" ry="2" />
+<text  x="1129.45" y="271.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;false&gt;::__uninit_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (2,772 samples, 0.59%)</title><rect x="358.5" y="133" width="6.9" height="15.0" fill="rgb(223,15,17)" rx="2" ry="2" />
+<text  x="361.46" y="143.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, FieldBase*&gt;, std::_Select1st&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt; &gt;::find (76 samples, 0.02%)</title><rect x="497.4" y="213" width="0.2" height="15.0" fill="rgb(234,134,37)" rx="2" ry="2" />
+<text  x="500.42" y="223.5" ></text>
+</g>
+<g >
+<title>std::string::compare (4,922 samples, 1.05%)</title><rect x="503.1" y="229" width="12.4" height="15.0" fill="rgb(231,81,29)" rx="2" ry="2" />
+<text  x="506.13" y="239.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::SumOfSquares (3,085 samples, 0.66%)</title><rect x="1035.8" y="261" width="7.8" height="15.0" fill="rgb(232,15,23)" rx="2" ry="2" />
+<text  x="1038.82" y="271.5" ></text>
+</g>
+<g >
+<title>std::map&lt;std::string, Array1dT&lt;R1TensorT&lt;3&gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::operator[] (54 samples, 0.01%)</title><rect x="497.3" y="229" width="0.1" height="15.0" fill="rgb(242,11,51)" rx="2" ry="2" />
+<text  x="500.28" y="239.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;double&gt;::VectorT (469 samples, 0.10%)</title><rect x="914.8" y="229" width="1.2" height="15.0" fill="rgb(253,16,40)" rx="2" ry="2" />
+<text  x="917.83" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;int, std::allocator&lt;int&gt; &gt;::operator[] (726 samples, 0.15%)</title><rect x="888.8" y="213" width="1.8" height="15.0" fill="rgb(206,140,42)" rx="2" ry="2" />
+<text  x="891.79" y="223.5" ></text>
+</g>
+<g >
+<title>operator new (933 samples, 0.20%)</title><rect x="355.9" y="85" width="2.4" height="15.0" fill="rgb(232,162,24)" rx="2" ry="2" />
+<text  x="358.92" y="95.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Array1dT&lt;int&gt;, std::allocator&lt;Array1dT&lt;int&gt; &gt; &gt;::operator[] (351 samples, 0.07%)</title><rect x="887.9" y="213" width="0.9" height="15.0" fill="rgb(207,113,2)" rx="2" ry="2" />
+<text  x="890.91" y="223.5" ></text>
+</g>
+<g >
+<title>operator- (494 samples, 0.11%)</title><rect x="1166.8" y="245" width="1.2" height="15.0" fill="rgb(225,210,33)" rx="2" ry="2" />
+<text  x="1169.79" y="255.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::operator (94 samples, 0.02%)</title><rect x="917.2" y="229" width="0.2" height="15.0" fill="rgb(254,90,28)" rx="2" ry="2" />
+<text  x="920.15" y="239.5" ></text>
+</g>
+<g >
+<title>_start (80 samples, 0.02%)</title><rect x="1183.7" y="277" width="0.2" height="15.0" fill="rgb(248,13,9)" rx="2" ry="2" />
+<text  x="1186.70" y="287.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::size (202 samples, 0.04%)</title><rect x="446.6" y="213" width="0.5" height="15.0" fill="rgb(224,41,15)" rx="2" ry="2" />
+<text  x="449.56" y="223.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (49 samples, 0.01%)</title><rect x="1168.8" y="229" width="0.1" height="15.0" fill="rgb(244,47,24)" rx="2" ry="2" />
+<text  x="1171.81" y="239.5" ></text>
+</g>
+<g >
+<title>_int_malloc (101 samples, 0.02%)</title><rect x="940.8" y="133" width="0.2" height="15.0" fill="rgb(208,37,33)" rx="2" ry="2" />
+<text  x="943.77" y="143.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::AijBkj (394 samples, 0.08%)</title><rect x="904.6" y="245" width="1.0" height="15.0" fill="rgb(253,97,37)" rx="2" ry="2" />
+<text  x="907.62" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, FieldBase*&gt;, std::_Select1st&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt; &gt;::_M_lower_bound (60 samples, 0.01%)</title><rect x="497.7" y="181" width="0.1" height="15.0" fill="rgb(209,87,50)" rx="2" ry="2" />
+<text  x="500.65" y="191.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (402 samples, 0.09%)</title><rect x="937.1" y="229" width="1.0" height="15.0" fill="rgb(246,131,44)" rx="2" ry="2" />
+<text  x="940.08" y="239.5" ></text>
+</g>
+<g >
+<title>operator new (906 samples, 0.19%)</title><rect x="911.8" y="69" width="2.3" height="15.0" fill="rgb(235,199,25)" rx="2" ry="2" />
+<text  x="914.84" y="79.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;double, std::allocator&lt;double&gt; &gt;::_Vector_base (1,145 samples, 0.24%)</title><rect x="406.8" y="181" width="2.9" height="15.0" fill="rgb(234,144,32)" rx="2" ry="2" />
+<text  x="409.82" y="191.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;, std::_Select1st&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::erase (92 samples, 0.02%)</title><rect x="496.6" y="213" width="0.3" height="15.0" fill="rgb(222,70,29)" rx="2" ry="2" />
+<text  x="499.63" y="223.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::length (70 samples, 0.01%)</title><rect x="516.6" y="213" width="0.2" height="15.0" fill="rgb(241,61,37)" rx="2" ry="2" />
+<text  x="519.63" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::vector (203 samples, 0.04%)</title><rect x="447.2" y="213" width="0.5" height="15.0" fill="rgb(227,229,35)" rx="2" ry="2" />
+<text  x="450.22" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::operator= (226 samples, 0.05%)</title><rect x="919.2" y="197" width="0.5" height="15.0" fill="rgb(249,201,54)" rx="2" ry="2" />
+<text  x="922.18" y="207.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R2TensorT&lt;3&gt; &gt;::VectorT (1,175 samples, 0.25%)</title><rect x="911.8" y="213" width="3.0" height="15.0" fill="rgb(253,140,54)" rx="2" ry="2" />
+<text  x="914.82" y="223.5" ></text>
+</g>
+<g >
+<title>__memcmp_sse4_1 (1,407 samples, 0.30%)</title><rect x="505.9" y="197" width="3.6" height="15.0" fill="rgb(226,221,34)" rx="2" ry="2" />
+<text  x="508.95" y="207.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (285 samples, 0.06%)</title><rect x="914.9" y="53" width="0.8" height="15.0" fill="rgb(217,156,43)" rx="2" ry="2" />
+<text  x="917.94" y="63.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~vector (1,996 samples, 0.42%)</title><rect x="537.3" y="181" width="5.1" height="15.0" fill="rgb(254,107,13)" rx="2" ry="2" />
+<text  x="540.34" y="191.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (184 samples, 0.04%)</title><rect x="1171.6" y="261" width="0.4" height="15.0" fill="rgb(235,132,51)" rx="2" ry="2" />
+<text  x="1174.58" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (50 samples, 0.01%)</title><rect x="836.9" y="197" width="0.1" height="15.0" fill="rgb(218,122,37)" rx="2" ry="2" />
+<text  x="839.87" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator+= (200 samples, 0.04%)</title><rect x="938.1" y="229" width="0.5" height="15.0" fill="rgb(228,60,42)" rx="2" ry="2" />
+<text  x="941.09" y="239.5" ></text>
+</g>
+<g >
+<title>operator new (116 samples, 0.02%)</title><rect x="1157.9" y="181" width="0.3" height="15.0" fill="rgb(253,101,25)" rx="2" ry="2" />
+<text  x="1160.88" y="191.5" ></text>
+</g>
+<g >
+<title>std::string::_Rep::_M_grab (60 samples, 0.01%)</title><rect x="932.1" y="213" width="0.2" height="15.0" fill="rgb(249,176,50)" rx="2" ry="2" />
+<text  x="935.10" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (59 samples, 0.01%)</title><rect x="1113.8" y="85" width="0.1" height="15.0" fill="rgb(229,28,41)" rx="2" ry="2" />
+<text  x="1116.77" y="95.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;, std::_Select1st&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::_M_destroy_node (47 samples, 0.01%)</title><rect x="496.7" y="133" width="0.1" height="15.0" fill="rgb(219,216,34)" rx="2" ry="2" />
+<text  x="499.72" y="143.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::AijBj (877 samples, 0.19%)</title><rect x="1032.3" y="261" width="2.2" height="15.0" fill="rgb(241,212,44)" rx="2" ry="2" />
+<text  x="1035.25" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (555 samples, 0.12%)</title><rect x="498.2" y="117" width="1.4" height="15.0" fill="rgb(214,88,27)" rx="2" ry="2" />
+<text  x="501.22" y="127.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_copy_a&lt;__gnu_cxx::__normal_iterator&lt;R1TensorT&lt;3&gt; const*, std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, R1TensorT&lt;3&gt;*, R1TensorT&lt;3&gt; &gt; (959 samples, 0.20%)</title><rect x="534.7" y="181" width="2.5" height="15.0" fill="rgb(209,195,17)" rx="2" ry="2" />
+<text  x="537.74" y="191.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator/= (185 samples, 0.04%)</title><rect x="1154.9" y="245" width="0.5" height="15.0" fill="rgb(238,139,5)" rx="2" ry="2" />
+<text  x="1157.92" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_Vector_base (74 samples, 0.02%)</title><rect x="447.5" y="181" width="0.2" height="15.0" fill="rgb(242,147,12)" rx="2" ry="2" />
+<text  x="450.55" y="191.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;int, std::allocator&lt;int&gt; &gt;::emplace_back&lt;int&gt; (65 samples, 0.01%)</title><rect x="796.7" y="229" width="0.2" height="15.0" fill="rgb(208,114,35)" rx="2" ry="2" />
+<text  x="799.74" y="239.5" ></text>
+</g>
+<g >
+<title>operator* (368 samples, 0.08%)</title><rect x="1174.1" y="261" width="0.9" height="15.0" fill="rgb(227,185,32)" rx="2" ry="2" />
+<text  x="1177.06" y="271.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;int&gt;::operator[] (726 samples, 0.15%)</title><rect x="888.8" y="245" width="1.8" height="15.0" fill="rgb(236,180,41)" rx="2" ry="2" />
+<text  x="891.79" y="255.5" ></text>
+</g>
+<g >
+<title>__sched_setaffinity_new (466 samples, 0.10%)</title><rect x="1184.8" y="53" width="1.2" height="15.0" fill="rgb(210,16,32)" rx="2" ry="2" />
+<text  x="1187.83" y="63.5" ></text>
+</g>
+<g >
+<title>__libm_floor_y8 (202 samples, 0.04%)</title><rect x="796.0" y="245" width="0.5" height="15.0" fill="rgb(253,229,40)" rx="2" ry="2" />
+<text  x="798.98" y="255.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (572 samples, 0.12%)</title><rect x="838.2" y="245" width="1.5" height="15.0" fill="rgb(227,23,33)" rx="2" ry="2" />
+<text  x="841.24" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;unsigned long, std::allocator&lt;unsigned long&gt; &gt;::push_back (286 samples, 0.06%)</title><rect x="1157.8" y="261" width="0.7" height="15.0" fill="rgb(253,72,7)" rx="2" ry="2" />
+<text  x="1160.76" y="271.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (1,702 samples, 0.36%)</title><rect x="530.3" y="117" width="4.3" height="15.0" fill="rgb(219,34,21)" rx="2" ry="2" />
+<text  x="533.32" y="127.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;int&gt;::operator[] (726 samples, 0.15%)</title><rect x="888.8" y="229" width="1.8" height="15.0" fill="rgb(250,218,10)" rx="2" ry="2" />
+<text  x="891.79" y="239.5" ></text>
+</g>
+<g >
+<title>_int_malloc (968 samples, 0.21%)</title><rect x="1181.1" y="277" width="2.4" height="15.0" fill="rgb(221,116,39)" rx="2" ry="2" />
+<text  x="1184.11" y="287.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (3,669 samples, 0.78%)</title><rect x="449.4" y="133" width="9.2" height="15.0" fill="rgb(217,219,30)" rx="2" ry="2" />
+<text  x="452.42" y="143.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::Normalize (71 samples, 0.02%)</title><rect x="836.1" y="229" width="0.1" height="15.0" fill="rgb(217,204,46)" rx="2" ry="2" />
+<text  x="839.06" y="239.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (4,899 samples, 1.04%)</title><rect x="433.7" y="133" width="12.3" height="15.0" fill="rgb(231,17,45)" rx="2" ry="2" />
+<text  x="436.74" y="143.5" ></text>
+</g>
+<g >
+<title>std::string::compare (44 samples, 0.01%)</title><rect x="1171.5" y="245" width="0.1" height="15.0" fill="rgb(205,42,2)" rx="2" ry="2" />
+<text  x="1174.46" y="255.5" ></text>
+</g>
+<g >
+<title>std::string::_M_mutate (53 samples, 0.01%)</title><rect x="1157.3" y="213" width="0.1" height="15.0" fill="rgb(216,16,6)" rx="2" ry="2" />
+<text  x="1160.31" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R2TensorT&lt;3&gt;, std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::vector (1,175 samples, 0.25%)</title><rect x="911.8" y="181" width="3.0" height="15.0" fill="rgb(210,0,7)" rx="2" ry="2" />
+<text  x="914.82" y="191.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (154 samples, 0.03%)</title><rect x="1035.1" y="213" width="0.4" height="15.0" fill="rgb(233,194,2)" rx="2" ry="2" />
+<text  x="1038.11" y="223.5" ></text>
+</g>
+<g >
+<title>ObjectDataStructureBaseT::RemoveDataField&lt;R1TensorT&lt;3&gt; &gt; (92 samples, 0.02%)</title><rect x="496.6" y="245" width="0.3" height="15.0" fill="rgb(222,73,10)" rx="2" ry="2" />
+<text  x="499.63" y="255.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;double*, unsigned long&gt; (78 samples, 0.02%)</title><rect x="500.0" y="181" width="0.2" height="15.0" fill="rgb(206,159,3)" rx="2" ry="2" />
+<text  x="502.99" y="191.5" ></text>
+</g>
+<g >
+<title>std::uninitialized_copy&lt;R1TensorT&lt;3&gt;*, R1TensorT&lt;3&gt;*&gt; (173 samples, 0.04%)</title><rect x="1113.7" y="181" width="0.5" height="15.0" fill="rgb(245,122,36)" rx="2" ry="2" />
+<text  x="1116.73" y="191.5" ></text>
+</g>
+<g >
+<title>darshan_clean_file_path (68 samples, 0.01%)</title><rect x="1155.8" y="197" width="0.1" height="15.0" fill="rgb(207,49,12)" rx="2" ry="2" />
+<text  x="1158.78" y="207.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::operator[] (352 samples, 0.07%)</title><rect x="837.4" y="213" width="0.8" height="15.0" fill="rgb(240,185,50)" rx="2" ry="2" />
+<text  x="840.36" y="223.5" ></text>
+</g>
+<g >
+<title>std::_Construct&lt;R1TensorT&lt;3&gt;, R1TensorT&lt;3&gt;&amp;&gt; (156 samples, 0.03%)</title><rect x="1113.8" y="149" width="0.4" height="15.0" fill="rgb(245,17,49)" rx="2" ry="2" />
+<text  x="1116.77" y="159.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::~Array1dT (211 samples, 0.04%)</title><rect x="934.1" y="245" width="0.5" height="15.0" fill="rgb(240,133,31)" rx="2" ry="2" />
+<text  x="937.05" y="255.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (44 samples, 0.01%)</title><rect x="936.9" y="229" width="0.1" height="15.0" fill="rgb(219,15,41)" rx="2" ry="2" />
+<text  x="939.87" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (44 samples, 0.01%)</title><rect x="936.9" y="213" width="0.1" height="15.0" fill="rgb(252,225,20)" rx="2" ry="2" />
+<text  x="939.87" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::size (389 samples, 0.08%)</title><rect x="489.8" y="213" width="1.0" height="15.0" fill="rgb(254,67,48)" rx="2" ry="2" />
+<text  x="492.84" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (65 samples, 0.01%)</title><rect x="1153.8" y="229" width="0.2" height="15.0" fill="rgb(229,222,18)" rx="2" ry="2" />
+<text  x="1156.84" y="239.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::VectorT (264 samples, 0.06%)</title><rect x="447.1" y="229" width="0.6" height="15.0" fill="rgb(210,93,0)" rx="2" ry="2" />
+<text  x="450.07" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (124 samples, 0.03%)</title><rect x="941.1" y="197" width="0.3" height="15.0" fill="rgb(215,146,26)" rx="2" ry="2" />
+<text  x="944.09" y="207.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::put (179 samples, 0.04%)</title><rect x="1156.7" y="245" width="0.4" height="15.0" fill="rgb(222,77,6)" rx="2" ry="2" />
+<text  x="1159.66" y="255.5" ></text>
+</g>
+<g >
+<title>std::uninitialized_copy&lt;__gnu_cxx::__normal_iterator&lt;R1TensorT&lt;3&gt; const*, std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, R1TensorT&lt;3&gt;*&gt; (12,256 samples, 2.61%)</title><rect x="459.0" y="181" width="30.8" height="15.0" fill="rgb(214,214,22)" rx="2" ry="2" />
+<text  x="462.01" y="191.5" >st..</text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::allocate (979 samples, 0.21%)</title><rect x="355.9" y="117" width="2.4" height="15.0" fill="rgb(242,213,8)" rx="2" ry="2" />
+<text  x="358.85" y="127.5" ></text>
+</g>
+<g >
+<title>operator* (82 samples, 0.02%)</title><rect x="836.5" y="245" width="0.2" height="15.0" fill="rgb(214,147,23)" rx="2" ry="2" />
+<text  x="839.49" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator*= (133 samples, 0.03%)</title><rect x="1155.1" y="229" width="0.3" height="15.0" fill="rgb(217,31,7)" rx="2" ry="2" />
+<text  x="1158.05" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (6,729 samples, 1.43%)</title><rect x="462.8" y="101" width="16.9" height="15.0" fill="rgb(247,83,54)" rx="2" ry="2" />
+<text  x="465.84" y="111.5" ></text>
+</g>
+<g >
+<title>__libm_cos_l9 (53 samples, 0.01%)</title><rect x="917.6" y="229" width="0.1" height="15.0" fill="rgb(254,95,39)" rx="2" ry="2" />
+<text  x="920.58" y="239.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (58 samples, 0.01%)</title><rect x="1154.3" y="245" width="0.1" height="15.0" fill="rgb(251,215,44)" rx="2" ry="2" />
+<text  x="1157.27" y="255.5" ></text>
+</g>
+<g >
+<title>std::map&lt;std::string, Array1dT&lt;R1TensorT&lt;3&gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::find (47 samples, 0.01%)</title><rect x="1031.3" y="229" width="0.1" height="15.0" fill="rgb(234,84,48)" rx="2" ry="2" />
+<text  x="1034.26" y="239.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::Array1dT (70 samples, 0.01%)</title><rect x="1164.1" y="261" width="0.2" height="15.0" fill="rgb(242,179,24)" rx="2" ry="2" />
+<text  x="1167.14" y="271.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;double, std::allocator&lt;double&gt; &gt;::_M_allocate (1,139 samples, 0.24%)</title><rect x="406.8" y="133" width="2.9" height="15.0" fill="rgb(246,111,48)" rx="2" ry="2" />
+<text  x="409.83" y="143.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (282 samples, 0.06%)</title><rect x="935.0" y="245" width="0.7" height="15.0" fill="rgb(252,1,42)" rx="2" ry="2" />
+<text  x="938.02" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeBodyForce (131 samples, 0.03%)</title><rect x="1158.5" y="277" width="0.4" height="15.0" fill="rgb(247,212,13)" rx="2" ry="2" />
+<text  x="1161.54" y="287.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_allocate (4,049 samples, 0.86%)</title><rect x="448.8" y="197" width="10.2" height="15.0" fill="rgb(214,203,13)" rx="2" ry="2" />
+<text  x="451.84" y="207.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;unsigned long&gt;::deallocate (50 samples, 0.01%)</title><rect x="1158.2" y="197" width="0.1" height="15.0" fill="rgb(223,76,5)" rx="2" ry="2" />
+<text  x="1161.21" y="207.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator= (208 samples, 0.04%)</title><rect x="935.7" y="245" width="0.6" height="15.0" fill="rgb(213,86,52)" rx="2" ry="2" />
+<text  x="938.73" y="255.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::R2TensorT (218 samples, 0.05%)</title><rect x="914.2" y="85" width="0.6" height="15.0" fill="rgb(238,187,39)" rx="2" ry="2" />
+<text  x="917.22" y="95.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::allocate (909 samples, 0.19%)</title><rect x="911.8" y="101" width="2.3" height="15.0" fill="rgb(209,91,15)" rx="2" ry="2" />
+<text  x="914.84" y="111.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::~VectorT (76 samples, 0.02%)</title><rect x="496.4" y="245" width="0.2" height="15.0" fill="rgb(218,10,45)" rx="2" ry="2" />
+<text  x="499.43" y="255.5" ></text>
+</g>
+<g >
+<title>operator new (41 samples, 0.01%)</title><rect x="1171.3" y="245" width="0.1" height="15.0" fill="rgb(239,23,30)" rx="2" ry="2" />
+<text  x="1174.29" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (1,155 samples, 0.25%)</title><rect x="841.4" y="213" width="2.9" height="15.0" fill="rgb(251,92,47)" rx="2" ry="2" />
+<text  x="844.44" y="223.5" ></text>
+</g>
+<g >
+<title>R2SymTensorT&lt;3&gt;::operator (1,729 samples, 0.37%)</title><rect x="1080.8" y="261" width="4.3" height="15.0" fill="rgb(225,158,23)" rx="2" ry="2" />
+<text  x="1083.80" y="271.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_copy_a&lt;__gnu_cxx::__normal_iterator&lt;R1TensorT&lt;3&gt; const*, std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, R1TensorT&lt;3&gt;*, R1TensorT&lt;3&gt; &gt; (12,256 samples, 2.61%)</title><rect x="459.0" y="197" width="30.8" height="15.0" fill="rgb(252,111,40)" rx="2" ry="2" />
+<text  x="462.01" y="207.5" >st..</text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R2TensorT&lt;3&gt;, std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::_M_allocate (909 samples, 0.19%)</title><rect x="911.8" y="117" width="2.3" height="15.0" fill="rgb(251,180,16)" rx="2" ry="2" />
+<text  x="914.84" y="127.5" ></text>
+</g>
+<g >
+<title>operator* (142 samples, 0.03%)</title><rect x="1187.4" y="277" width="0.4" height="15.0" fill="rgb(219,39,32)" rx="2" ry="2" />
+<text  x="1190.44" y="287.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (71 samples, 0.02%)</title><rect x="941.2" y="117" width="0.2" height="15.0" fill="rgb(214,38,14)" rx="2" ry="2" />
+<text  x="944.22" y="127.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (71 samples, 0.02%)</title><rect x="941.2" y="133" width="0.2" height="15.0" fill="rgb(225,11,52)" rx="2" ry="2" />
+<text  x="944.22" y="143.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::operator= (2,904 samples, 0.62%)</title><rect x="530.0" y="245" width="7.3" height="15.0" fill="rgb(215,77,34)" rx="2" ry="2" />
+<text  x="533.05" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (73 samples, 0.02%)</title><rect x="838.2" y="197" width="0.2" height="15.0" fill="rgb(222,30,45)" rx="2" ry="2" />
+<text  x="841.24" y="207.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computePairwiseNodalContactForce (46 samples, 0.01%)</title><rect x="1160.0" y="277" width="0.1" height="15.0" fill="rgb(218,7,17)" rx="2" ry="2" />
+<text  x="1163.01" y="287.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (767 samples, 0.16%)</title><rect x="844.3" y="213" width="2.0" height="15.0" fill="rgb(227,207,12)" rx="2" ry="2" />
+<text  x="847.34" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_emplace_back_aux&lt;R1TensorT&lt;3&gt; const&amp;&gt; (188 samples, 0.04%)</title><rect x="1113.7" y="229" width="0.5" height="15.0" fill="rgb(217,155,34)" rx="2" ry="2" />
+<text  x="1116.70" y="239.5" ></text>
+</g>
+<g >
+<title>std::_Construct&lt;R1TensorT&lt;3&gt;&gt; (371 samples, 0.08%)</title><rect x="529.1" y="101" width="0.9" height="15.0" fill="rgb(243,23,1)" rx="2" ry="2" />
+<text  x="532.12" y="111.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;double&gt;::operator[] (2,671 samples, 0.57%)</title><rect x="410.5" y="261" width="6.7" height="15.0" fill="rgb(253,144,32)" rx="2" ry="2" />
+<text  x="413.48" y="271.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computePairwiseNodalContactForce (546 samples, 0.12%)</title><rect x="835.8" y="261" width="1.4" height="15.0" fill="rgb(228,198,8)" rx="2" ry="2" />
+<text  x="838.78" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (1,155 samples, 0.25%)</title><rect x="841.4" y="197" width="2.9" height="15.0" fill="rgb(249,154,47)" rx="2" ry="2" />
+<text  x="844.44" y="207.5" ></text>
+</g>
+<g >
+<title>std::string::compare (302 samples, 0.06%)</title><rect x="932.5" y="229" width="0.7" height="15.0" fill="rgb(246,100,14)" rx="2" ry="2" />
+<text  x="935.48" y="239.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::length (82 samples, 0.02%)</title><rect x="932.8" y="213" width="0.2" height="15.0" fill="rgb(239,103,45)" rx="2" ry="2" />
+<text  x="935.82" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (53 samples, 0.01%)</title><rect x="1168.6" y="213" width="0.1" height="15.0" fill="rgb(240,208,1)" rx="2" ry="2" />
+<text  x="1171.57" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;unsigned long, std::allocator&lt;unsigned long&gt; &gt;::_M_emplace_back_aux&lt;unsigned long const&amp;&gt; (277 samples, 0.06%)</title><rect x="1157.8" y="245" width="0.7" height="15.0" fill="rgb(240,172,13)" rx="2" ry="2" />
+<text  x="1160.78" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_create_storage (2,250 samples, 0.48%)</title><rect x="523.5" y="133" width="5.6" height="15.0" fill="rgb(214,208,25)" rx="2" ry="2" />
+<text  x="526.47" y="143.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::operator[] (14,132 samples, 3.01%)</title><rect x="365.5" y="229" width="35.5" height="15.0" fill="rgb(227,32,35)" rx="2" ry="2" />
+<text  x="368.51" y="239.5" >std..</text>
+</g>
+<g >
+<title>_dl_sysdep_start (54 samples, 0.01%)</title><rect x="1183.8" y="245" width="0.1" height="15.0" fill="rgb(219,177,24)" rx="2" ry="2" />
+<text  x="1186.76" y="255.5" ></text>
+</g>
+<g >
+<title>operator new (310 samples, 0.07%)</title><rect x="914.9" y="69" width="0.8" height="15.0" fill="rgb(227,135,13)" rx="2" ry="2" />
+<text  x="917.89" y="79.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::TensorBaseT (252 samples, 0.05%)</title><rect x="919.1" y="213" width="0.6" height="15.0" fill="rgb(219,50,41)" rx="2" ry="2" />
+<text  x="922.11" y="223.5" ></text>
+</g>
+<g >
+<title>ObjectDataStructureBaseT::AddKeylessDataField&lt;double&gt; (225 samples, 0.05%)</title><rect x="499.6" y="245" width="0.6" height="15.0" fill="rgb(210,21,12)" rx="2" ry="2" />
+<text  x="502.62" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (141 samples, 0.03%)</title><rect x="939.0" y="181" width="0.3" height="15.0" fill="rgb(217,75,32)" rx="2" ry="2" />
+<text  x="941.98" y="191.5" ></text>
+</g>
+<g >
+<title>std::string::compare (54 samples, 0.01%)</title><rect x="497.7" y="133" width="0.1" height="15.0" fill="rgb(254,28,10)" rx="2" ry="2" />
+<text  x="500.67" y="143.5" ></text>
+</g>
+<g >
+<title>_int_malloc (162 samples, 0.03%)</title><rect x="915.2" y="37" width="0.5" height="15.0" fill="rgb(240,8,41)" rx="2" ry="2" />
+<text  x="918.25" y="47.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::AijBkj (475 samples, 0.10%)</title><rect x="1095.5" y="261" width="1.2" height="15.0" fill="rgb(233,99,5)" rx="2" ry="2" />
+<text  x="1098.48" y="271.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_allocate_and_copy&lt;__gnu_cxx::__normal_iterator&lt;R1TensorT&lt;3&gt; const*, std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt; (16,305 samples, 3.47%)</title><rect x="448.8" y="213" width="41.0" height="15.0" fill="rgb(253,150,40)" rx="2" ry="2" />
+<text  x="451.84" y="223.5" >std..</text>
+</g>
+<g >
+<title>std::map&lt;std::string, FieldBase*, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt; &gt;::find (76 samples, 0.02%)</title><rect x="497.4" y="229" width="0.2" height="15.0" fill="rgb(245,8,40)" rx="2" ry="2" />
+<text  x="500.42" y="239.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;double&gt;::operator[] (2,671 samples, 0.57%)</title><rect x="410.5" y="245" width="6.7" height="15.0" fill="rgb(217,31,15)" rx="2" ry="2" />
+<text  x="413.48" y="255.5" ></text>
+</g>
+<g >
+<title>fopen64 (140 samples, 0.03%)</title><rect x="1155.7" y="213" width="0.3" height="15.0" fill="rgb(239,73,51)" rx="2" ry="2" />
+<text  x="1158.69" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_default_append (41 samples, 0.01%)</title><rect x="1157.5" y="245" width="0.1" height="15.0" fill="rgb(238,201,51)" rx="2" ry="2" />
+<text  x="1160.50" y="255.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_copy&lt;false&gt;::__uninit_copy&lt;R1TensorT&lt;3&gt;*, R1TensorT&lt;3&gt;*&gt; (173 samples, 0.04%)</title><rect x="1113.7" y="165" width="0.5" height="15.0" fill="rgb(231,228,34)" rx="2" ry="2" />
+<text  x="1116.73" y="175.5" ></text>
+</g>
+<g >
+<title>bufvector::PrivatePackArray&lt;R1TensorT&lt;3&gt; &gt; (71 samples, 0.02%)</title><rect x="1113.4" y="213" width="0.2" height="15.0" fill="rgb(234,192,33)" rx="2" ry="2" />
+<text  x="1116.39" y="223.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator= (702 samples, 0.15%)</title><rect x="839.7" y="245" width="1.7" height="15.0" fill="rgb(235,93,41)" rx="2" ry="2" />
+<text  x="842.68" y="255.5" ></text>
+</g>
+<g >
+<title>_int_malloc (745 samples, 0.16%)</title><rect x="912.2" y="37" width="1.9" height="15.0" fill="rgb(234,222,19)" rx="2" ry="2" />
+<text  x="915.20" y="47.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (213 samples, 0.05%)</title><rect x="938.8" y="197" width="0.5" height="15.0" fill="rgb(216,213,20)" rx="2" ry="2" />
+<text  x="941.80" y="207.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::operator[] (7,353 samples, 1.57%)</title><rect x="730.8" y="213" width="18.4" height="15.0" fill="rgb(245,46,4)" rx="2" ry="2" />
+<text  x="733.77" y="223.5" ></text>
+</g>
+<g >
+<title>hwloc_x86_discover (588 samples, 0.13%)</title><rect x="1184.7" y="117" width="1.5" height="15.0" fill="rgb(218,130,53)" rx="2" ry="2" />
+<text  x="1187.70" y="127.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;unsigned long, std::allocator&lt;unsigned long&gt; &gt;::operator[] (44 samples, 0.01%)</title><rect x="417.9" y="229" width="0.1" height="15.0" fill="rgb(240,140,14)" rx="2" ry="2" />
+<text  x="420.89" y="239.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_create_storage (979 samples, 0.21%)</title><rect x="355.9" y="149" width="2.4" height="15.0" fill="rgb(239,49,54)" rx="2" ry="2" />
+<text  x="358.85" y="159.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::allocate (979 samples, 0.21%)</title><rect x="355.9" y="101" width="2.4" height="15.0" fill="rgb(215,65,27)" rx="2" ry="2" />
+<text  x="358.85" y="111.5" ></text>
+</g>
+<g >
+<title>__GI___libc_free (473 samples, 0.10%)</title><rect x="1115.1" y="261" width="1.2" height="15.0" fill="rgb(254,161,34)" rx="2" ry="2" />
+<text  x="1118.08" y="271.5" ></text>
+</g>
+<g >
+<title>operator new (2,203 samples, 0.47%)</title><rect x="523.5" y="69" width="5.5" height="15.0" fill="rgb(251,175,18)" rx="2" ry="2" />
+<text  x="526.50" y="79.5" ></text>
+</g>
+<g >
+<title>std::string::operator= (112 samples, 0.02%)</title><rect x="932.0" y="245" width="0.3" height="15.0" fill="rgb(211,153,23)" rx="2" ry="2" />
+<text  x="935.02" y="255.5" ></text>
+</g>
+<g >
+<title>std::basic_filebuf&lt;char, std::char_traits&lt;char&gt; &gt;::close (46 samples, 0.01%)</title><rect x="1155.6" y="245" width="0.1" height="15.0" fill="rgb(242,11,6)" rx="2" ry="2" />
+<text  x="1158.56" y="255.5" ></text>
+</g>
+<g >
+<title>PMPI_Allreduce (43 samples, 0.01%)</title><rect x="1186.6" y="245" width="0.1" height="15.0" fill="rgb(241,147,20)" rx="2" ry="2" />
+<text  x="1189.62" y="255.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;unsigned long&gt;::allocate (137 samples, 0.03%)</title><rect x="1157.9" y="197" width="0.3" height="15.0" fill="rgb(245,108,32)" rx="2" ry="2" />
+<text  x="1160.87" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (339 samples, 0.07%)</title><rect x="529.2" y="69" width="0.8" height="15.0" fill="rgb(246,171,29)" rx="2" ry="2" />
+<text  x="532.20" y="79.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::VectorT (3,811 samples, 0.81%)</title><rect x="355.8" y="229" width="9.6" height="15.0" fill="rgb(224,205,45)" rx="2" ry="2" />
+<text  x="358.85" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (240 samples, 0.05%)</title><rect x="937.1" y="197" width="0.6" height="15.0" fill="rgb(219,160,1)" rx="2" ry="2" />
+<text  x="940.08" y="207.5" ></text>
+</g>
+<g >
+<title>MPMSolver::enforcePrescribedBoundaryVelocityGradientBC (270 samples, 0.06%)</title><rect x="945.9" y="261" width="0.7" height="15.0" fill="rgb(233,80,47)" rx="2" ry="2" />
+<text  x="948.93" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (322 samples, 0.07%)</title><rect x="1169.9" y="261" width="0.8" height="15.0" fill="rgb(216,219,24)" rx="2" ry="2" />
+<text  x="1172.85" y="271.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R2TensorT&lt;3&gt; &gt;::Array1dT (1,175 samples, 0.25%)</title><rect x="911.8" y="245" width="3.0" height="15.0" fill="rgb(242,187,31)" rx="2" ry="2" />
+<text  x="914.82" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator-= (259 samples, 0.06%)</title><rect x="939.6" y="229" width="0.7" height="15.0" fill="rgb(223,70,32)" rx="2" ry="2" />
+<text  x="942.61" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::vector (3,809 samples, 0.81%)</title><rect x="355.9" y="213" width="9.5" height="15.0" fill="rgb(224,165,49)" rx="2" ry="2" />
+<text  x="358.85" y="223.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::Det (251 samples, 0.05%)</title><rect x="1099.8" y="261" width="0.6" height="15.0" fill="rgb(233,50,36)" rx="2" ry="2" />
+<text  x="1102.81" y="271.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (957 samples, 0.20%)</title><rect x="534.7" y="117" width="2.5" height="15.0" fill="rgb(205,177,4)" rx="2" ry="2" />
+<text  x="537.75" y="127.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;unsigned long&gt; &gt;::deallocate (50 samples, 0.01%)</title><rect x="1158.2" y="213" width="0.1" height="15.0" fill="rgb(209,85,50)" rx="2" ry="2" />
+<text  x="1161.21" y="223.5" ></text>
+</g>
+<g >
+<title>std::string::_M_rep (177 samples, 0.04%)</title><rect x="931.3" y="197" width="0.4" height="15.0" fill="rgb(244,163,41)" rx="2" ry="2" />
+<text  x="934.25" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (187 samples, 0.04%)</title><rect x="935.0" y="213" width="0.5" height="15.0" fill="rgb(247,131,3)" rx="2" ry="2" />
+<text  x="938.02" y="223.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_Vector_base (1,022 samples, 0.22%)</title><rect x="355.9" y="165" width="2.5" height="15.0" fill="rgb(229,187,22)" rx="2" ry="2" />
+<text  x="358.85" y="175.5" ></text>
+</g>
+<g >
+<title>_int_malloc (910 samples, 0.19%)</title><rect x="407.3" y="53" width="2.3" height="15.0" fill="rgb(251,29,34)" rx="2" ry="2" />
+<text  x="410.31" y="63.5" ></text>
+</g>
+<g >
+<title>_int_free (3,723 samples, 0.79%)</title><rect x="1116.8" y="261" width="9.4" height="15.0" fill="rgb(224,206,17)" rx="2" ry="2" />
+<text  x="1119.82" y="271.5" ></text>
+</g>
+<g >
+<title>operator delete@plt (88 samples, 0.02%)</title><rect x="542.1" y="85" width="0.3" height="15.0" fill="rgb(205,156,30)" rx="2" ry="2" />
+<text  x="545.13" y="95.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (1,922 samples, 0.41%)</title><rect x="841.4" y="229" width="4.9" height="15.0" fill="rgb(215,85,42)" rx="2" ry="2" />
+<text  x="844.44" y="239.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::deallocate (211 samples, 0.04%)</title><rect x="934.1" y="101" width="0.5" height="15.0" fill="rgb(219,212,40)" rx="2" ry="2" />
+<text  x="937.05" y="111.5" ></text>
+</g>
+<g >
+<title>floor (97 samples, 0.02%)</title><rect x="796.5" y="245" width="0.2" height="15.0" fill="rgb(236,152,40)" rx="2" ry="2" />
+<text  x="799.49" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (4,899 samples, 1.04%)</title><rect x="433.7" y="85" width="12.3" height="15.0" fill="rgb(222,225,10)" rx="2" ry="2" />
+<text  x="436.74" y="95.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator= (2,641 samples, 0.56%)</title><rect x="1050.4" y="261" width="6.6" height="15.0" fill="rgb(230,79,49)" rx="2" ry="2" />
+<text  x="1053.41" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (496 samples, 0.11%)</title><rect x="534.7" y="69" width="1.3" height="15.0" fill="rgb(215,74,21)" rx="2" ry="2" />
+<text  x="537.75" y="79.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~_Vector_base (72 samples, 0.02%)</title><rect x="496.4" y="181" width="0.2" height="15.0" fill="rgb(247,122,36)" rx="2" ry="2" />
+<text  x="499.44" y="191.5" ></text>
+</g>
+<g >
+<title>operator* (206 samples, 0.04%)</title><rect x="936.6" y="245" width="0.5" height="15.0" fill="rgb(221,70,35)" rx="2" ry="2" />
+<text  x="939.56" y="255.5" ></text>
+</g>
+<g >
+<title>ProblemManagerT::CompleteObjectInitialization (108 samples, 0.02%)</title><rect x="1186.3" y="245" width="0.3" height="15.0" fill="rgb(212,126,46)" rx="2" ry="2" />
+<text  x="1189.33" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeSurfaceTraction (386 samples, 0.08%)</title><rect x="932.3" y="261" width="1.0" height="15.0" fill="rgb(233,116,0)" rx="2" ry="2" />
+<text  x="935.30" y="271.5" ></text>
+</g>
+<g >
+<title>std::less&lt;std::string&gt;::operator (54 samples, 0.01%)</title><rect x="497.7" y="165" width="0.1" height="15.0" fill="rgb(233,180,38)" rx="2" ry="2" />
+<text  x="500.67" y="175.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeBodyForce (6,227 samples, 1.33%)</title><rect x="500.6" y="261" width="15.6" height="15.0" fill="rgb(242,109,3)" rx="2" ry="2" />
+<text  x="503.56" y="271.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::compare (73 samples, 0.02%)</title><rect x="516.4" y="213" width="0.2" height="15.0" fill="rgb(247,20,22)" rx="2" ry="2" />
+<text  x="519.45" y="223.5" ></text>
+</g>
+<g >
+<title>std::_Construct&lt;R1TensorT&lt;3&gt;&gt; (2,275 samples, 0.48%)</title><rect x="359.7" y="117" width="5.7" height="15.0" fill="rgb(238,35,37)" rx="2" ry="2" />
+<text  x="362.71" y="127.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::compare (130 samples, 0.03%)</title><rect x="932.5" y="213" width="0.3" height="15.0" fill="rgb(224,46,30)" rx="2" ry="2" />
+<text  x="935.49" y="223.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;, std::_Select1st&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::_M_erase_aux (55 samples, 0.01%)</title><rect x="496.7" y="149" width="0.2" height="15.0" fill="rgb(225,35,34)" rx="2" ry="2" />
+<text  x="499.72" y="159.5" ></text>
+</g>
+<g >
+<title>ObjectDataStructureBaseT::GetFieldData&lt;R1TensorT&lt;3&gt; &gt; (49 samples, 0.01%)</title><rect x="1031.3" y="245" width="0.1" height="15.0" fill="rgb(231,44,11)" rx="2" ry="2" />
+<text  x="1034.25" y="255.5" ></text>
+</g>
+<g >
+<title>SpatialPartition::IsCoordInPartition (132 samples, 0.03%)</title><rect x="1113.0" y="245" width="0.4" height="15.0" fill="rgb(207,204,42)" rx="2" ry="2" />
+<text  x="1116.05" y="255.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::allocate (233 samples, 0.05%)</title><rect x="940.5" y="181" width="0.6" height="15.0" fill="rgb(253,161,11)" rx="2" ry="2" />
+<text  x="943.50" y="191.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (47 samples, 0.01%)</title><rect x="1023.7" y="213" width="0.1" height="15.0" fill="rgb(205,46,35)" rx="2" ry="2" />
+<text  x="1026.68" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R2TensorT&lt;3&gt;, std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::operator[] (2,242 samples, 0.48%)</title><rect x="401.1" y="229" width="5.7" height="15.0" fill="rgb(234,28,16)" rx="2" ry="2" />
+<text  x="404.14" y="239.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::deallocate (1,996 samples, 0.42%)</title><rect x="537.3" y="101" width="5.1" height="15.0" fill="rgb(234,85,15)" rx="2" ry="2" />
+<text  x="540.34" y="111.5" ></text>
+</g>
+<g >
+<title>_int_free (603 samples, 0.13%)</title><rect x="921.4" y="245" width="1.5" height="15.0" fill="rgb(215,214,40)" rx="2" ry="2" />
+<text  x="924.36" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator/= (97 samples, 0.02%)</title><rect x="1030.5" y="229" width="0.2" height="15.0" fill="rgb(252,64,18)" rx="2" ry="2" />
+<text  x="1033.49" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator*= (71 samples, 0.02%)</title><rect x="1154.0" y="245" width="0.2" height="15.0" fill="rgb(233,227,10)" rx="2" ry="2" />
+<text  x="1157.00" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (162 samples, 0.03%)</title><rect x="937.7" y="213" width="0.4" height="15.0" fill="rgb(242,71,52)" rx="2" ry="2" />
+<text  x="940.68" y="223.5" ></text>
+</g>
+<g >
+<title>memcmp@plt (183 samples, 0.04%)</title><rect x="927.6" y="197" width="0.5" height="15.0" fill="rgb(235,19,22)" rx="2" ry="2" />
+<text  x="930.61" y="207.5" ></text>
+</g>
+<g >
+<title>_int_free (670 samples, 0.14%)</title><rect x="1179.4" y="277" width="1.7" height="15.0" fill="rgb(253,157,0)" rx="2" ry="2" />
+<text  x="1182.43" y="287.5" ></text>
+</g>
+<g >
+<title>std::__fill_n_a&lt;double*, unsigned long, double&gt; (78 samples, 0.02%)</title><rect x="500.0" y="133" width="0.2" height="15.0" fill="rgb(221,192,48)" rx="2" ry="2" />
+<text  x="502.99" y="143.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::~Array1dT (1,996 samples, 0.42%)</title><rect x="537.3" y="245" width="5.1" height="15.0" fill="rgb(236,184,33)" rx="2" ry="2" />
+<text  x="540.34" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::vector (1,462 samples, 0.31%)</title><rect x="406.8" y="213" width="3.7" height="15.0" fill="rgb(210,216,33)" rx="2" ry="2" />
+<text  x="409.81" y="223.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;Array1dT&lt;unsigned long&gt; &gt;::operator[] (1,088 samples, 0.23%)</title><rect x="728.0" y="229" width="2.8" height="15.0" fill="rgb(236,18,33)" rx="2" ry="2" />
+<text  x="731.04" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;int, std::allocator&lt;int&gt; &gt;::size (12,353 samples, 2.63%)</title><rect x="796.9" y="245" width="31.0" height="15.0" fill="rgb(206,178,53)" rx="2" ry="2" />
+<text  x="799.92" y="255.5" >st..</text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (555 samples, 0.12%)</title><rect x="498.2" y="85" width="1.4" height="15.0" fill="rgb(224,23,7)" rx="2" ry="2" />
+<text  x="501.22" y="95.5" ></text>
+</g>
+<g >
+<title>PMPI_Init (675 samples, 0.14%)</title><rect x="1184.5" y="245" width="1.7" height="15.0" fill="rgb(233,215,13)" rx="2" ry="2" />
+<text  x="1187.55" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, FieldBase*&gt;, std::_Select1st&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt; &gt;::lower_bound (61 samples, 0.01%)</title><rect x="497.6" y="197" width="0.2" height="15.0" fill="rgb(240,127,37)" rx="2" ry="2" />
+<text  x="500.65" y="207.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeNeighborList (102,596 samples, 21.84%)</title><rect x="578.1" y="261" width="257.7" height="15.0" fill="rgb(224,151,53)" rx="2" ry="2" />
+<text  x="581.10" y="271.5" >MPMSolver::computeNeighborList</text>
+</g>
+<g >
+<title>std::string::assign (99 samples, 0.02%)</title><rect x="1157.3" y="245" width="0.2" height="15.0" fill="rgb(226,20,36)" rx="2" ry="2" />
+<text  x="1160.25" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeSurfaceTraction (48 samples, 0.01%)</title><rect x="1162.8" y="277" width="0.1" height="15.0" fill="rgb(224,183,49)" rx="2" ry="2" />
+<text  x="1165.76" y="287.5" ></text>
+</g>
+<g >
+<title>operator- (2,708 samples, 0.58%)</title><rect x="1023.7" y="245" width="6.8" height="15.0" fill="rgb(237,114,31)" rx="2" ry="2" />
+<text  x="1026.68" y="255.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::put (53 samples, 0.01%)</title><rect x="1186.8" y="229" width="0.1" height="15.0" fill="rgb(231,83,47)" rx="2" ry="2" />
+<text  x="1189.80" y="239.5" ></text>
+</g>
+<g >
+<title>_int_malloc (48 samples, 0.01%)</title><rect x="1158.0" y="149" width="0.1" height="15.0" fill="rgb(244,32,25)" rx="2" ry="2" />
+<text  x="1161.03" y="159.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;double*, unsigned long, double&gt; (280 samples, 0.06%)</title><rect x="409.8" y="165" width="0.7" height="15.0" fill="rgb(237,65,54)" rx="2" ry="2" />
+<text  x="412.78" y="175.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (4,899 samples, 1.04%)</title><rect x="433.7" y="101" width="12.3" height="15.0" fill="rgb(210,208,27)" rx="2" ry="2" />
+<text  x="436.74" y="111.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;unsigned long, std::allocator&lt;unsigned long&gt; &gt;::push_back (3,088 samples, 0.66%)</title><rect x="828.0" y="245" width="7.8" height="15.0" fill="rgb(237,38,11)" rx="2" ry="2" />
+<text  x="830.99" y="255.5" ></text>
+</g>
+<g >
+<title>std::string::compare (231 samples, 0.05%)</title><rect x="918.1" y="213" width="0.6" height="15.0" fill="rgb(210,32,8)" rx="2" ry="2" />
+<text  x="921.11" y="223.5" ></text>
+</g>
+<g >
+<title>std::fill_n&lt;double*, unsigned long, double&gt; (280 samples, 0.06%)</title><rect x="409.8" y="117" width="0.7" height="15.0" fill="rgb(223,172,31)" rx="2" ry="2" />
+<text  x="412.78" y="127.5" ></text>
+</g>
+<g >
+<title>_int_free (134 samples, 0.03%)</title><rect x="934.2" y="85" width="0.3" height="15.0" fill="rgb(242,181,6)" rx="2" ry="2" />
+<text  x="937.18" y="95.5" ></text>
+</g>
+<g >
+<title>look_sysfscpu (55 samples, 0.01%)</title><rect x="1184.4" y="261" width="0.1" height="15.0" fill="rgb(206,165,51)" rx="2" ry="2" />
+<text  x="1187.38" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator+= (989 samples, 0.21%)</title><rect x="846.3" y="229" width="2.5" height="15.0" fill="rgb(237,79,15)" rx="2" ry="2" />
+<text  x="849.27" y="239.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::deallocate (40 samples, 0.01%)</title><rect x="496.5" y="133" width="0.1" height="15.0" fill="rgb(238,19,5)" rx="2" ry="2" />
+<text  x="499.53" y="143.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (137 samples, 0.03%)</title><rect x="1163.7" y="277" width="0.3" height="15.0" fill="rgb(243,42,8)" rx="2" ry="2" />
+<text  x="1166.69" y="287.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (371 samples, 0.08%)</title><rect x="529.1" y="133" width="0.9" height="15.0" fill="rgb(251,177,18)" rx="2" ry="2" />
+<text  x="532.12" y="143.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;Array1dT&lt;unsigned long&gt; &gt;::operator[] (1,088 samples, 0.23%)</title><rect x="728.0" y="245" width="2.8" height="15.0" fill="rgb(252,173,11)" rx="2" ry="2" />
+<text  x="731.04" y="255.5" ></text>
+</g>
+<g >
+<title>operator delete (60 samples, 0.01%)</title><rect x="1126.3" y="261" width="0.2" height="15.0" fill="rgb(230,196,45)" rx="2" ry="2" />
+<text  x="1129.30" y="271.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (1,843 samples, 0.39%)</title><rect x="849.6" y="229" width="4.7" height="15.0" fill="rgb(207,158,47)" rx="2" ry="2" />
+<text  x="852.63" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::vector (469 samples, 0.10%)</title><rect x="914.8" y="181" width="1.2" height="15.0" fill="rgb(248,54,36)" rx="2" ry="2" />
+<text  x="917.83" y="191.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::length (1,972 samples, 0.42%)</title><rect x="509.7" y="213" width="4.9" height="15.0" fill="rgb(246,206,39)" rx="2" ry="2" />
+<text  x="512.67" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::TensorBaseT (218 samples, 0.05%)</title><rect x="914.2" y="53" width="0.6" height="15.0" fill="rgb(242,152,35)" rx="2" ry="2" />
+<text  x="917.22" y="63.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;unsigned long, std::allocator&lt;unsigned long&gt; &gt;::_M_deallocate (51 samples, 0.01%)</title><rect x="1158.2" y="229" width="0.1" height="15.0" fill="rgb(239,162,33)" rx="2" ry="2" />
+<text  x="1161.21" y="239.5" ></text>
+</g>
+<g >
+<title>__strlen_sse2_pminub (1,698 samples, 0.36%)</title><rect x="509.7" y="197" width="4.3" height="15.0" fill="rgb(236,30,16)" rx="2" ry="2" />
+<text  x="512.72" y="207.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R2TensorT&lt;3&gt; &gt;::VectorT (1,175 samples, 0.25%)</title><rect x="911.8" y="229" width="3.0" height="15.0" fill="rgb(245,60,24)" rx="2" ry="2" />
+<text  x="914.82" y="239.5" ></text>
+</g>
+<g >
+<title>operator* (10,900 samples, 2.32%)</title><rect x="1126.9" y="261" width="27.4" height="15.0" fill="rgb(206,171,54)" rx="2" ry="2" />
+<text  x="1129.89" y="271.5" >o..</text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~vector (1,996 samples, 0.42%)</title><rect x="537.3" y="197" width="5.1" height="15.0" fill="rgb(227,39,17)" rx="2" ry="2" />
+<text  x="540.34" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (925 samples, 0.20%)</title><rect x="851.9" y="213" width="2.4" height="15.0" fill="rgb(245,174,18)" rx="2" ry="2" />
+<text  x="854.94" y="223.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::L2_Norm (87 samples, 0.02%)</title><rect x="1034.6" y="245" width="0.2" height="15.0" fill="rgb(242,1,22)" rx="2" ry="2" />
+<text  x="1037.62" y="255.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::AijBjk (4,099 samples, 0.87%)</title><rect x="1085.2" y="261" width="10.3" height="15.0" fill="rgb(207,50,52)" rx="2" ry="2" />
+<text  x="1088.18" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (2,641 samples, 0.56%)</title><rect x="1050.4" y="245" width="6.6" height="15.0" fill="rgb(244,192,38)" rx="2" ry="2" />
+<text  x="1053.41" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::size (72 samples, 0.02%)</title><rect x="537.2" y="197" width="0.1" height="15.0" fill="rgb(239,51,7)" rx="2" ry="2" />
+<text  x="540.16" y="207.5" ></text>
+</g>
+<g >
+<title>std::operator&lt; &lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (68 samples, 0.01%)</title><rect x="497.4" y="165" width="0.2" height="15.0" fill="rgb(222,208,31)" rx="2" ry="2" />
+<text  x="500.43" y="175.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;double, std::allocator&lt;double&gt; &gt;::_Vector_base (368 samples, 0.08%)</title><rect x="914.8" y="149" width="1.0" height="15.0" fill="rgb(220,121,23)" rx="2" ry="2" />
+<text  x="917.83" y="159.5" ></text>
+</g>
+<g >
+<title>operator+ (602 samples, 0.13%)</title><rect x="937.1" y="245" width="1.5" height="15.0" fill="rgb(217,203,21)" rx="2" ry="2" />
+<text  x="940.08" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (204 samples, 0.04%)</title><rect x="1166.3" y="213" width="0.5" height="15.0" fill="rgb(252,46,41)" rx="2" ry="2" />
+<text  x="1169.28" y="223.5" ></text>
+</g>
+<g >
+<title>std::_Construct&lt;R1TensorT&lt;3&gt;&gt; (78 samples, 0.02%)</title><rect x="941.2" y="165" width="0.2" height="15.0" fill="rgb(243,78,23)" rx="2" ry="2" />
+<text  x="944.20" y="175.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator+= (5,983 samples, 1.27%)</title><rect x="1008.5" y="245" width="15.0" height="15.0" fill="rgb(254,18,46)" rx="2" ry="2" />
+<text  x="1011.47" y="255.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;R1TensorT&lt;3&gt;*, unsigned long, R1TensorT&lt;3&gt; &gt; (371 samples, 0.08%)</title><rect x="529.1" y="149" width="0.9" height="15.0" fill="rgb(235,99,0)" rx="2" ry="2" />
+<text  x="532.12" y="159.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator*= (73 samples, 0.02%)</title><rect x="1023.5" y="213" width="0.2" height="15.0" fill="rgb(228,31,0)" rx="2" ry="2" />
+<text  x="1026.50" y="223.5" ></text>
+</g>
+<g >
+<title>MPIR_Allreduce_index_tuned_intra_MV2 (57 samples, 0.01%)</title><rect x="1031.4" y="229" width="0.2" height="15.0" fill="rgb(254,23,53)" rx="2" ry="2" />
+<text  x="1034.44" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;true&gt;::__uninit_default_n&lt;double*, unsigned long&gt; (280 samples, 0.06%)</title><rect x="409.8" y="133" width="0.7" height="15.0" fill="rgb(211,47,47)" rx="2" ry="2" />
+<text  x="412.78" y="143.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::length (94 samples, 0.02%)</title><rect x="918.4" y="197" width="0.2" height="15.0" fill="rgb(223,200,36)" rx="2" ry="2" />
+<text  x="921.38" y="207.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~_Vector_base (1,996 samples, 0.42%)</title><rect x="537.3" y="149" width="5.1" height="15.0" fill="rgb(217,173,0)" rx="2" ry="2" />
+<text  x="540.34" y="159.5" ></text>
+</g>
+<g >
+<title>std::string::_Rep::_M_refcopy (49 samples, 0.01%)</title><rect x="932.1" y="197" width="0.2" height="15.0" fill="rgb(220,87,1)" rx="2" ry="2" />
+<text  x="935.13" y="207.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R2TensorT&lt;3&gt;, std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::vector (1,175 samples, 0.25%)</title><rect x="911.8" y="197" width="3.0" height="15.0" fill="rgb(249,99,51)" rx="2" ry="2" />
+<text  x="914.82" y="207.5" ></text>
+</g>
+<g >
+<title>pthread_equal (72 samples, 0.02%)</title><rect x="1032.0" y="213" width="0.2" height="15.0" fill="rgb(252,137,7)" rx="2" ry="2" />
+<text  x="1035.00" y="223.5" ></text>
+</g>
+<g >
+<title>ObjectDataStructureBaseT::DataLengths (122 samples, 0.03%)</title><rect x="1030.8" y="261" width="0.3" height="15.0" fill="rgb(229,150,9)" rx="2" ry="2" />
+<text  x="1033.84" y="271.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;Array1dT&lt;int&gt; &gt;::operator[] (351 samples, 0.07%)</title><rect x="887.9" y="245" width="0.9" height="15.0" fill="rgb(244,79,21)" rx="2" ry="2" />
+<text  x="890.91" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_check_len (171 samples, 0.04%)</title><rect x="446.1" y="197" width="0.5" height="15.0" fill="rgb(216,70,24)" rx="2" ry="2" />
+<text  x="449.13" y="207.5" ></text>
+</g>
+<g >
+<title>std::_Construct&lt;R1TensorT&lt;3&gt;, R1TensorT&lt;3&gt; const&amp;&gt; (10,742 samples, 2.29%)</title><rect x="462.8" y="149" width="27.0" height="15.0" fill="rgb(236,140,41)" rx="2" ry="2" />
+<text  x="465.82" y="159.5" >s..</text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (105 samples, 0.02%)</title><rect x="542.4" y="245" width="0.2" height="15.0" fill="rgb(247,196,30)" rx="2" ry="2" />
+<text  x="545.36" y="255.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;R2TensorT&lt;3&gt;*, unsigned long, R2TensorT&lt;3&gt; &gt; (259 samples, 0.06%)</title><rect x="914.1" y="149" width="0.7" height="15.0" fill="rgb(229,51,52)" rx="2" ry="2" />
+<text  x="917.12" y="159.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeElasticProperties (263 samples, 0.06%)</title><rect x="516.2" y="261" width="0.7" height="15.0" fill="rgb(224,6,11)" rx="2" ry="2" />
+<text  x="519.20" y="271.5" ></text>
+</g>
+<g >
+<title>GEOS.x (469,812 samples, 100.00%)</title><rect x="10.0" y="293" width="1180.0" height="15.0" fill="rgb(221,171,45)" rx="2" ry="2" />
+<text  x="13.00" y="303.5" >GEOS.x</text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::length (278 samples, 0.06%)</title><rect x="1189.1" y="261" width="0.7" height="15.0" fill="rgb(206,212,5)" rx="2" ry="2" />
+<text  x="1192.05" y="271.5" ></text>
+</g>
+<g >
+<title>operator- (115 samples, 0.02%)</title><rect x="836.8" y="245" width="0.3" height="15.0" fill="rgb(244,21,42)" rx="2" ry="2" />
+<text  x="839.84" y="255.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (684 samples, 0.15%)</title><rect x="497.9" y="181" width="1.7" height="15.0" fill="rgb(238,9,40)" rx="2" ry="2" />
+<text  x="500.89" y="191.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (47 samples, 0.01%)</title><rect x="1023.7" y="229" width="0.1" height="15.0" fill="rgb(219,97,6)" rx="2" ry="2" />
+<text  x="1026.68" y="239.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::Array1dT (3,825 samples, 0.81%)</title><rect x="355.8" y="261" width="9.6" height="15.0" fill="rgb(249,155,20)" rx="2" ry="2" />
+<text  x="358.81" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (2,273 samples, 0.48%)</title><rect x="359.7" y="69" width="5.7" height="15.0" fill="rgb(216,85,35)" rx="2" ry="2" />
+<text  x="362.71" y="79.5" ></text>
+</g>
+<g >
+<title>std::operator==&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (233 samples, 0.05%)</title><rect x="1165.6" y="245" width="0.6" height="15.0" fill="rgb(238,12,36)" rx="2" ry="2" />
+<text  x="1168.57" y="255.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;double&gt;::VectorT (1,465 samples, 0.31%)</title><rect x="406.8" y="245" width="3.7" height="15.0" fill="rgb(244,191,0)" rx="2" ry="2" />
+<text  x="409.80" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_default_initialize (371 samples, 0.08%)</title><rect x="529.1" y="165" width="0.9" height="15.0" fill="rgb(227,201,53)" rx="2" ry="2" />
+<text  x="532.12" y="175.5" ></text>
+</g>
+<g >
+<title>std::string::assign (72 samples, 0.02%)</title><rect x="932.1" y="229" width="0.2" height="15.0" fill="rgb(208,77,32)" rx="2" ry="2" />
+<text  x="935.07" y="239.5" ></text>
+</g>
+<g >
+<title>_int_malloc (181 samples, 0.04%)</title><rect x="1173.1" y="261" width="0.4" height="15.0" fill="rgb(249,62,26)" rx="2" ry="2" />
+<text  x="1176.06" y="271.5" ></text>
+</g>
+<g >
+<title>Dot (10,702 samples, 2.28%)</title><rect x="1126.9" y="245" width="26.9" height="15.0" fill="rgb(254,3,10)" rx="2" ry="2" />
+<text  x="1129.92" y="255.5" >Dot</text>
+</g>
+<g >
+<title>_IO_vfprintf_internal (44 samples, 0.01%)</title><rect x="1186.8" y="149" width="0.1" height="15.0" fill="rgb(252,20,49)" rx="2" ry="2" />
+<text  x="1189.81" y="159.5" ></text>
+</g>
+<g >
+<title>std::__fill_n_a&lt;double*, unsigned long, double&gt; (280 samples, 0.06%)</title><rect x="409.8" y="101" width="0.7" height="15.0" fill="rgb(218,63,46)" rx="2" ry="2" />
+<text  x="412.78" y="111.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~_Vector_base (211 samples, 0.04%)</title><rect x="934.1" y="165" width="0.5" height="15.0" fill="rgb(218,208,21)" rx="2" ry="2" />
+<text  x="937.05" y="175.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_allocate (247 samples, 0.05%)</title><rect x="940.5" y="213" width="0.6" height="15.0" fill="rgb(237,34,46)" rx="2" ry="2" />
+<text  x="943.46" y="223.5" ></text>
+</g>
+<g >
+<title>std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;::~pair (42 samples, 0.01%)</title><rect x="496.7" y="69" width="0.1" height="15.0" fill="rgb(249,57,8)" rx="2" ry="2" />
+<text  x="499.73" y="79.5" ></text>
+</g>
+<g >
+<title>std::operator==&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (197 samples, 0.04%)</title><rect x="516.4" y="245" width="0.5" height="15.0" fill="rgb(218,38,11)" rx="2" ry="2" />
+<text  x="519.36" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::TensorBaseT (256 samples, 0.05%)</title><rect x="919.1" y="229" width="0.6" height="15.0" fill="rgb(239,202,14)" rx="2" ry="2" />
+<text  x="922.10" y="239.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator[] (404 samples, 0.09%)</title><rect x="577.1" y="245" width="1.0" height="15.0" fill="rgb(237,126,42)" rx="2" ry="2" />
+<text  x="580.08" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::resize (110 samples, 0.02%)</title><rect x="499.9" y="229" width="0.3" height="15.0" fill="rgb(229,191,25)" rx="2" ry="2" />
+<text  x="502.91" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;false&gt;::__uninit_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (6,286 samples, 1.34%)</title><rect x="430.3" y="165" width="15.7" height="15.0" fill="rgb(209,83,17)" rx="2" ry="2" />
+<text  x="433.26" y="175.5" ></text>
+</g>
+<g >
+<title>__intel_avx_rep_memset (276 samples, 0.06%)</title><rect x="409.8" y="85" width="0.7" height="15.0" fill="rgb(246,201,15)" rx="2" ry="2" />
+<text  x="412.79" y="95.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;false&gt;::__uninit_default_n&lt;R2TensorT&lt;3&gt;*, unsigned long&gt; (259 samples, 0.06%)</title><rect x="914.1" y="117" width="0.7" height="15.0" fill="rgb(239,41,26)" rx="2" ry="2" />
+<text  x="917.12" y="127.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::deallocate (40 samples, 0.01%)</title><rect x="496.5" y="117" width="0.1" height="15.0" fill="rgb(209,186,31)" rx="2" ry="2" />
+<text  x="499.53" y="127.5" ></text>
+</g>
+<g >
+<title>main (999 samples, 0.21%)</title><rect x="1184.5" y="277" width="2.5" height="15.0" fill="rgb(206,3,46)" rx="2" ry="2" />
+<text  x="1187.52" y="287.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R2TensorT&lt;3&gt;, std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::_Vector_base (916 samples, 0.19%)</title><rect x="911.8" y="165" width="2.3" height="15.0" fill="rgb(211,180,48)" rx="2" ry="2" />
+<text  x="914.82" y="175.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator*= (50 samples, 0.01%)</title><rect x="1030.6" y="213" width="0.1" height="15.0" fill="rgb(229,154,14)" rx="2" ry="2" />
+<text  x="1033.60" y="223.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;double&gt; &gt;::allocate (337 samples, 0.07%)</title><rect x="914.9" y="101" width="0.8" height="15.0" fill="rgb(225,29,11)" rx="2" ry="2" />
+<text  x="917.86" y="111.5" ></text>
+</g>
+<g >
+<title>operator* (73 samples, 0.02%)</title><rect x="1023.5" y="229" width="0.2" height="15.0" fill="rgb(231,99,31)" rx="2" ry="2" />
+<text  x="1026.50" y="239.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;unsigned long&gt; &gt;::construct&lt;unsigned long, unsigned long const&amp;&gt; (2,297 samples, 0.49%)</title><rect x="830.0" y="229" width="5.8" height="15.0" fill="rgb(253,23,3)" rx="2" ry="2" />
+<text  x="832.98" y="239.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_allocate (979 samples, 0.21%)</title><rect x="355.9" y="133" width="2.4" height="15.0" fill="rgb(227,21,29)" rx="2" ry="2" />
+<text  x="358.85" y="143.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeEigenspaceProjectors (736 samples, 0.16%)</title><rect x="916.1" y="245" width="1.8" height="15.0" fill="rgb(237,158,4)" rx="2" ry="2" />
+<text  x="919.08" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (461 samples, 0.10%)</title><rect x="536.0" y="101" width="1.2" height="15.0" fill="rgb(222,141,5)" rx="2" ry="2" />
+<text  x="538.99" y="111.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::compare (99 samples, 0.02%)</title><rect x="918.1" y="197" width="0.3" height="15.0" fill="rgb(227,201,48)" rx="2" ry="2" />
+<text  x="921.13" y="207.5" ></text>
+</g>
+<g >
+<title>MPMSolver::cpdiDomainScaling (3,336 samples, 0.71%)</title><rect x="933.3" y="261" width="8.3" height="15.0" fill="rgb(249,2,25)" rx="2" ry="2" />
+<text  x="936.27" y="271.5" ></text>
+</g>
+<g >
+<title>MPMSolver::TimeStep (456,886 samples, 97.25%)</title><rect x="11.0" y="277" width="1147.5" height="15.0" fill="rgb(241,185,10)" rx="2" ry="2" />
+<text  x="14.01" y="287.5" >MPMSolver::TimeStep</text>
+</g>
+<g >
+<title>std::_Construct&lt;R2TensorT&lt;3&gt;&gt; (224 samples, 0.05%)</title><rect x="914.2" y="101" width="0.6" height="15.0" fill="rgb(220,42,17)" rx="2" ry="2" />
+<text  x="917.21" y="111.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (3,076 samples, 0.65%)</title><rect x="545.0" y="229" width="7.7" height="15.0" fill="rgb(245,4,32)" rx="2" ry="2" />
+<text  x="547.97" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::vector (469 samples, 0.10%)</title><rect x="914.8" y="197" width="1.2" height="15.0" fill="rgb(209,0,48)" rx="2" ry="2" />
+<text  x="917.83" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (6,729 samples, 1.43%)</title><rect x="462.8" y="85" width="16.9" height="15.0" fill="rgb(227,134,27)" rx="2" ry="2" />
+<text  x="465.84" y="95.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::operator= (17,083 samples, 3.64%)</title><rect x="447.9" y="245" width="42.9" height="15.0" fill="rgb(231,53,14)" rx="2" ry="2" />
+<text  x="450.91" y="255.5" >Vect..</text>
+</g>
+<g >
+<title>all (469,812 samples, 100%)</title><rect x="10.0" y="309" width="1180.0" height="15.0" fill="rgb(227,106,16)" rx="2" ry="2" />
+<text  x="13.00" y="319.5" ></text>
+</g>
+<g >
+<title>floor (1,848 samples, 0.39%)</title><rect x="898.0" y="245" width="4.6" height="15.0" fill="rgb(220,37,48)" rx="2" ry="2" />
+<text  x="900.98" y="255.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (120 samples, 0.03%)</title><rect x="1175.7" y="277" width="0.3" height="15.0" fill="rgb(251,184,32)" rx="2" ry="2" />
+<text  x="1178.67" y="287.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;double, std::allocator&lt;double&gt; &gt;::_Vector_base (368 samples, 0.08%)</title><rect x="914.8" y="165" width="1.0" height="15.0" fill="rgb(234,190,40)" rx="2" ry="2" />
+<text  x="917.83" y="175.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::vector (3,809 samples, 0.81%)</title><rect x="355.9" y="197" width="9.5" height="15.0" fill="rgb(253,141,23)" rx="2" ry="2" />
+<text  x="358.85" y="207.5" ></text>
+</g>
+<g >
+<title>strlen@plt (107 samples, 0.02%)</title><rect x="930.3" y="197" width="0.3" height="15.0" fill="rgb(241,130,4)" rx="2" ry="2" />
+<text  x="933.34" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (97 samples, 0.02%)</title><rect x="1113.9" y="117" width="0.3" height="15.0" fill="rgb(211,60,34)" rx="2" ry="2" />
+<text  x="1116.92" y="127.5" ></text>
+</g>
+<g >
+<title>ObjectDataStructureBaseT::GetFieldData&lt;R1TensorT&lt;3&gt; &gt; (49 samples, 0.01%)</title><rect x="1031.3" y="261" width="0.1" height="15.0" fill="rgb(239,192,42)" rx="2" ry="2" />
+<text  x="1034.25" y="271.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (10,732 samples, 2.28%)</title><rect x="462.8" y="133" width="27.0" height="15.0" fill="rgb(246,118,18)" rx="2" ry="2" />
+<text  x="465.84" y="143.5" >R..</text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, FieldBase*&gt;, std::_Select1st&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt; &gt;::_M_lower_bound (72 samples, 0.02%)</title><rect x="497.4" y="197" width="0.2" height="15.0" fill="rgb(222,164,29)" rx="2" ry="2" />
+<text  x="500.42" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (762 samples, 0.16%)</title><rect x="842.4" y="181" width="1.9" height="15.0" fill="rgb(226,188,33)" rx="2" ry="2" />
+<text  x="845.43" y="191.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator[] (9,388 samples, 2.00%)</title><rect x="1057.0" y="261" width="23.6" height="15.0" fill="rgb(218,89,15)" rx="2" ry="2" />
+<text  x="1060.04" y="271.5" >R..</text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (123 samples, 0.03%)</title><rect x="944.5" y="245" width="0.3" height="15.0" fill="rgb(245,75,43)" rx="2" ry="2" />
+<text  x="947.51" y="255.5" ></text>
+</g>
+<g >
+<title>operator new@plt (51 samples, 0.01%)</title><rect x="430.0" y="149" width="0.1" height="15.0" fill="rgb(227,145,21)" rx="2" ry="2" />
+<text  x="432.97" y="159.5" ></text>
+</g>
+<g >
+<title>std::map&lt;std::string, FieldBase*, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt; &gt;::operator[] (76 samples, 0.02%)</title><rect x="497.6" y="229" width="0.2" height="15.0" fill="rgb(227,148,20)" rx="2" ry="2" />
+<text  x="500.61" y="239.5" ></text>
+</g>
+<g >
+<title>FaceManagerT::BuildFaces (41 samples, 0.01%)</title><rect x="1186.4" y="213" width="0.1" height="15.0" fill="rgb(249,108,4)" rx="2" ry="2" />
+<text  x="1189.40" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator-= (2,661 samples, 0.57%)</title><rect x="1023.8" y="229" width="6.7" height="15.0" fill="rgb(243,229,34)" rx="2" ry="2" />
+<text  x="1026.80" y="239.5" ></text>
+</g>
+<g >
+<title>operator new (153 samples, 0.03%)</title><rect x="1187.1" y="277" width="0.3" height="15.0" fill="rgb(237,164,34)" rx="2" ry="2" />
+<text  x="1190.06" y="287.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_allocate (1,828 samples, 0.39%)</title><rect x="530.2" y="181" width="4.5" height="15.0" fill="rgb(237,0,4)" rx="2" ry="2" />
+<text  x="533.15" y="191.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (50 samples, 0.01%)</title><rect x="836.9" y="213" width="0.1" height="15.0" fill="rgb(247,118,19)" rx="2" ry="2" />
+<text  x="839.87" y="223.5" ></text>
+</g>
+<g >
+<title>__strlen_sse2_pminub (887 samples, 0.19%)</title><rect x="928.1" y="197" width="2.2" height="15.0" fill="rgb(219,55,22)" rx="2" ry="2" />
+<text  x="931.11" y="207.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~_Vector_base (72 samples, 0.02%)</title><rect x="496.4" y="165" width="0.2" height="15.0" fill="rgb(231,60,25)" rx="2" ry="2" />
+<text  x="499.44" y="175.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::deallocate (211 samples, 0.04%)</title><rect x="934.1" y="117" width="0.5" height="15.0" fill="rgb(225,176,29)" rx="2" ry="2" />
+<text  x="937.05" y="127.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (156 samples, 0.03%)</title><rect x="937.3" y="181" width="0.4" height="15.0" fill="rgb(216,18,23)" rx="2" ry="2" />
+<text  x="940.29" y="191.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (154 samples, 0.03%)</title><rect x="1035.1" y="229" width="0.4" height="15.0" fill="rgb(252,13,15)" rx="2" ry="2" />
+<text  x="1038.11" y="239.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;, std::_Select1st&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::_M_erase_aux (61 samples, 0.01%)</title><rect x="496.7" y="181" width="0.2" height="15.0" fill="rgb(245,10,37)" rx="2" ry="2" />
+<text  x="499.71" y="191.5" ></text>
+</g>
+<g >
+<title>MPMSolver::evaluateSeparabilityCriterion (40 samples, 0.01%)</title><rect x="946.6" y="261" width="0.1" height="15.0" fill="rgb(238,126,44)" rx="2" ry="2" />
+<text  x="949.61" y="271.5" ></text>
+</g>
+<g >
+<title>GPAC_IO::FileManagerT::ReadMesh (89 samples, 0.02%)</title><rect x="10.8" y="277" width="0.2" height="15.0" fill="rgb(214,78,38)" rx="2" ry="2" />
+<text  x="13.77" y="287.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::AjiBjk (1,250 samples, 0.27%)</title><rect x="1096.7" y="261" width="3.1" height="15.0" fill="rgb(230,92,33)" rx="2" ry="2" />
+<text  x="1099.67" y="271.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;double&gt;::Array1dT (482 samples, 0.10%)</title><rect x="914.8" y="245" width="1.2" height="15.0" fill="rgb(226,72,54)" rx="2" ry="2" />
+<text  x="917.80" y="255.5" ></text>
+</g>
+<g >
+<title>__intel_avx_rep_memset (78 samples, 0.02%)</title><rect x="500.0" y="117" width="0.2" height="15.0" fill="rgb(215,196,50)" rx="2" ry="2" />
+<text  x="502.99" y="127.5" ></text>
+</g>
+<g >
+<title>__strlen_sse2_pminub (127 samples, 0.03%)</title><rect x="1179.1" y="277" width="0.3" height="15.0" fill="rgb(236,117,48)" rx="2" ry="2" />
+<text  x="1182.07" y="287.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::vector (1,457 samples, 0.31%)</title><rect x="406.8" y="197" width="3.7" height="15.0" fill="rgb(218,91,51)" rx="2" ry="2" />
+<text  x="409.82" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::operator= (71 samples, 0.02%)</title><rect x="919.7" y="229" width="0.2" height="15.0" fill="rgb(214,107,43)" rx="2" ry="2" />
+<text  x="922.74" y="239.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::~VectorT (1,996 samples, 0.42%)</title><rect x="537.3" y="229" width="5.1" height="15.0" fill="rgb(217,93,37)" rx="2" ry="2" />
+<text  x="540.34" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (49 samples, 0.01%)</title><rect x="1168.8" y="197" width="0.1" height="15.0" fill="rgb(236,188,5)" rx="2" ry="2" />
+<text  x="1171.81" y="207.5" ></text>
+</g>
+<g >
+<title>ProblemManagerT::ProblemSetup (109 samples, 0.02%)</title><rect x="1186.3" y="261" width="0.3" height="15.0" fill="rgb(207,132,54)" rx="2" ry="2" />
+<text  x="1189.33" y="271.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator (300 samples, 0.06%)</title><rect x="944.8" y="245" width="0.8" height="15.0" fill="rgb(215,162,4)" rx="2" ry="2" />
+<text  x="947.82" y="255.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (226 samples, 0.05%)</title><rect x="1167.5" y="229" width="0.5" height="15.0" fill="rgb(237,226,5)" rx="2" ry="2" />
+<text  x="1170.46" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R2TensorT&lt;3&gt;, std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::_M_default_initialize (259 samples, 0.06%)</title><rect x="914.1" y="165" width="0.7" height="15.0" fill="rgb(245,123,53)" rx="2" ry="2" />
+<text  x="917.12" y="175.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::do_put (179 samples, 0.04%)</title><rect x="1156.7" y="229" width="0.4" height="15.0" fill="rgb(253,86,15)" rx="2" ry="2" />
+<text  x="1159.66" y="239.5" ></text>
+</g>
+<g >
+<title>std::basic_ofstream&lt;char, std::char_traits&lt;char&gt; &gt;::open (153 samples, 0.03%)</title><rect x="1155.7" y="261" width="0.4" height="15.0" fill="rgb(247,118,53)" rx="2" ry="2" />
+<text  x="1158.68" y="271.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::deallocate (1,996 samples, 0.42%)</title><rect x="537.3" y="117" width="5.1" height="15.0" fill="rgb(234,131,53)" rx="2" ry="2" />
+<text  x="540.34" y="127.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::allocate (4,352 samples, 0.93%)</title><rect x="419.2" y="165" width="10.9" height="15.0" fill="rgb(211,181,18)" rx="2" ry="2" />
+<text  x="422.17" y="175.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::_M_insert_float&lt;double&gt; (179 samples, 0.04%)</title><rect x="1156.7" y="213" width="0.4" height="15.0" fill="rgb(217,160,22)" rx="2" ry="2" />
+<text  x="1159.66" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator*= (1,164 samples, 0.25%)</title><rect x="554.9" y="229" width="2.9" height="15.0" fill="rgb(241,160,8)" rx="2" ry="2" />
+<text  x="557.86" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;true&gt;::__uninit_default_n&lt;double*, unsigned long&gt; (85 samples, 0.02%)</title><rect x="915.8" y="117" width="0.2" height="15.0" fill="rgb(240,214,6)" rx="2" ry="2" />
+<text  x="918.80" y="127.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;Array1dT&lt;Array1dT&lt;int&gt; &gt; &gt;::operator[] (744 samples, 0.16%)</title><rect x="886.0" y="245" width="1.9" height="15.0" fill="rgb(223,204,18)" rx="2" ry="2" />
+<text  x="889.04" y="255.5" ></text>
+</g>
+<g >
+<title>look_procs (588 samples, 0.13%)</title><rect x="1184.7" y="85" width="1.5" height="15.0" fill="rgb(237,158,29)" rx="2" ry="2" />
+<text  x="1187.70" y="95.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_deallocate (64 samples, 0.01%)</title><rect x="430.1" y="197" width="0.2" height="15.0" fill="rgb(249,41,9)" rx="2" ry="2" />
+<text  x="433.10" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (339 samples, 0.07%)</title><rect x="529.2" y="53" width="0.8" height="15.0" fill="rgb(240,176,44)" rx="2" ry="2" />
+<text  x="532.20" y="63.5" ></text>
+</g>
+<g >
+<title>R2SymTensorT&lt;3&gt;::operator (142 samples, 0.03%)</title><rect x="1163.2" y="277" width="0.4" height="15.0" fill="rgb(222,198,22)" rx="2" ry="2" />
+<text  x="1166.22" y="287.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::~VectorT (76 samples, 0.02%)</title><rect x="496.4" y="229" width="0.2" height="15.0" fill="rgb(240,79,34)" rx="2" ry="2" />
+<text  x="499.43" y="239.5" ></text>
+</g>
+<g >
+<title>MPIR_Init_thread (673 samples, 0.14%)</title><rect x="1184.5" y="229" width="1.7" height="15.0" fill="rgb(233,0,38)" rx="2" ry="2" />
+<text  x="1187.55" y="239.5" ></text>
+</g>
+<g >
+<title>MPIR_Allreduce_impl (63 samples, 0.01%)</title><rect x="1031.4" y="245" width="0.2" height="15.0" fill="rgb(225,50,3)" rx="2" ry="2" />
+<text  x="1034.43" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_allocate_and_copy&lt;__gnu_cxx::__normal_iterator&lt;R1TensorT&lt;3&gt; const*, std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt; (2,787 samples, 0.59%)</title><rect x="530.2" y="197" width="7.0" height="15.0" fill="rgb(220,123,1)" rx="2" ry="2" />
+<text  x="533.15" y="207.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;R2TensorT&lt;3&gt;*, unsigned long&gt; (259 samples, 0.06%)</title><rect x="914.1" y="133" width="0.7" height="15.0" fill="rgb(229,68,33)" rx="2" ry="2" />
+<text  x="917.12" y="143.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::vector (2,621 samples, 0.56%)</title><rect x="523.5" y="181" width="6.5" height="15.0" fill="rgb(240,63,2)" rx="2" ry="2" />
+<text  x="526.47" y="191.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;double&gt;::VectorT (1,465 samples, 0.31%)</title><rect x="406.8" y="229" width="3.7" height="15.0" fill="rgb(233,220,26)" rx="2" ry="2" />
+<text  x="409.80" y="239.5" ></text>
+</g>
+<g >
+<title>pthread_equal (59 samples, 0.01%)</title><rect x="1031.7" y="213" width="0.2" height="15.0" fill="rgb(205,207,54)" rx="2" ry="2" />
+<text  x="1034.73" y="223.5" ></text>
+</g>
+<g >
+<title>std::basic_stringbuf&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;::str (43 samples, 0.01%)</title><rect x="500.2" y="229" width="0.1" height="15.0" fill="rgb(246,66,7)" rx="2" ry="2" />
+<text  x="503.23" y="239.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::VectorT (264 samples, 0.06%)</title><rect x="447.1" y="245" width="0.6" height="15.0" fill="rgb(226,53,21)" rx="2" ry="2" />
+<text  x="450.07" y="255.5" ></text>
+</g>
+<g >
+<title>_int_malloc (3,227 samples, 0.69%)</title><rect x="450.5" y="117" width="8.1" height="15.0" fill="rgb(221,166,2)" rx="2" ry="2" />
+<text  x="453.53" y="127.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;char&gt;::allocate (43 samples, 0.01%)</title><rect x="1157.3" y="181" width="0.1" height="15.0" fill="rgb(253,115,44)" rx="2" ry="2" />
+<text  x="1160.33" y="191.5" ></text>
+</g>
+<g >
+<title>operator+ (204 samples, 0.04%)</title><rect x="1166.3" y="245" width="0.5" height="15.0" fill="rgb(208,60,48)" rx="2" ry="2" />
+<text  x="1169.28" y="255.5" ></text>
+</g>
+<g >
+<title>hwloc_x86_cpuid (46 samples, 0.01%)</title><rect x="1186.0" y="53" width="0.2" height="15.0" fill="rgb(207,99,37)" rx="2" ry="2" />
+<text  x="1189.05" y="63.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::allocate (3,970 samples, 0.85%)</title><rect x="449.0" y="165" width="10.0" height="15.0" fill="rgb(209,114,9)" rx="2" ry="2" />
+<text  x="452.04" y="175.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;int, std::allocator&lt;int&gt; &gt;::push_back (65 samples, 0.01%)</title><rect x="796.7" y="245" width="0.2" height="15.0" fill="rgb(215,159,38)" rx="2" ry="2" />
+<text  x="799.74" y="255.5" ></text>
+</g>
+<g >
+<title>_IO_vsnprintf (134 samples, 0.03%)</title><rect x="1156.7" y="181" width="0.3" height="15.0" fill="rgb(208,191,33)" rx="2" ry="2" />
+<text  x="1159.70" y="191.5" ></text>
+</g>
+<g >
+<title>std::string::compare@plt (281 samples, 0.06%)</title><rect x="515.5" y="229" width="0.7" height="15.0" fill="rgb(206,223,23)" rx="2" ry="2" />
+<text  x="518.49" y="239.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (14,132 samples, 3.01%)</title><rect x="365.5" y="261" width="35.5" height="15.0" fill="rgb(239,176,29)" rx="2" ry="2" />
+<text  x="368.51" y="271.5" >Arr..</text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::L2_Norm (6,145 samples, 1.31%)</title><rect x="992.9" y="245" width="15.5" height="15.0" fill="rgb(211,145,0)" rx="2" ry="2" />
+<text  x="995.95" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeElasticProperties (50 samples, 0.01%)</title><rect x="1158.9" y="277" width="0.1" height="15.0" fill="rgb(250,179,53)" rx="2" ry="2" />
+<text  x="1161.88" y="287.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (918 samples, 0.20%)</title><rect x="849.6" y="213" width="2.3" height="15.0" fill="rgb(217,24,14)" rx="2" ry="2" />
+<text  x="852.63" y="223.5" ></text>
+</g>
+<g >
+<title>operator* (73 samples, 0.02%)</title><rect x="1023.5" y="245" width="0.2" height="15.0" fill="rgb(225,169,6)" rx="2" ry="2" />
+<text  x="1026.50" y="255.5" ></text>
+</g>
+<g >
+<title>R2SymTensorT&lt;3&gt;::operator (84 samples, 0.02%)</title><rect x="1169.3" y="261" width="0.2" height="15.0" fill="rgb(232,228,3)" rx="2" ry="2" />
+<text  x="1172.33" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator-= (1,630 samples, 0.35%)</title><rect x="854.3" y="229" width="4.1" height="15.0" fill="rgb(242,45,8)" rx="2" ry="2" />
+<text  x="857.26" y="239.5" ></text>
+</g>
+<g >
+<title>strlen@plt (253 samples, 0.05%)</title><rect x="514.0" y="197" width="0.6" height="15.0" fill="rgb(208,210,25)" rx="2" ry="2" />
+<text  x="516.99" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::operator= (794 samples, 0.17%)</title><rect x="1101.0" y="213" width="2.0" height="15.0" fill="rgb(206,33,16)" rx="2" ry="2" />
+<text  x="1103.97" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::operator= (350 samples, 0.07%)</title><rect x="1111.9" y="245" width="0.9" height="15.0" fill="rgb(214,177,9)" rx="2" ry="2" />
+<text  x="1114.95" y="255.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::SumOfSquares (75 samples, 0.02%)</title><rect x="1169.1" y="261" width="0.2" height="15.0" fill="rgb(233,56,37)" rx="2" ry="2" />
+<text  x="1172.14" y="271.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;double, std::allocator&lt;double&gt; &gt;::_M_create_storage (1,141 samples, 0.24%)</title><rect x="406.8" y="149" width="2.9" height="15.0" fill="rgb(218,140,47)" rx="2" ry="2" />
+<text  x="409.82" y="159.5" ></text>
+</g>
+<g >
+<title>operator new (193 samples, 0.04%)</title><rect x="1173.6" y="261" width="0.5" height="15.0" fill="rgb(222,57,19)" rx="2" ry="2" />
+<text  x="1176.57" y="271.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::operator (109 samples, 0.02%)</title><rect x="908.1" y="245" width="0.3" height="15.0" fill="rgb(220,221,28)" rx="2" ry="2" />
+<text  x="911.13" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R2TensorT&lt;3&gt;, std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::_M_create_storage (916 samples, 0.19%)</title><rect x="911.8" y="133" width="2.3" height="15.0" fill="rgb(207,93,41)" rx="2" ry="2" />
+<text  x="914.82" y="143.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator/= (45 samples, 0.01%)</title><rect x="1034.8" y="245" width="0.2" height="15.0" fill="rgb(247,211,16)" rx="2" ry="2" />
+<text  x="1037.84" y="255.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_copy&lt;false&gt;::__uninit_copy&lt;__gnu_cxx::__normal_iterator&lt;R1TensorT&lt;3&gt; const*, std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, R1TensorT&lt;3&gt;*&gt; (959 samples, 0.20%)</title><rect x="534.7" y="149" width="2.5" height="15.0" fill="rgb(254,75,46)" rx="2" ry="2" />
+<text  x="537.74" y="159.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::VectorT (2,685 samples, 0.57%)</title><rect x="523.3" y="229" width="6.7" height="15.0" fill="rgb(246,190,6)" rx="2" ry="2" />
+<text  x="526.30" y="239.5" ></text>
+</g>
+<g >
+<title>std::string::compare (178 samples, 0.04%)</title><rect x="1175.1" y="261" width="0.4" height="15.0" fill="rgb(237,111,50)" rx="2" ry="2" />
+<text  x="1178.08" y="271.5" ></text>
+</g>
+<g >
+<title>operator* (79 samples, 0.02%)</title><rect x="1168.4" y="245" width="0.2" height="15.0" fill="rgb(215,182,26)" rx="2" ry="2" />
+<text  x="1171.37" y="255.5" ></text>
+</g>
+<g >
+<title>__libm_sin_l9 (76 samples, 0.02%)</title><rect x="917.7" y="229" width="0.2" height="15.0" fill="rgb(233,42,53)" rx="2" ry="2" />
+<text  x="920.72" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;R1TensorT&lt;3&gt;*, unsigned long, R1TensorT&lt;3&gt; &gt; (124 samples, 0.03%)</title><rect x="941.1" y="213" width="0.3" height="15.0" fill="rgb(242,93,13)" rx="2" ry="2" />
+<text  x="944.09" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;int, std::allocator&lt;int&gt; &gt;::operator[] (3,019 samples, 0.64%)</title><rect x="749.2" y="213" width="7.6" height="15.0" fill="rgb(218,104,36)" rx="2" ry="2" />
+<text  x="752.24" y="223.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (339 samples, 0.07%)</title><rect x="529.2" y="37" width="0.8" height="15.0" fill="rgb(236,27,40)" rx="2" ry="2" />
+<text  x="532.20" y="47.5" ></text>
+</g>
+<g >
+<title>_IO_vfprintf_internal (128 samples, 0.03%)</title><rect x="1156.7" y="165" width="0.3" height="15.0" fill="rgb(252,185,12)" rx="2" ry="2" />
+<text  x="1159.72" y="175.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (240 samples, 0.05%)</title><rect x="937.1" y="213" width="0.6" height="15.0" fill="rgb(241,57,41)" rx="2" ry="2" />
+<text  x="940.08" y="223.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;double&gt;::allocate (337 samples, 0.07%)</title><rect x="914.9" y="85" width="0.8" height="15.0" fill="rgb(244,163,47)" rx="2" ry="2" />
+<text  x="917.86" y="95.5" ></text>
+</g>
+<g >
+<title>__strlen_sse2_pminub (79 samples, 0.02%)</title><rect x="918.4" y="181" width="0.2" height="15.0" fill="rgb(240,65,52)" rx="2" ry="2" />
+<text  x="921.38" y="191.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::Array1dT (2,685 samples, 0.57%)</title><rect x="523.3" y="245" width="6.7" height="15.0" fill="rgb(212,167,35)" rx="2" ry="2" />
+<text  x="526.30" y="255.5" ></text>
+</g>
+<g >
+<title>_int_free (334 samples, 0.07%)</title><rect x="1172.2" y="261" width="0.9" height="15.0" fill="rgb(240,38,1)" rx="2" ry="2" />
+<text  x="1175.23" y="271.5" ></text>
+</g>
+<g >
+<title>__GI___libc_free (272 samples, 0.06%)</title><rect x="537.3" y="85" width="0.7" height="15.0" fill="rgb(208,99,49)" rx="2" ry="2" />
+<text  x="540.34" y="95.5" ></text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::Array2dT (11,828 samples, 2.52%)</title><rect x="418.0" y="261" width="29.7" height="15.0" fill="rgb(207,75,28)" rx="2" ry="2" />
+<text  x="421.02" y="271.5" >Ar..</text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::operator= (85 samples, 0.02%)</title><rect x="10.6" y="277" width="0.2" height="15.0" fill="rgb(211,98,52)" rx="2" ry="2" />
+<text  x="13.56" y="287.5" ></text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::resize2 (11,507 samples, 2.45%)</title><rect x="418.2" y="245" width="28.9" height="15.0" fill="rgb(227,68,4)" rx="2" ry="2" />
+<text  x="421.17" y="255.5" >Ar..</text>
+</g>
+<g >
+<title>ProblemManagerT::InitializeObjectManagers (83 samples, 0.02%)</title><rect x="1186.3" y="229" width="0.2" height="15.0" fill="rgb(219,123,42)" rx="2" ry="2" />
+<text  x="1189.34" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::operator[] (2,671 samples, 0.57%)</title><rect x="410.5" y="229" width="6.7" height="15.0" fill="rgb(254,41,20)" rx="2" ry="2" />
+<text  x="413.48" y="239.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;R1TensorT&lt;3&gt; &gt;::allocate (2,236 samples, 0.48%)</title><rect x="523.5" y="85" width="5.6" height="15.0" fill="rgb(222,47,11)" rx="2" ry="2" />
+<text  x="526.50" y="95.5" ></text>
+</g>
+<g >
+<title>check_split_comm (105 samples, 0.02%)</title><rect x="1031.6" y="229" width="0.3" height="15.0" fill="rgb(206,48,39)" rx="2" ry="2" />
+<text  x="1034.61" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n&lt;double*, unsigned long&gt; (280 samples, 0.06%)</title><rect x="409.8" y="149" width="0.7" height="15.0" fill="rgb(210,51,0)" rx="2" ry="2" />
+<text  x="412.78" y="159.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::L2_Norm (52 samples, 0.01%)</title><rect x="1034.5" y="261" width="0.1" height="15.0" fill="rgb(214,129,5)" rx="2" ry="2" />
+<text  x="1037.46" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (57 samples, 0.01%)</title><rect x="1154.3" y="229" width="0.1" height="15.0" fill="rgb(212,141,29)" rx="2" ry="2" />
+<text  x="1157.27" y="239.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::allocate (2,236 samples, 0.48%)</title><rect x="523.5" y="101" width="5.6" height="15.0" fill="rgb(218,140,2)" rx="2" ry="2" />
+<text  x="526.50" y="111.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::AijBjk (40 samples, 0.01%)</title><rect x="916.9" y="229" width="0.1" height="15.0" fill="rgb(213,132,14)" rx="2" ry="2" />
+<text  x="919.86" y="239.5" ></text>
+</g>
+<g >
+<title>_dl_start (55 samples, 0.01%)</title><rect x="1183.8" y="261" width="0.1" height="15.0" fill="rgb(250,169,29)" rx="2" ry="2" />
+<text  x="1186.76" y="271.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::allocate (1,822 samples, 0.39%)</title><rect x="530.2" y="165" width="4.5" height="15.0" fill="rgb(206,3,32)" rx="2" ry="2" />
+<text  x="533.17" y="175.5" ></text>
+</g>
+<g >
+<title>SpatialPartition::IsCoordInPartition (112 samples, 0.02%)</title><rect x="1114.5" y="245" width="0.3" height="15.0" fill="rgb(215,195,16)" rx="2" ry="2" />
+<text  x="1117.49" y="255.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (55 samples, 0.01%)</title><rect x="836.3" y="245" width="0.2" height="15.0" fill="rgb(230,9,54)" rx="2" ry="2" />
+<text  x="839.31" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator+= (80 samples, 0.02%)</title><rect x="1154.4" y="245" width="0.2" height="15.0" fill="rgb(243,25,18)" rx="2" ry="2" />
+<text  x="1157.41" y="255.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::~VectorT (211 samples, 0.04%)</title><rect x="934.1" y="229" width="0.5" height="15.0" fill="rgb(240,77,37)" rx="2" ry="2" />
+<text  x="937.05" y="239.5" ></text>
+</g>
+<g >
+<title>std::basic_ofstream&lt;char, std::char_traits&lt;char&gt; &gt;::close (47 samples, 0.01%)</title><rect x="1155.6" y="261" width="0.1" height="15.0" fill="rgb(232,54,36)" rx="2" ry="2" />
+<text  x="1158.56" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (208 samples, 0.04%)</title><rect x="935.7" y="229" width="0.6" height="15.0" fill="rgb(252,148,54)" rx="2" ry="2" />
+<text  x="938.73" y="239.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::length (1,008 samples, 0.21%)</title><rect x="928.1" y="213" width="2.5" height="15.0" fill="rgb(218,45,36)" rx="2" ry="2" />
+<text  x="931.07" y="223.5" ></text>
+</g>
+<g >
+<title>std::string::_S_compare (58 samples, 0.01%)</title><rect x="933.0" y="213" width="0.2" height="15.0" fill="rgb(249,63,10)" rx="2" ry="2" />
+<text  x="936.02" y="223.5" ></text>
+</g>
+<g >
+<title>_dl_relocate_object (48 samples, 0.01%)</title><rect x="1183.8" y="213" width="0.1" height="15.0" fill="rgb(218,180,37)" rx="2" ry="2" />
+<text  x="1186.78" y="223.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::allocate (3,970 samples, 0.85%)</title><rect x="449.0" y="181" width="10.0" height="15.0" fill="rgb(229,150,1)" rx="2" ry="2" />
+<text  x="452.04" y="191.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator*= (124 samples, 0.03%)</title><rect x="936.3" y="245" width="0.3" height="15.0" fill="rgb(248,132,28)" rx="2" ry="2" />
+<text  x="939.25" y="255.5" ></text>
+</g>
+<g >
+<title>std::string::_M_replace_safe (74 samples, 0.02%)</title><rect x="1157.3" y="229" width="0.2" height="15.0" fill="rgb(230,212,36)" rx="2" ry="2" />
+<text  x="1160.27" y="239.5" ></text>
+</g>
+<g >
+<title>check_split_comm (113 samples, 0.02%)</title><rect x="1031.9" y="229" width="0.3" height="15.0" fill="rgb(247,86,47)" rx="2" ry="2" />
+<text  x="1034.90" y="239.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;std::_Rb_tree_node&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt; &gt;::_S_destroy&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; (42 samples, 0.01%)</title><rect x="496.7" y="101" width="0.1" height="15.0" fill="rgb(208,101,35)" rx="2" ry="2" />
+<text  x="499.73" y="111.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~_Vector_base (211 samples, 0.04%)</title><rect x="934.1" y="149" width="0.5" height="15.0" fill="rgb(254,164,27)" rx="2" ry="2" />
+<text  x="937.05" y="159.5" ></text>
+</g>
+<g >
+<title>operator new (4,254 samples, 0.91%)</title><rect x="419.3" y="149" width="10.7" height="15.0" fill="rgb(230,10,43)" rx="2" ry="2" />
+<text  x="422.29" y="159.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;double&gt;::allocate (1,124 samples, 0.24%)</title><rect x="406.9" y="101" width="2.8" height="15.0" fill="rgb(240,74,12)" rx="2" ry="2" />
+<text  x="409.87" y="111.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;int&gt;::operator[] (3,019 samples, 0.64%)</title><rect x="749.2" y="229" width="7.6" height="15.0" fill="rgb(213,123,48)" rx="2" ry="2" />
+<text  x="752.24" y="239.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::operator= (364 samples, 0.08%)</title><rect x="1111.9" y="261" width="0.9" height="15.0" fill="rgb(233,72,24)" rx="2" ry="2" />
+<text  x="1114.91" y="271.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeParticleCornerLocations (700 samples, 0.15%)</title><rect x="1166.3" y="261" width="1.7" height="15.0" fill="rgb(215,29,41)" rx="2" ry="2" />
+<text  x="1169.27" y="271.5" ></text>
+</g>
+<g >
+<title>dl_main (53 samples, 0.01%)</title><rect x="1183.8" y="229" width="0.1" height="15.0" fill="rgb(226,185,19)" rx="2" ry="2" />
+<text  x="1186.76" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::operator= (17,028 samples, 3.62%)</title><rect x="448.1" y="229" width="42.7" height="15.0" fill="rgb(211,176,25)" rx="2" ry="2" />
+<text  x="451.05" y="239.5" >std:..</text>
+</g>
+<g >
+<title>VectorT&lt;Array1dT&lt;int&gt; &gt;::operator[] (351 samples, 0.07%)</title><rect x="887.9" y="229" width="0.9" height="15.0" fill="rgb(238,154,44)" rx="2" ry="2" />
+<text  x="890.91" y="239.5" ></text>
+</g>
+<g >
+<title>operator- (666 samples, 0.14%)</title><rect x="938.6" y="245" width="1.7" height="15.0" fill="rgb(224,151,25)" rx="2" ry="2" />
+<text  x="941.59" y="255.5" ></text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::operator= (144 samples, 0.03%)</title><rect x="1164.7" y="261" width="0.4" height="15.0" fill="rgb(230,94,43)" rx="2" ry="2" />
+<text  x="1167.75" y="271.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;unsigned long&gt;::construct&lt;unsigned long, unsigned long const&amp;&gt; (2,297 samples, 0.49%)</title><rect x="830.0" y="197" width="5.8" height="15.0" fill="rgb(228,85,27)" rx="2" ry="2" />
+<text  x="832.98" y="207.5" ></text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::~Array2dT (76 samples, 0.02%)</title><rect x="496.4" y="261" width="0.2" height="15.0" fill="rgb(223,59,1)" rx="2" ry="2" />
+<text  x="499.43" y="271.5" ></text>
+</g>
+<g >
+<title>std::ostream::_M_insert&lt;double&gt; (182 samples, 0.04%)</title><rect x="1156.7" y="261" width="0.4" height="15.0" fill="rgb(252,228,12)" rx="2" ry="2" />
+<text  x="1159.65" y="271.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::operator[] (123 samples, 0.03%)</title><rect x="944.5" y="213" width="0.3" height="15.0" fill="rgb(240,189,7)" rx="2" ry="2" />
+<text  x="947.51" y="223.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::compare (2,174 samples, 0.46%)</title><rect x="504.2" y="213" width="5.5" height="15.0" fill="rgb(235,185,52)" rx="2" ry="2" />
+<text  x="507.21" y="223.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (555 samples, 0.12%)</title><rect x="498.2" y="133" width="1.4" height="15.0" fill="rgb(243,168,31)" rx="2" ry="2" />
+<text  x="501.22" y="143.5" ></text>
+</g>
+<g >
+<title>MPMSolver::RegisterTemporaryFields (1,319 samples, 0.28%)</title><rect x="497.2" y="261" width="3.3" height="15.0" fill="rgb(251,16,33)" rx="2" ry="2" />
+<text  x="500.15" y="271.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (4,174 samples, 0.89%)</title><rect x="419.4" y="133" width="10.5" height="15.0" fill="rgb(216,171,6)" rx="2" ry="2" />
+<text  x="422.41" y="143.5" ></text>
+</g>
+<g >
+<title>[unknown] (222 samples, 0.05%)</title><rect x="1171.0" y="261" width="0.6" height="15.0" fill="rgb(220,112,44)" rx="2" ry="2" />
+<text  x="1174.01" y="271.5" ></text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;, std::_Select1st&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::erase[abi:cxx11] (61 samples, 0.01%)</title><rect x="496.7" y="197" width="0.2" height="15.0" fill="rgb(243,87,54)" rx="2" ry="2" />
+<text  x="499.71" y="207.5" ></text>
+</g>
+<g >
+<title>_int_malloc (3,759 samples, 0.80%)</title><rect x="420.5" y="117" width="9.4" height="15.0" fill="rgb(215,187,32)" rx="2" ry="2" />
+<text  x="423.45" y="127.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~vector (72 samples, 0.02%)</title><rect x="496.4" y="197" width="0.2" height="15.0" fill="rgb(241,60,50)" rx="2" ry="2" />
+<text  x="499.44" y="207.5" ></text>
+</g>
+<g >
+<title>std::map&lt;std::string, FieldBase*, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, FieldBase*&gt; &gt; &gt;::lower_bound (61 samples, 0.01%)</title><rect x="497.6" y="213" width="0.2" height="15.0" fill="rgb(228,7,18)" rx="2" ry="2" />
+<text  x="500.65" y="223.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R2TensorT&lt;3&gt;, std::allocator&lt;R2TensorT&lt;3&gt; &gt; &gt;::_Vector_base (916 samples, 0.19%)</title><rect x="911.8" y="149" width="2.3" height="15.0" fill="rgb(209,177,40)" rx="2" ry="2" />
+<text  x="914.82" y="159.5" ></text>
+</g>
+<g >
+<title>hwloc_discover (638 samples, 0.14%)</title><rect x="1184.6" y="133" width="1.6" height="15.0" fill="rgb(236,204,25)" rx="2" ry="2" />
+<text  x="1187.58" y="143.5" ></text>
+</g>
+<g >
+<title>MPMSolver::DeregisterTemporaryFields (210 samples, 0.04%)</title><rect x="496.6" y="261" width="0.6" height="15.0" fill="rgb(244,81,6)" rx="2" ry="2" />
+<text  x="499.63" y="271.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (339 samples, 0.07%)</title><rect x="529.2" y="85" width="0.8" height="15.0" fill="rgb(221,159,5)" rx="2" ry="2" />
+<text  x="532.20" y="95.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator (2,724 samples, 0.58%)</title><rect x="1043.6" y="261" width="6.8" height="15.0" fill="rgb(220,43,36)" rx="2" ry="2" />
+<text  x="1046.57" y="271.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_deallocate (211 samples, 0.04%)</title><rect x="934.1" y="133" width="0.5" height="15.0" fill="rgb(237,182,14)" rx="2" ry="2" />
+<text  x="937.05" y="143.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;R1TensorT&lt;3&gt;*, unsigned long, R1TensorT&lt;3&gt; &gt; (684 samples, 0.15%)</title><rect x="497.9" y="197" width="1.7" height="15.0" fill="rgb(230,219,50)" rx="2" ry="2" />
+<text  x="500.89" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (53 samples, 0.01%)</title><rect x="1168.6" y="197" width="0.1" height="15.0" fill="rgb(245,78,3)" rx="2" ry="2" />
+<text  x="1171.57" y="207.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::operator (45 samples, 0.01%)</title><rect x="945.8" y="245" width="0.1" height="15.0" fill="rgb(227,104,30)" rx="2" ry="2" />
+<text  x="948.82" y="255.5" ></text>
+</g>
+<g >
+<title>operator new (216 samples, 0.05%)</title><rect x="940.5" y="165" width="0.6" height="15.0" fill="rgb(212,54,37)" rx="2" ry="2" />
+<text  x="943.51" y="175.5" ></text>
+</g>
+<g >
+<title>std::string::operator= (99 samples, 0.02%)</title><rect x="1157.3" y="261" width="0.2" height="15.0" fill="rgb(217,154,13)" rx="2" ry="2" />
+<text  x="1160.25" y="271.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_default_append (11,190 samples, 2.38%)</title><rect x="418.5" y="213" width="28.1" height="15.0" fill="rgb(225,160,32)" rx="2" ry="2" />
+<text  x="421.46" y="223.5" >s..</text>
+</g>
+<g >
+<title>__GI___libc_malloc (193 samples, 0.04%)</title><rect x="940.5" y="149" width="0.5" height="15.0" fill="rgb(216,73,41)" rx="2" ry="2" />
+<text  x="943.54" y="159.5" ></text>
+</g>
+<g >
+<title>PMPI_Allreduce (308 samples, 0.07%)</title><rect x="1031.4" y="261" width="0.8" height="15.0" fill="rgb(231,157,12)" rx="2" ry="2" />
+<text  x="1034.42" y="271.5" ></text>
+</g>
+<g >
+<title>std::char_traits&lt;char&gt;::compare (1,498 samples, 0.32%)</title><rect x="924.3" y="213" width="3.8" height="15.0" fill="rgb(215,160,27)" rx="2" ry="2" />
+<text  x="927.31" y="223.5" ></text>
+</g>
+<g >
+<title>std::string::size (324 samples, 0.07%)</title><rect x="930.9" y="213" width="0.8" height="15.0" fill="rgb(240,150,4)" rx="2" ry="2" />
+<text  x="933.88" y="223.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_Vector_base (1,022 samples, 0.22%)</title><rect x="355.9" y="181" width="2.5" height="15.0" fill="rgb(213,62,43)" rx="2" ry="2" />
+<text  x="358.85" y="191.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::resize (707 samples, 0.15%)</title><rect x="497.8" y="229" width="1.8" height="15.0" fill="rgb(246,176,11)" rx="2" ry="2" />
+<text  x="500.84" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::TensorBaseT (134 samples, 0.03%)</title><rect x="1170.7" y="261" width="0.3" height="15.0" fill="rgb(233,46,28)" rx="2" ry="2" />
+<text  x="1173.66" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (213 samples, 0.05%)</title><rect x="938.8" y="213" width="0.5" height="15.0" fill="rgb(215,3,25)" rx="2" ry="2" />
+<text  x="941.80" y="223.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::Normalize (147 samples, 0.03%)</title><rect x="1034.6" y="261" width="0.4" height="15.0" fill="rgb(206,171,47)" rx="2" ry="2" />
+<text  x="1037.59" y="271.5" ></text>
+</g>
+<g >
+<title>_int_malloc (1,899 samples, 0.40%)</title><rect x="524.2" y="37" width="4.7" height="15.0" fill="rgb(249,120,13)" rx="2" ry="2" />
+<text  x="527.17" y="47.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;int&gt;::operator[] (256 samples, 0.05%)</title><rect x="417.2" y="245" width="0.7" height="15.0" fill="rgb(231,100,11)" rx="2" ry="2" />
+<text  x="420.21" y="255.5" ></text>
+</g>
+<g >
+<title>__memcmp_sse4_1 (80 samples, 0.02%)</title><rect x="932.6" y="197" width="0.2" height="15.0" fill="rgb(233,50,29)" rx="2" ry="2" />
+<text  x="935.58" y="207.5" ></text>
+</g>
+<g >
+<title>operator/ (308 samples, 0.07%)</title><rect x="1154.6" y="261" width="0.8" height="15.0" fill="rgb(244,1,20)" rx="2" ry="2" />
+<text  x="1157.61" y="271.5" ></text>
+</g>
+<g >
+<title>std::operator==&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (341 samples, 0.07%)</title><rect x="932.4" y="245" width="0.9" height="15.0" fill="rgb(221,136,41)" rx="2" ry="2" />
+<text  x="935.41" y="255.5" ></text>
+</g>
+<g >
+<title>hwloc_look_linuxfs_pci (46 samples, 0.01%)</title><rect x="1184.6" y="117" width="0.1" height="15.0" fill="rgb(249,90,50)" rx="2" ry="2" />
+<text  x="1187.58" y="127.5" ></text>
+</g>
+<g >
+<title>MPMSolver::enforceGridVectorFieldSymmetryBC (141 samples, 0.03%)</title><rect x="945.6" y="261" width="0.3" height="15.0" fill="rgb(227,140,46)" rx="2" ry="2" />
+<text  x="948.57" y="271.5" ></text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::Array2dT (117 samples, 0.02%)</title><rect x="1164.5" y="261" width="0.2" height="15.0" fill="rgb(221,107,13)" rx="2" ry="2" />
+<text  x="1167.45" y="271.5" ></text>
+</g>
+<g >
+<title>Array2dT&lt;R1TensorT&lt;3&gt; &gt;::operator= (17,156 samples, 3.65%)</title><rect x="447.7" y="261" width="43.1" height="15.0" fill="rgb(245,68,0)" rx="2" ry="2" />
+<text  x="450.73" y="271.5" >Arra..</text>
+</g>
+<g >
+<title>std::string::compare (638 samples, 0.14%)</title><rect x="1188.1" y="277" width="1.7" height="15.0" fill="rgb(208,15,23)" rx="2" ry="2" />
+<text  x="1191.15" y="287.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::operator= (74 samples, 0.02%)</title><rect x="920.4" y="229" width="0.2" height="15.0" fill="rgb(242,210,0)" rx="2" ry="2" />
+<text  x="923.39" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::operator*= (116 samples, 0.02%)</title><rect x="920.6" y="245" width="0.3" height="15.0" fill="rgb(227,34,10)" rx="2" ry="2" />
+<text  x="923.57" y="255.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::operator (3,539 samples, 0.75%)</title><rect x="1103.0" y="261" width="8.9" height="15.0" fill="rgb(234,76,9)" rx="2" ry="2" />
+<text  x="1106.02" y="271.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (156 samples, 0.03%)</title><rect x="1113.8" y="133" width="0.4" height="15.0" fill="rgb(237,85,37)" rx="2" ry="2" />
+<text  x="1116.77" y="143.5" ></text>
+</g>
+<g >
+<title>__strlen_sse2_pminub (72 samples, 0.02%)</title><rect x="932.8" y="197" width="0.2" height="15.0" fill="rgb(211,210,23)" rx="2" ry="2" />
+<text  x="935.82" y="207.5" ></text>
+</g>
+<g >
+<title>operator+ (56 samples, 0.01%)</title><rect x="836.7" y="245" width="0.1" height="15.0" fill="rgb(239,53,4)" rx="2" ry="2" />
+<text  x="839.69" y="255.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;double&gt; &gt;::allocate (1,124 samples, 0.24%)</title><rect x="406.9" y="117" width="2.8" height="15.0" fill="rgb(230,61,1)" rx="2" ry="2" />
+<text  x="409.87" y="127.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator+= (101 samples, 0.02%)</title><rect x="1114.8" y="261" width="0.3" height="15.0" fill="rgb(209,206,54)" rx="2" ry="2" />
+<text  x="1117.83" y="271.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R2TensorT&lt;3&gt; &gt;::operator[] (2,242 samples, 0.48%)</title><rect x="401.1" y="261" width="5.7" height="15.0" fill="rgb(235,146,52)" rx="2" ry="2" />
+<text  x="404.14" y="271.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;double, std::allocator&lt;double&gt; &gt;::_M_default_initialize (312 samples, 0.07%)</title><rect x="409.7" y="181" width="0.8" height="15.0" fill="rgb(248,52,10)" rx="2" ry="2" />
+<text  x="412.70" y="191.5" ></text>
+</g>
+<g >
+<title>__libm_floor_y8 (977 samples, 0.21%)</title><rect x="1176.0" y="277" width="2.5" height="15.0" fill="rgb(230,45,4)" rx="2" ry="2" />
+<text  x="1179.03" y="287.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (937 samples, 0.20%)</title><rect x="542.6" y="229" width="2.4" height="15.0" fill="rgb(249,152,45)" rx="2" ry="2" />
+<text  x="545.62" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_default_append (704 samples, 0.15%)</title><rect x="497.8" y="213" width="1.8" height="15.0" fill="rgb(245,208,26)" rx="2" ry="2" />
+<text  x="500.84" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Array1dT&lt;Array1dT&lt;int&gt; &gt;, std::allocator&lt;Array1dT&lt;Array1dT&lt;int&gt; &gt; &gt; &gt;::operator[] (744 samples, 0.16%)</title><rect x="886.0" y="213" width="1.9" height="15.0" fill="rgb(212,149,22)" rx="2" ry="2" />
+<text  x="889.04" y="223.5" ></text>
+</g>
+<g >
+<title>SpatialPartition::sendCoordinateListToNeighbors (78 samples, 0.02%)</title><rect x="1113.4" y="245" width="0.2" height="15.0" fill="rgb(206,187,30)" rx="2" ry="2" />
+<text  x="1116.38" y="255.5" ></text>
+</g>
+<g >
+<title>std::__fill_n_a&lt;double*, unsigned long, double&gt; (85 samples, 0.02%)</title><rect x="915.8" y="85" width="0.2" height="15.0" fill="rgb(222,79,15)" rx="2" ry="2" />
+<text  x="918.80" y="95.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (184 samples, 0.04%)</title><rect x="501.6" y="245" width="0.5" height="15.0" fill="rgb(247,142,32)" rx="2" ry="2" />
+<text  x="504.63" y="255.5" ></text>
+</g>
+<g >
+<title>look_proc (65 samples, 0.01%)</title><rect x="1186.0" y="69" width="0.2" height="15.0" fill="rgb(248,23,15)" rx="2" ry="2" />
+<text  x="1189.01" y="79.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::VectorT (3,811 samples, 0.81%)</title><rect x="355.8" y="245" width="9.6" height="15.0" fill="rgb(220,118,3)" rx="2" ry="2" />
+<text  x="358.85" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;double, std::allocator&lt;double&gt; &gt;::_Vector_base (1,145 samples, 0.24%)</title><rect x="406.8" y="165" width="2.9" height="15.0" fill="rgb(230,228,15)" rx="2" ry="2" />
+<text  x="409.82" y="175.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_copy&lt;false&gt;::__uninit_copy&lt;__gnu_cxx::__normal_iterator&lt;R1TensorT&lt;3&gt; const*, std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, R1TensorT&lt;3&gt;*&gt; (12,256 samples, 2.61%)</title><rect x="459.0" y="165" width="30.8" height="15.0" fill="rgb(217,0,18)" rx="2" ry="2" />
+<text  x="462.01" y="175.5" >st..</text>
+</g>
+<g >
+<title>std::_Rb_tree&lt;std::string, std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt;, std::_Select1st&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, std::less&lt;std::string&gt;, std::allocator&lt;std::pair&lt;std::string const, Array1dT&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt; &gt;::_M_lower_bound (40 samples, 0.01%)</title><rect x="1031.3" y="197" width="0.1" height="15.0" fill="rgb(233,81,47)" rx="2" ry="2" />
+<text  x="1034.26" y="207.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (6,729 samples, 1.43%)</title><rect x="462.8" y="117" width="16.9" height="15.0" fill="rgb(232,153,4)" rx="2" ry="2" />
+<text  x="465.84" y="127.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (702 samples, 0.15%)</title><rect x="839.7" y="229" width="1.7" height="15.0" fill="rgb(237,8,38)" rx="2" ry="2" />
+<text  x="842.68" y="239.5" ></text>
+</g>
+<g >
+<title>hwloc_topology_load (638 samples, 0.14%)</title><rect x="1184.6" y="149" width="1.6" height="15.0" fill="rgb(220,4,0)" rx="2" ry="2" />
+<text  x="1187.58" y="159.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;9&gt;::MaxVal (201 samples, 0.04%)</title><rect x="907.6" y="229" width="0.5" height="15.0" fill="rgb(248,43,18)" rx="2" ry="2" />
+<text  x="910.55" y="239.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::resize (550 samples, 0.12%)</title><rect x="940.3" y="245" width="1.3" height="15.0" fill="rgb(244,25,17)" rx="2" ry="2" />
+<text  x="943.26" y="255.5" ></text>
+</g>
+<g >
+<title>std::_Construct&lt;R1TensorT&lt;3&gt;, R1TensorT&lt;3&gt; const&amp;&gt; (959 samples, 0.20%)</title><rect x="534.7" y="133" width="2.5" height="15.0" fill="rgb(234,146,39)" rx="2" ry="2" />
+<text  x="537.74" y="143.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;R1TensorT&lt;3&gt;*, unsigned long, R1TensorT&lt;3&gt; &gt; (6,286 samples, 1.34%)</title><rect x="430.3" y="197" width="15.7" height="15.0" fill="rgb(254,72,36)" rx="2" ry="2" />
+<text  x="433.26" y="207.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::VectorT (2,685 samples, 0.57%)</title><rect x="523.3" y="213" width="6.7" height="15.0" fill="rgb(254,200,31)" rx="2" ry="2" />
+<text  x="526.30" y="223.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (53 samples, 0.01%)</title><rect x="1168.6" y="229" width="0.1" height="15.0" fill="rgb(209,124,29)" rx="2" ry="2" />
+<text  x="1171.57" y="239.5" ></text>
+</g>
+<g >
+<title>__GI___libc_free (52 samples, 0.01%)</title><rect x="934.1" y="85" width="0.1" height="15.0" fill="rgb(242,9,26)" rx="2" ry="2" />
+<text  x="937.05" y="95.5" ></text>
+</g>
+<g >
+<title>operator- (3,822 samples, 0.81%)</title><rect x="848.8" y="245" width="9.6" height="15.0" fill="rgb(225,111,51)" rx="2" ry="2" />
+<text  x="851.75" y="255.5" ></text>
+</g>
+<g >
+<title>round (41 samples, 0.01%)</title><rect x="1155.4" y="261" width="0.1" height="15.0" fill="rgb(241,221,34)" rx="2" ry="2" />
+<text  x="1158.39" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (59 samples, 0.01%)</title><rect x="1113.8" y="117" width="0.1" height="15.0" fill="rgb(215,122,17)" rx="2" ry="2" />
+<text  x="1116.77" y="127.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::_M_insert_float&lt;double&gt; (53 samples, 0.01%)</title><rect x="1186.8" y="197" width="0.1" height="15.0" fill="rgb(236,163,31)" rx="2" ry="2" />
+<text  x="1189.80" y="207.5" ></text>
+</g>
+<g >
+<title>__libm_floor_y8 (2,933 samples, 0.62%)</title><rect x="890.6" y="245" width="7.4" height="15.0" fill="rgb(209,110,9)" rx="2" ry="2" />
+<text  x="893.61" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (95 samples, 0.02%)</title><rect x="935.5" y="229" width="0.2" height="15.0" fill="rgb(220,174,29)" rx="2" ry="2" />
+<text  x="938.49" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (496 samples, 0.11%)</title><rect x="534.7" y="85" width="1.3" height="15.0" fill="rgb(253,151,46)" rx="2" ry="2" />
+<text  x="537.75" y="95.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~vector (211 samples, 0.04%)</title><rect x="934.1" y="181" width="0.5" height="15.0" fill="rgb(206,82,23)" rx="2" ry="2" />
+<text  x="937.05" y="191.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::AijBkj (62 samples, 0.01%)</title><rect x="918.7" y="245" width="0.2" height="15.0" fill="rgb(211,140,19)" rx="2" ry="2" />
+<text  x="921.73" y="255.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;double*, unsigned long, double&gt; (78 samples, 0.02%)</title><rect x="500.0" y="197" width="0.2" height="15.0" fill="rgb(234,132,51)" rx="2" ry="2" />
+<text  x="502.99" y="207.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;R1TensorT&lt;3&gt; &gt;::operator[] (352 samples, 0.07%)</title><rect x="837.4" y="245" width="0.8" height="15.0" fill="rgb(250,101,35)" rx="2" ry="2" />
+<text  x="840.36" y="255.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_default_initialize (2,787 samples, 0.59%)</title><rect x="358.4" y="181" width="7.0" height="15.0" fill="rgb(225,36,44)" rx="2" ry="2" />
+<text  x="361.42" y="191.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;R1TensorT&lt;3&gt;*, unsigned long, R1TensorT&lt;3&gt; &gt; (2,772 samples, 0.59%)</title><rect x="358.5" y="165" width="6.9" height="15.0" fill="rgb(228,191,54)" rx="2" ry="2" />
+<text  x="361.46" y="175.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (895 samples, 0.19%)</title><rect x="356.0" y="69" width="2.2" height="15.0" fill="rgb(239,219,29)" rx="2" ry="2" />
+<text  x="358.97" y="79.5" ></text>
+</g>
+<g >
+<title>operator new (1,761 samples, 0.37%)</title><rect x="530.2" y="133" width="4.5" height="15.0" fill="rgb(217,196,3)" rx="2" ry="2" />
+<text  x="533.24" y="143.5" ></text>
+</g>
+<g >
+<title>__libm_asin_l9 (77 samples, 0.02%)</title><rect x="917.4" y="229" width="0.2" height="15.0" fill="rgb(243,94,32)" rx="2" ry="2" />
+<text  x="920.39" y="239.5" ></text>
+</g>
+<g >
+<title>Array1dT&lt;int&gt;::operator[] (256 samples, 0.05%)</title><rect x="417.2" y="261" width="0.7" height="15.0" fill="rgb(228,88,40)" rx="2" ry="2" />
+<text  x="420.21" y="271.5" ></text>
+</g>
+<g >
+<title>std::operator==&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (3,522 samples, 0.75%)</title><rect x="923.2" y="245" width="8.8" height="15.0" fill="rgb(226,48,37)" rx="2" ry="2" />
+<text  x="926.17" y="255.5" ></text>
+</g>
+<g >
+<title>std::uninitialized_copy&lt;__gnu_cxx::__normal_iterator&lt;R1TensorT&lt;3&gt; const*, std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt; &gt;, R1TensorT&lt;3&gt;*&gt; (959 samples, 0.20%)</title><rect x="534.7" y="165" width="2.5" height="15.0" fill="rgb(211,32,30)" rx="2" ry="2" />
+<text  x="537.74" y="175.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_allocate (2,236 samples, 0.48%)</title><rect x="523.5" y="117" width="5.6" height="15.0" fill="rgb(247,229,54)" rx="2" ry="2" />
+<text  x="526.50" y="127.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::vector (2,677 samples, 0.57%)</title><rect x="523.3" y="197" width="6.7" height="15.0" fill="rgb(249,219,39)" rx="2" ry="2" />
+<text  x="526.32" y="207.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::~_Vector_base (1,996 samples, 0.42%)</title><rect x="537.3" y="165" width="5.1" height="15.0" fill="rgb(219,146,8)" rx="2" ry="2" />
+<text  x="540.34" y="175.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (326 samples, 0.07%)</title><rect x="938.8" y="229" width="0.8" height="15.0" fill="rgb(205,112,53)" rx="2" ry="2" />
+<text  x="941.80" y="239.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_a&lt;double*, unsigned long, double&gt; (85 samples, 0.02%)</title><rect x="915.8" y="149" width="0.2" height="15.0" fill="rgb(242,121,45)" rx="2" ry="2" />
+<text  x="918.80" y="159.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;true&gt;::__uninit_default_n&lt;double*, unsigned long&gt; (78 samples, 0.02%)</title><rect x="500.0" y="165" width="0.2" height="15.0" fill="rgb(251,82,44)" rx="2" ry="2" />
+<text  x="502.99" y="175.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;Array1dT&lt;Array1dT&lt;int&gt; &gt; &gt;::operator[] (744 samples, 0.16%)</title><rect x="886.0" y="229" width="1.9" height="15.0" fill="rgb(224,153,20)" rx="2" ry="2" />
+<text  x="889.04" y="239.5" ></text>
+</g>
+<g >
+<title>std::operator&lt; &lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; (54 samples, 0.01%)</title><rect x="497.7" y="149" width="0.1" height="15.0" fill="rgb(207,169,45)" rx="2" ry="2" />
+<text  x="500.67" y="159.5" ></text>
+</g>
+<g >
+<title>std::string::compare (68 samples, 0.01%)</title><rect x="497.4" y="149" width="0.2" height="15.0" fill="rgb(221,152,8)" rx="2" ry="2" />
+<text  x="500.43" y="159.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::operator= (2,904 samples, 0.62%)</title><rect x="530.0" y="229" width="7.3" height="15.0" fill="rgb(236,227,10)" rx="2" ry="2" />
+<text  x="533.05" y="239.5" ></text>
+</g>
+<g >
+<title>std::string::_Rep::_S_create (43 samples, 0.01%)</title><rect x="1157.3" y="197" width="0.1" height="15.0" fill="rgb(235,158,7)" rx="2" ry="2" />
+<text  x="1160.33" y="207.5" ></text>
+</g>
+<g >
+<title>__memcmp_sse4_1 (40 samples, 0.01%)</title><rect x="516.5" y="197" width="0.1" height="15.0" fill="rgb(217,2,31)" rx="2" ry="2" />
+<text  x="519.50" y="207.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::_M_deallocate (65 samples, 0.01%)</title><rect x="496.5" y="149" width="0.1" height="15.0" fill="rgb(207,8,6)" rx="2" ry="2" />
+<text  x="499.46" y="159.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_copy_a&lt;R1TensorT&lt;3&gt;*, R1TensorT&lt;3&gt;*, R1TensorT&lt;3&gt; &gt; (173 samples, 0.04%)</title><rect x="1113.7" y="197" width="0.5" height="15.0" fill="rgb(218,104,9)" rx="2" ry="2" />
+<text  x="1116.73" y="207.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_default_n_1&lt;false&gt;::__uninit_default_n&lt;R1TensorT&lt;3&gt;*, unsigned long&gt; (124 samples, 0.03%)</title><rect x="941.1" y="181" width="0.3" height="15.0" fill="rgb(220,223,31)" rx="2" ry="2" />
+<text  x="944.09" y="191.5" ></text>
+</g>
+<g >
+<title>R2TensorT&lt;3&gt;::R2TensorT (1,005 samples, 0.21%)</title><rect x="1100.4" y="261" width="2.6" height="15.0" fill="rgb(227,80,9)" rx="2" ry="2" />
+<text  x="1103.44" y="271.5" ></text>
+</g>
+<g >
+<title>VectorT&lt;R1TensorT&lt;3&gt; &gt;::~VectorT (1,996 samples, 0.42%)</title><rect x="537.3" y="213" width="5.1" height="15.0" fill="rgb(223,18,9)" rx="2" ry="2" />
+<text  x="540.34" y="223.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;unsigned long long, std::allocator&lt;unsigned long long&gt; &gt;::push_back (48 samples, 0.01%)</title><rect x="1114.2" y="245" width="0.1" height="15.0" fill="rgb(216,6,5)" rx="2" ry="2" />
+<text  x="1117.17" y="255.5" ></text>
+</g>
+<g >
+<title>MPMSolver::computeBodyForce (380 samples, 0.08%)</title><rect x="1165.2" y="261" width="1.0" height="15.0" fill="rgb(213,151,30)" rx="2" ry="2" />
+<text  x="1168.20" y="271.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::TensorBaseT (59 samples, 0.01%)</title><rect x="1113.8" y="101" width="0.1" height="15.0" fill="rgb(226,146,46)" rx="2" ry="2" />
+<text  x="1116.77" y="111.5" ></text>
+</g>
+<g >
+<title>R1TensorT&lt;3&gt;::R1TensorT (937 samples, 0.20%)</title><rect x="542.6" y="245" width="2.4" height="15.0" fill="rgb(230,156,20)" rx="2" ry="2" />
+<text  x="545.62" y="255.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (71 samples, 0.02%)</title><rect x="941.2" y="101" width="0.2" height="15.0" fill="rgb(228,78,32)" rx="2" ry="2" />
+<text  x="944.22" y="111.5" ></text>
+</g>
+<g >
+<title>std::basic_filebuf&lt;char, std::char_traits&lt;char&gt; &gt;::open (149 samples, 0.03%)</title><rect x="1155.7" y="245" width="0.4" height="15.0" fill="rgb(254,9,49)" rx="2" ry="2" />
+<text  x="1158.68" y="255.5" ></text>
+</g>
+<g >
+<title>std::__basic_file&lt;char&gt;::close (40 samples, 0.01%)</title><rect x="1155.6" y="229" width="0.1" height="15.0" fill="rgb(252,91,3)" rx="2" ry="2" />
+<text  x="1158.56" y="239.5" ></text>
+</g>
+<g >
+<title>TensorBaseT&lt;3&gt;::operator= (89 samples, 0.02%)</title><rect x="1154.7" y="229" width="0.2" height="15.0" fill="rgb(228,81,16)" rx="2" ry="2" />
+<text  x="1157.70" y="239.5" ></text>
+</g>
+<g >
+<title>__GI___libc_malloc (99 samples, 0.02%)</title><rect x="1157.9" y="165" width="0.2" height="15.0" fill="rgb(240,181,0)" rx="2" ry="2" />
+<text  x="1160.90" y="175.5" ></text>
+</g>
+<g >
+<title>mv2_get_arch_type (650 samples, 0.14%)</title><rect x="1184.5" y="181" width="1.7" height="15.0" fill="rgb(209,91,28)" rx="2" ry="2" />
+<text  x="1187.55" y="191.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;R1TensorT&lt;3&gt;, std::allocator&lt;R1TensorT&lt;3&gt; &gt; &gt;::size (89 samples, 0.02%)</title><rect x="858.4" y="245" width="0.2" height="15.0" fill="rgb(220,83,53)" rx="2" ry="2" />
+<text  x="861.35" y="255.5" ></text>
+</g>
+</g>
+</svg>

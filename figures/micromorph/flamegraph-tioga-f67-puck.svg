@@ -1,0 +1,760 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="900" height="280" onload="init(evt)" viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Hack; font-size:14px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:19px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom();
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				clearzoom();
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 14 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x = txt.length - 2; x > 0; x--) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom() {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="900.0" height="280.0" fill="url(#background)"  />
+<text id="title" x="450.00" y="28" >F67 12.5mm puck, 50 MDoF, 4 nodes of Tioga</text>
+<text id="details" x="10.00" y="261" > </text>
+<text id="unzoom" x="10.00" y="28" class="hide">Reset Zoom</text>
+<text id="search" x="790.00" y="28" >Search</text>
+<text id="ignorecase" x="874.00" y="28" >ic</text>
+<text id="matched" x="790.00" y="261" > </text>
+<g id="frames">
+<g >
+<title>KSPSetUp (25,024,939 us, 3.63%)</title><rect x="804.6" y="143" width="31.9" height="19.0" fill="rgb(213,125,32)" rx="2" ry="2" />
+<text  x="807.59" y="155.5" >K..</text>
+</g>
+<g >
+<title>SNESJacobianEval (12,358,650 us, 1.79%)</title><rect x="868.9" y="163" width="15.8" height="19.0" fill="rgb(221,79,6)" rx="2" ry="2" />
+<text  x="871.91" y="175.5" ></text>
+</g>
+<g >
+<title>VecSet (615,629 us, 0.09%)</title><rect x="594.0" y="63" width="0.8" height="19.0" fill="rgb(238,174,7)" rx="2" ry="2" />
+<text  x="597.01" y="75.5" ></text>
+</g>
+<g >
+<title>PCSetUp (22,429,077 us, 3.25%)</title><rect x="838.5" y="143" width="28.6" height="19.0" fill="rgb(222,139,39)" rx="2" ry="2" />
+<text  x="841.49" y="155.5" >P..</text>
+</g>
+<g >
+<title>SNESFunctionEval (4,162,670 us, 0.60%)</title><rect x="884.7" y="143" width="5.3" height="19.0" fill="rgb(231,216,24)" rx="2" ry="2" />
+<text  x="887.69" y="155.5" ></text>
+</g>
+<g >
+<title>SFPack (179,189 us, 0.03%)</title><rect x="592.6" y="43" width="0.3" height="19.0" fill="rgb(230,174,43)" rx="2" ry="2" />
+<text  x="595.65" y="55.5" ></text>
+</g>
+<g >
+<title>MatMult (20,639,934 us, 2.99%)</title><rect x="805.4" y="103" width="26.4" height="19.0" fill="rgb(237,63,46)" rx="2" ry="2" />
+<text  x="808.45" y="115.5" >M..</text>
+</g>
+<g >
+<title>SFReduceEnd (884,055 us, 0.13%)</title><rect x="592.9" y="63" width="1.1" height="19.0" fill="rgb(234,74,37)" rx="2" ry="2" />
+<text  x="595.88" y="75.5" ></text>
+</g>
+<g >
+<title>MatAssemblyBegin (381,262 us, 0.06%)</title><rect x="872.5" y="123" width="0.5" height="19.0" fill="rgb(250,22,42)" rx="2" ry="2" />
+<text  x="875.52" y="135.5" ></text>
+</g>
+<g >
+<title>SFReduceEnd (182,695 us, 0.03%)</title><rect x="680.6" y="63" width="0.3" height="19.0" fill="rgb(223,87,19)" rx="2" ry="2" />
+<text  x="683.63" y="75.5" ></text>
+</g>
+<g >
+<title>TSStep (689,248,251 us, 100.00%)</title><rect x="10.0" y="203" width="880.0" height="19.0" fill="rgb(251,48,52)" rx="2" ry="2" />
+<text  x="13.00" y="215.5" >TSStep</text>
+</g>
+<g >
+<title>VecAYPX (206,858 us, 0.03%)</title><rect x="803.1" y="143" width="0.3" height="19.0" fill="rgb(214,207,36)" rx="2" ry="2" />
+<text  x="806.12" y="155.5" ></text>
+</g>
+<g >
+<title>VecSet (277,953 us, 0.04%)</title><rect x="802.2" y="123" width="0.4" height="19.0" fill="rgb(234,85,34)" rx="2" ry="2" />
+<text  x="805.21" y="135.5" ></text>
+</g>
+<g >
+<title>VecSet (757,400 us, 0.11%)</title><rect x="837.5" y="103" width="1.0" height="19.0" fill="rgb(249,205,40)" rx="2" ry="2" />
+<text  x="840.52" y="115.5" ></text>
+</g>
+<g >
+<title>MatMultTranspose (1,527,911 us, 0.22%; 0.00%)</title><rect x="836.5" y="143" width="2.0" height="19.0" fill="rgb(255,255,255)" rx="2" ry="2" />
+<text  x="839.54" y="155.5" ></text>
+</g>
+<g >
+<title>PCApply (546,185,024 us, 79.24%)</title><rect x="105.2" y="143" width="697.4" height="19.0" fill="rgb(226,220,35)" rx="2" ry="2" />
+<text  x="108.23" y="155.5" >PCApply</text>
+</g>
+<g >
+<title>VecTDot (944,648 us, 0.14%)</title><rect x="803.4" y="143" width="1.2" height="19.0" fill="rgb(242,111,27)" rx="2" ry="2" />
+<text  x="806.38" y="155.5" ></text>
+</g>
+<g >
+<title>VecPointwiseMult (1,283,057 us, 0.19%)</title><rect x="673.3" y="83" width="1.6" height="19.0" fill="rgb(243,63,47)" rx="2" ry="2" />
+<text  x="676.30" y="95.5" ></text>
+</g>
+<g >
+<title>VecSet (125,494 us, 0.02%)</title><rect x="801.7" y="63" width="0.2" height="19.0" fill="rgb(228,44,20)" rx="2" ry="2" />
+<text  x="804.72" y="75.5" ></text>
+</g>
+<g >
+<title>SFReduceBegin (353,601 us, 0.05%)</title><rect x="680.2" y="63" width="0.4" height="19.0" fill="rgb(228,4,41)" rx="2" ry="2" />
+<text  x="683.17" y="75.5" ></text>
+</g>
+<g >
+<title>SFBcastEnd (409,233 us, 0.06%)</title><rect x="679.7" y="63" width="0.5" height="19.0" fill="rgb(240,64,34)" rx="2" ry="2" />
+<text  x="682.65" y="75.5" ></text>
+</g>
+<g >
+<title>RatelJacobianApp (20,639,934 us, 2.99%)</title><rect x="805.4" y="83" width="26.4" height="19.0" fill="rgb(228,128,43)" rx="2" ry="2" />
+<text  x="808.45" y="95.5" >R..</text>
+</g>
+<g >
+<title>VecPointwiseMult (419,134 us, 0.06%)</title><rect x="832.9" y="83" width="0.5" height="19.0" fill="rgb(247,149,34)" rx="2" ry="2" />
+<text  x="835.91" y="95.5" ></text>
+</g>
+<g >
+<title>SNESFunctionEval (1,241,388 us, 0.18%)</title><rect x="867.3" y="163" width="1.6" height="19.0" fill="rgb(207,187,44)" rx="2" ry="2" />
+<text  x="870.32" y="175.5" ></text>
+</g>
+<g >
+<title>RatelProlong (789,502 us, 0.11%; +0.11%)</title><rect x="678.6" y="83" width="1.1" height="19.0" fill="rgb(255,0,0)" rx="2" ry="2" />
+<text  x="681.64" y="95.5" ></text>
+</g>
+<g >
+<title>RatelJacobianApp (76,705,808 us, 11.13%)</title><rect x="703.9" y="83" width="98.0" height="19.0" fill="rgb(216,152,32)" rx="2" ry="2" />
+<text  x="706.94" y="95.5" >RatelJaco..</text>
+</g>
+<g >
+<title>KSPSolve (449,121,521 us, 65.16%)</title><rect x="105.2" y="123" width="573.4" height="19.0" fill="rgb(225,183,27)" rx="2" ry="2" />
+<text  x="108.23" y="135.5" >KSPSolve</text>
+</g>
+<g >
+<title>VecSet (1,362,817 us, 0.20%)</title><rect x="833.4" y="83" width="1.8" height="19.0" fill="rgb(223,30,14)" rx="2" ry="2" />
+<text  x="836.44" y="95.5" ></text>
+</g>
+<g >
+<title>VecAYPX (1,747,238 us, 0.25%)</title><rect x="676.2" y="103" width="2.2" height="19.0" fill="rgb(233,21,36)" rx="2" ry="2" />
+<text  x="679.21" y="115.5" ></text>
+</g>
+<g >
+<title>VecAXPY (118,451 us, 0.02%)</title><rect x="835.2" y="103" width="0.1" height="19.0" fill="rgb(210,206,1)" rx="2" ry="2" />
+<text  x="838.18" y="115.5" ></text>
+</g>
+<g >
+<title>MatSetValuesCOO (9,150,808 us, 1.33%)</title><rect x="873.0" y="123" width="11.7" height="19.0" fill="rgb(211,48,53)" rx="2" ry="2" />
+<text  x="876.00" y="135.5" ></text>
+</g>
+<g >
+<title>MatMultTranspose (10,752,625 us, 1.56%; 0.00%)</title><rect x="690.2" y="123" width="13.7" height="19.0" fill="rgb(255,255,255)" rx="2" ry="2" />
+<text  x="693.22" y="135.5" ></text>
+</g>
+<g >
+<title>SFReduceEnd (175,862 us, 0.03%)</title><rect x="801.5" y="63" width="0.2" height="19.0" fill="rgb(226,12,54)" rx="2" ry="2" />
+<text  x="804.49" y="75.5" ></text>
+</g>
+<g >
+<title>SFBcastEnd (770,473 us, 0.11%)</title><rect x="690.6" y="83" width="0.9" height="19.0" fill="rgb(213,96,22)" rx="2" ry="2" />
+<text  x="693.56" y="95.5" ></text>
+</g>
+<g >
+<title>VecSet (9,512,894 us, 1.38%)</title><rect x="691.8" y="83" width="12.1" height="19.0" fill="rgb(219,14,39)" rx="2" ry="2" />
+<text  x="694.80" y="95.5" ></text>
+</g>
+<g >
+<title>SFPack (179,189 us, 0.03%)</title><rect x="592.6" y="63" width="0.3" height="19.0" fill="rgb(241,134,52)" rx="2" ry="2" />
+<text  x="595.65" y="75.5" ></text>
+</g>
+<g >
+<title>PCSetUp (49,135,649 us, 7.13%)</title><rect x="804.6" y="163" width="62.7" height="19.0" fill="rgb(225,182,0)" rx="2" ry="2" />
+<text  x="807.59" y="175.5" >PCSetUp</text>
+</g>
+<g >
+<title>SFReduceEnd (171,785 us, 0.02%)</title><rect x="104.9" y="103" width="0.2" height="19.0" fill="rgb(217,22,18)" rx="2" ry="2" />
+<text  x="107.85" y="115.5" ></text>
+</g>
+<g >
+<title>SFBcastEnd (758,965 us, 0.11%)</title><rect x="800.5" y="63" width="1.0" height="19.0" fill="rgb(224,214,44)" rx="2" ry="2" />
+<text  x="803.53" y="75.5" ></text>
+</g>
+<g >
+<title>MatMult (8,805,171 us, 1.28%; 0.00%)</title><rect x="678.6" y="103" width="11.3" height="19.0" fill="rgb(255,255,255)" rx="2" ry="2" />
+<text  x="681.64" y="115.5" ></text>
+</g>
+<g >
+<title>SFBcastEnd (199,530 us, 0.03%)</title><rect x="831.5" y="63" width="0.3" height="19.0" fill="rgb(220,21,14)" rx="2" ry="2" />
+<text  x="834.54" y="75.5" ></text>
+</g>
+<g >
+<title>SFBcastEnd (3,690,263 us, 0.54%)</title><rect x="587.9" y="63" width="4.7" height="19.0" fill="rgb(209,226,16)" rx="2" ry="2" />
+<text  x="590.94" y="75.5" ></text>
+</g>
+<g >
+<title>VecTDot (720,715 us, 0.10%)</title><rect x="835.6" y="103" width="0.9" height="19.0" fill="rgb(217,172,43)" rx="2" ry="2" />
+<text  x="838.62" y="115.5" ></text>
+</g>
+<g >
+<title>VecAXPY (429,100 us, 0.06%)</title><rect x="802.6" y="143" width="0.5" height="19.0" fill="rgb(230,134,21)" rx="2" ry="2" />
+<text  x="805.57" y="155.5" ></text>
+</g>
+<g >
+<title>VecPointwiseMult (153,722 us, 0.02%)</title><rect x="867.1" y="143" width="0.2" height="19.0" fill="rgb(211,133,7)" rx="2" ry="2" />
+<text  x="870.13" y="155.5" ></text>
+</g>
+<g >
+<title>SFBcastBegin (172,057 us, 0.02%)</title><rect x="587.7" y="63" width="0.2" height="19.0" fill="rgb(226,38,33)" rx="2" ry="2" />
+<text  x="590.72" y="75.5" ></text>
+</g>
+<g >
+<title>TSFunctionEval (1,241,388 us, 0.18%)</title><rect x="867.3" y="143" width="1.6" height="19.0" fill="rgb(227,42,5)" rx="2" ry="2" />
+<text  x="870.32" y="155.5" ></text>
+</g>
+<g >
+<title>VecSet (7,070,140 us, 1.03%)</title><rect x="680.9" y="63" width="9.0" height="19.0" fill="rgb(216,78,0)" rx="2" ry="2" />
+<text  x="683.86" y="75.5" ></text>
+</g>
+<g >
+<title>MatResidual (76,968,233 us, 11.17%)</title><rect x="703.9" y="123" width="98.3" height="19.0" fill="rgb(220,165,46)" rx="2" ry="2" />
+<text  x="706.94" y="135.5" >MatResidual</text>
+</g>
+<g >
+<title>PCSetUp (1,362,817 us, 0.20%)</title><rect x="833.4" y="103" width="1.8" height="19.0" fill="rgb(207,170,12)" rx="2" ry="2" />
+<text  x="836.44" y="115.5" ></text>
+</g>
+<g >
+<title>SFReduceBegin (4,162,670 us, 0.60%)</title><rect x="884.7" y="103" width="5.3" height="19.0" fill="rgb(215,185,32)" rx="2" ry="2" />
+<text  x="887.69" y="115.5" ></text>
+</g>
+<g >
+<title>VecSet (121,921 us, 0.02%)</title><rect x="105.1" y="103" width="0.1" height="19.0" fill="rgb(241,145,29)" rx="2" ry="2" />
+<text  x="108.07" y="115.5" ></text>
+</g>
+<g >
+<title>SFReduceBegin (203,248 us, 0.03%)</title><rect x="691.5" y="83" width="0.3" height="19.0" fill="rgb(252,180,25)" rx="2" ry="2" />
+<text  x="694.54" y="95.5" ></text>
+</g>
+<g >
+<title>RatelJacobianApp (74,584,264 us, 10.82%)</title><rect x="10.0" y="123" width="95.2" height="19.0" fill="rgb(226,193,46)" rx="2" ry="2" />
+<text  x="13.00" y="135.5" >RatelJaco..</text>
+</g>
+<g >
+<title>TSJacobianEval (12,358,650 us, 1.79%)</title><rect x="868.9" y="143" width="15.8" height="19.0" fill="rgb(221,221,49)" rx="2" ry="2" />
+<text  x="871.91" y="155.5" ></text>
+</g>
+<g >
+<title>all (689,248,251 us, 100%)</title><rect x="10.0" y="223" width="880.0" height="19.0" fill="rgb(248,43,12)" rx="2" ry="2" />
+<text  x="13.00" y="235.5" ></text>
+</g>
+<g >
+<title>SNESSolve (689,248,251 us, 100.00%)</title><rect x="10.0" y="183" width="880.0" height="19.0" fill="rgb(253,179,18)" rx="2" ry="2" />
+<text  x="13.00" y="195.5" >SNESSolve</text>
+</g>
+<g >
+<title>RatelRestrict 1 (887,851 us, 0.13%)</title><rect x="837.4" y="123" width="1.1" height="19.0" fill="rgb(251,166,25)" rx="2" ry="2" />
+<text  x="840.36" y="135.5" ></text>
+</g>
+<g >
+<title>PCApply (62,772,873 us, 9.11%)</title><rect x="594.8" y="103" width="80.1" height="19.0" fill="rgb(221,83,41)" rx="2" ry="2" />
+<text  x="597.79" y="115.5" >PCApply</text>
+</g>
+<g >
+<title>SNESLineSearch (4,162,670 us, 0.60%)</title><rect x="884.7" y="163" width="5.3" height="19.0" fill="rgb(213,66,48)" rx="2" ry="2" />
+<text  x="887.69" y="175.5" ></text>
+</g>
+<g >
+<title>RatelProlong 1 (8,015,669 us, 1.16%)</title><rect x="679.7" y="83" width="10.2" height="19.0" fill="rgb(227,14,16)" rx="2" ry="2" />
+<text  x="682.65" y="95.5" ></text>
+</g>
+<g >
+<title>VecNorm (220,653 us, 0.03%)</title><rect x="835.3" y="103" width="0.3" height="19.0" fill="rgb(209,225,17)" rx="2" ry="2" />
+<text  x="838.34" y="115.5" ></text>
+</g>
+<g >
+<title>MatMult (74,584,264 us, 10.82%)</title><rect x="10.0" y="143" width="95.2" height="19.0" fill="rgb(232,217,46)" rx="2" ry="2" />
+<text  x="13.00" y="155.5" >MatMult</text>
+</g>
+<g >
+<title>VecAXPY (259,521 us, 0.04%)</title><rect x="689.9" y="103" width="0.3" height="19.0" fill="rgb(249,3,39)" rx="2" ry="2" />
+<text  x="692.89" y="115.5" ></text>
+</g>
+<g >
+<title>RatelJacobianApp (383,446,722 us, 55.63%)</title><rect x="105.2" y="83" width="489.6" height="19.0" fill="rgb(218,229,7)" rx="2" ry="2" />
+<text  x="108.23" y="95.5" >RatelJacobianApp</text>
+</g>
+<g >
+<title>SFBcastEnd (130,451 us, 0.02%)</title><rect x="837.4" y="103" width="0.1" height="19.0" fill="rgb(225,176,13)" rx="2" ry="2" />
+<text  x="840.36" y="115.5" ></text>
+</g>
+<g >
+<title>RatelRestrict 1 (10,486,615 us, 1.52%)</title><rect x="690.6" y="103" width="13.3" height="19.0" fill="rgb(248,121,42)" rx="2" ry="2" />
+<text  x="693.56" y="115.5" ></text>
+</g>
+<g >
+<title>VecCopy (159,332 us, 0.02%)</title><rect x="678.4" y="103" width="0.2" height="19.0" fill="rgb(254,202,39)" rx="2" ry="2" />
+<text  x="681.44" y="115.5" ></text>
+</g>
+<g >
+<title>VecAYPX (262,425 us, 0.04%)</title><rect x="801.9" y="103" width="0.3" height="19.0" fill="rgb(254,59,24)" rx="2" ry="2" />
+<text  x="804.88" y="115.5" ></text>
+</g>
+<g >
+<title>BuildTwoSided (381,262 us, 0.06%)</title><rect x="872.5" y="83" width="0.5" height="19.0" fill="rgb(238,190,46)" rx="2" ry="2" />
+<text  x="875.52" y="95.5" ></text>
+</g>
+<g >
+<title>KSPSolve (622,349,894 us, 90.29%)</title><rect x="10.0" y="163" width="794.6" height="19.0" fill="rgb(220,21,5)" rx="2" ry="2" />
+<text  x="13.00" y="175.5" >KSPSolve</text>
+</g>
+<g >
+<title>MatMultAdd (9,064,692 us, 1.32%; 0.00%)</title><rect x="678.6" y="123" width="11.6" height="19.0" fill="rgb(255,255,255)" rx="2" ry="2" />
+<text  x="681.64" y="135.5" ></text>
+</g>
+<g >
+<title>BuildTwoSidedF (381,262 us, 0.06%)</title><rect x="872.5" y="103" width="0.5" height="19.0" fill="rgb(251,203,41)" rx="2" ry="2" />
+<text  x="875.52" y="115.5" ></text>
+</g>
+<g >
+<title>KSPSolve (24,512,406 us, 3.56%)</title><rect x="805.2" y="123" width="31.3" height="19.0" fill="rgb(215,23,21)" rx="2" ry="2" />
+<text  x="808.24" y="135.5" >K..</text>
+</g>
+<g >
+<title>SFReduceBegin (496,151 us, 0.07%)</title><rect x="868.3" y="123" width="0.6" height="19.0" fill="rgb(226,140,47)" rx="2" ry="2" />
+<text  x="871.27" y="135.5" ></text>
+</g>
+<g >
+<title>VecAXPBYCZ (995,356 us, 0.14%)</title><rect x="674.9" y="103" width="1.3" height="19.0" fill="rgb(253,190,33)" rx="2" ry="2" />
+<text  x="677.94" y="115.5" ></text>
+</g>
+<g >
+<title>PCApply (1,289,818 us, 0.19%)</title><rect x="831.8" y="103" width="1.6" height="19.0" fill="rgb(243,83,22)" rx="2" ry="2" />
+<text  x="834.80" y="115.5" ></text>
+</g>
+<g >
+<title>SFReduceBegin (9,049,844 us, 1.31%)</title><rect x="873.1" y="103" width="11.6" height="19.0" fill="rgb(231,224,1)" rx="2" ry="2" />
+<text  x="876.13" y="115.5" ></text>
+</g>
+<g >
+<title>RatelRestrict (640,060 us, 0.09%; +0.09%)</title><rect x="836.5" y="123" width="0.9" height="19.0" fill="rgb(255,39,39)" rx="2" ry="2" />
+<text  x="839.54" y="135.5" ></text>
+</g>
+<g >
+<title>TSFunctionEval (4,162,670 us, 0.60%)</title><rect x="884.7" y="123" width="5.3" height="19.0" fill="rgb(224,90,10)" rx="2" ry="2" />
+<text  x="887.69" y="135.5" ></text>
+</g>
+<g >
+<title>RatelRestrict (266,010 us, 0.04%; +0.04%)</title><rect x="690.2" y="103" width="0.4" height="19.0" fill="rgb(255,139,139)" rx="2" ry="2" />
+<text  x="693.22" y="115.5" ></text>
+</g>
+<g >
+<title>SFBcastEnd (673,880 us, 0.10%)</title><rect x="104.0" y="103" width="0.9" height="19.0" fill="rgb(239,210,4)" rx="2" ry="2" />
+<text  x="106.99" y="115.5" ></text>
+</g>
+<g >
+<title>MatMult (383,446,722 us, 55.63%)</title><rect x="105.2" y="103" width="489.6" height="19.0" fill="rgb(246,178,11)" rx="2" ry="2" />
+<text  x="108.23" y="115.5" >MatMult</text>
+</g>
+<g >
+<title>MatMult (76,705,808 us, 11.13%)</title><rect x="703.9" y="103" width="98.0" height="19.0" fill="rgb(207,221,10)" rx="2" ry="2" />
+<text  x="706.94" y="115.5" >MatMult</text>
+</g>
+</g>
+</svg>

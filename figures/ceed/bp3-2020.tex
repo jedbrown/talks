@@ -1,0 +1,350 @@
+%xelatex thisfile.tex
+\documentclass{standalone}
+\usepackage{mathspec}
+\setmainfont{Nimbus Sans}
+
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+\definecolor{RYB1}{RGB}{166,206,227}  % Light blue
+\definecolor{RYB2}{RGB}{31,120,180}   % Dark blue
+\definecolor{RYB3}{RGB}{178,223,138}  % Light green
+\definecolor{RYB4}{RGB}{51,160,44}    % Dark green
+\definecolor{RYB5}{RGB}{251,154,153}  % Light red
+\definecolor{RYB6}{RGB}{227,26,28}    % Dark red
+\definecolor{RYB7}{RGB}{253,191,111}  % Light orange
+\definecolor{RYB8}{RGB}{255,127,0}    % Dark orange
+\definecolor{RYB9}{RGB}{202,178,214}  % Light purple
+\definecolor{RYB10}{RGB}{160,60,140}  % Dark purple (modified)
+\definecolor{RYB11}{RGB}{255,255,153} % Yellow
+\definecolor{RYB12}{RGB}{177,89,40}   % Dark brown
+
+\pgfplotscreateplotcyclelist{will}{%
+black,every mark/.append style={fill=white},mark=*\\%
+RYB4!50!black,every mark/.append style={fill=RYB4},mark=*\\%
+RYB6!50!black,every mark/.append style={fill=RYB6},mark=*\\%
+RYB8!50!black,every mark/.append style={fill=RYB8},mark=*\\%
+RYB10!50!black,every mark/.append style={fill=RYB10},mark=*\\%
+RYB12!50!black,every mark/.append style={fill=RYB12},mark=*\\%
+black,every mark/.append style={fill=white!50!black},mark=*\\%
+RYB2!50!black,every mark/.append style={fill=RYB2},mark=*\\%
+RYB4!50!black,densely dashed,every mark/.append style={fill=RYB4},mark=*\\%
+RYB6!50!black,densely dashed,every mark/.append style={fill=RYB6},mark=*\\%
+RYB8!50!black,densely dashed,every mark/.append style={fill=RYB8},mark=*\\%
+RYB10!50!black,densely dashed,every mark/.append style={fill=RYB10},mark=*\\%
+RYB12!50!black,densely dashed,every mark/.append style={fill=RYB12},mark=*\\%
+black,densely dashed,every mark/.append style={fill=white!50!black},mark=*\\%
+RYB2!50!black,densely dashed,every mark/.append style={fill=RYB2},mark=*\\%
+}
+
+\begin{document}
+\begin{tikzpicture}[scale=0.7]
+  \begin{axis}[
+  xmode=log,
+  % ymode=log,
+  grid=both,
+  major grid style={line width=.1pt,draw=gray!50},
+  minor grid style={line width=.1pt,draw=gray!50},
+  cycle list name=will,
+  log basis x={10},
+  tick align=outside,
+  tick pos=left,
+  xmin=5e-05, xmax=0.01,
+  % xmin=8.76456222955951e-05, xmax=0.0164739850409227,
+  ymin=1,
+  % ymax=5000,
+  ymax=3000,
+  xlabel={Time per CG iteration (s)},
+  ylabel={MDoF/s per CG iteration},
+  title={2x AMD EPYC 7452},
+  %legend cell align={left},
+  % legend style={fill opacity=0.8, draw opacity=1, text opacity=1, at={(1.05,1)}, anchor=north west, draw=white!80!black},
+  %legend pos = outer north east,
+  % legend pos = south east,
+  % legend columns = 2,
+  %legend entries = {$p=1$,$p=2$,$p=3$,$p=4$,$p=5$,$p=6$,$p=7$},
+  ]
+  \addplot
+table {%
+0.000272989 172.721
+0.00046134 207.433
+0.00118279 164.425
+0.00261807 150.18
+0.00520134 152.287
+0.0103836 153.778
+0.0211196 152.024
+0.0443032 145.466
+};
+\addplot
+table {%
+9.4085875e-05 501.148
+0.000168508888888889 567.905
+0.00030067625 646.813
+0.0006193225 634.86
+0.00150291111111111 527.043
+0.00345995555555556 461.5
+0.00699034 459.304
+0.01445074 445.971
+};
+\addplot
+table {%
+6.71745e-05 701.1
+0.000103271 927.114
+0.000168884 1151.56
+0.0002995135 1313.4
+0.000633075 1250.69
+0.002204 722.845
+0.004733145 677.199
+0.00998674 644.74
+};
+\addplot
+table {%
+6.7413e-05 699.436
+9.24585e-05 1036.39
+0.000141227 1374.4
+0.0002507925 1567.76
+0.000487983 1623.21
+0.001584565 1007.7
+0.00398134 806.434
+0.00846114 761.672
+};
+\addplot
+table {%
+7.26105e-05 665.387
+9.53795e-05 1003.82
+0.000139141 1396.45
+0.0002266765 1733.85
+0.0004450085 1781.95
+0.00127474 1252.56
+0.003497075 918.011
+0.00777292 829.658
+};
+\addplot
+table {%
+8.6105e-05 554.034
+9.28045e-05 1045.8
+0.000133896 1470.42
+0.000257945 1524.95
+0.0004871845 1626.79
+0.001178085 1355.83
+0.003366075 954.379
+0.00740395 870.245
+};
+\addplot
+table {%
+0.000105679 448.49
+0.000114131 842.769
+0.0001874685 1041.25
+0.000244355 1607.63
+0.00039804 1989.75
+0.001111255 1438.37
+0.003172255 1010.69
+0.00716405 899.917
+};
+  \end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}[scale=0.7]
+  \begin{axis}[
+  xmode=log,
+  % ymode=log,
+  grid=both,
+  major grid style={line width=.1pt,draw=gray!50},
+  minor grid style={line width=.1pt,draw=gray!50},
+  cycle list name=will,
+  log basis x={10},
+  tick align=outside,
+  tick pos=left,
+  xmin=5e-05, xmax=0.01,
+  % xmin=8.76456222955951e-05, xmax=0.0164739850409227,
+  ymin=1,
+  % ymax=5000,
+  ymax=3000,
+  xlabel={Time per CG iteration (s)},
+  % ylabel={MDoF/s per CG iteration},
+  yticklabels={,,},
+  title={NVIDIA V100},
+  legend cell align={left},
+  % legend style={fill opacity=0.8, draw opacity=1, text opacity=1, at={(1.05,1)}, anchor=north west, draw=white!80!black},
+  legend pos = outer north east,
+  % legend pos = south east,
+  % legend columns = 2,
+  legend entries = {$p=1$,$p=2$,$p=3$,$p=4$,$p=5$,$p=6$,$p=7$,$p=8$},
+  ]
+  \addplot
+  table {%
+  0.000218933 0.123325
+  0.000169932 0.264812
+  0.000160804 0.466405
+  0.000152783 0.818155
+  0.000119983 1.87527
+  0.000114926 3.52399
+  0.000125232 5.8212
+  0.000118245 11.6453
+  0.00012832 20.2696
+  0.000140066 35.0763
+  0.000134106 71.1155
+  0.000148314 124.823
+  0.000198899 180.679
+  0.000244523 289.482
+  0.000381226 365.728
+  0.000686071 400.287
+  0.00114595 475.61
+  0.00226555 477.441
+  0.00425817 504.134
+  0.00838328 510.151
+  };
+  \addplot
+  table {%
+  0.000233264 0.115749
+  0.00017693 0.254339
+  0.000161957 0.463086
+  0.000150167 0.832409
+  0.000134685 1.67056
+  0.000128243 3.15807
+  0.000114343 6.37557
+  0.000127604 10.7912
+  0.000115828 22.4557
+  0.000121849 40.3204
+  0.000126797 75.215
+  0.000118709 155.953
+  0.000148962 241.249
+  0.000163785 432.183
+  0.000202206 689.521
+  0.000297476 923.184
+  0.000496519 1097.69
+  0.000860303 1257.31
+  0.00161803 1326.73
+  0.00305839 1398.36
+  0.00599976 1420.11
+  };
+  \addplot
+  table {%
+  0.000217329 0.294484
+  0.000150536 0.74401
+  0.000143479 1.36606
+  0.000119664 2.86636
+  0.000118739 5.36472
+  0.000129313 9.14838
+  0.000115348 19.0467
+  0.000122816 34.4011
+  0.000114816 70.7655
+  0.000137425 113.698
+  0.000132138 231.765
+  0.000157046 382.212
+  0.000171259 686.966
+  0.000227257 1024.82
+  0.000342473 1346.21
+  0.000586435 1556.31
+  0.00106503 1705.06
+  0.00199606 1810.14
+  0.00384129 1871.52
+  };
+  \addplot
+  table {%
+  0.000142183 0.879152
+  0.000125111 1.7984
+  0.000131197 3.08697
+  0.000115801 6.29526
+  0.000111198 12.3833
+  0.00012863 20.2207
+  0.000136184 36.0761
+  0.000124486 76.611
+  0.000120667 153.422
+  0.000135837 264.56
+  0.000158324 447.091
+  0.000187077 745.282
+  0.000230045 1193.79
+  0.000352755 1545.05
+  0.000584391 1850.93
+  0.00107462 1997.63
+  0.00196724 2173.98
+  0.00376693 2261.88
+  0.0073803 2299.99
+  };
+  \addplot
+  table {%
+  0.000155554 1.38858
+  0.000140224 2.82406
+  0.000138402 5.2456
+  0.000121662 10.9401
+  0.00012309 20.6434
+  0.000121672 39.8695
+  0.000135322 68.4366
+  0.000134195 134.737
+  0.000141732 249.069
+  0.000139071 495.58
+  0.000188863 720.951
+  0.000224859 1196.31
+  0.000353953 1501.45
+  0.000584862 1806.1
+  0.00103758 2023.56
+  0.00186235 2240.86
+  0.00355595 2339.92
+  0.00707707 2344.13
+  };
+  \addplot
+  table {%
+  0.000138978 2.46801
+  0.00014393 4.42575
+  0.000120322 9.83192
+  0.000135392 16.2269
+  0.00012845 32.8922
+  0.000135226 60.0847
+  0.0001359 114.974
+  0.000132513 231.11
+  0.000143561 418.114
+  0.00014988 784.957
+  0.000189588 1228.44
+  0.000279983 1646.68
+  0.00047939 1903.82
+  0.000814448 2229.65
+  0.00142627 2533.28
+  0.00272713 2636.13
+  0.00534601 2682.53
+  };
+  \addplot
+  table {%
+  0.000137165 3.73273
+  0.000136171 7.04996
+  0.000135109 13.3226
+  0.000136813 24.6688
+  0.000120211 54.2794
+  0.000120276 104.883
+  0.00013198 184.793
+  0.00013178 363.765
+  0.000155967 604.109
+  0.000188632 981.768
+  0.000264976 1385.55
+  0.000422989 1720.69
+  0.000676972 2131.4
+  0.00125825 2283.35
+  0.002309 2477.53
+  0.00470555 2420.68
+  0.00861265 2639.21
+  };
+  \addplot
+  table {%
+  0.000138315 5.27058
+  0.000134813 10.2141
+  0.000133527 19.4791
+  0.000137809 35.6507
+  0.000125164 76.1961
+  0.000120419 153.738
+  0.000133981 268.224
+  0.000155618 454.863
+  0.000180491 772.477
+  0.000221054 1242.34
+  0.00034221 1592.66
+  0.000556995 1941.97
+  0.000970898 2211.03
+  0.00172093 2485.13
+  0.00336881 2529.18
+  0.00653128 2598.97
+  0.0129847 2609.47
+  };
+  \end{axis}
+
+  \end{tikzpicture}
+
+\end{document}
